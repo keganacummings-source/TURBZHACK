@@ -1,8 +1,10 @@
 {
   "name": "Thick Skin",
-  "about": "Blows glance off.",
+  "group": "body",
+  "tier": 1,
+  "weight": 8,
+  "about": "Less of it gets through.",
   "modify": {
-    "armour": 2
-  },
-  "weight": 12
+    "armour": 3
+  }
 }

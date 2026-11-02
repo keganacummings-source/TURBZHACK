@@ -1,0 +1,10 @@
+{
+  "name": "Wind",
+  "group": "body",
+  "tier": 1,
+  "weight": 8,
+  "about": "You keep going.",
+  "modify": {
+    "staminaMax": 30
+  }
+}

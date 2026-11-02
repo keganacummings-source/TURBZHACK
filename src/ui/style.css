@@ -419,3 +419,8 @@ table.slots td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); v
 /* --- companions ---------------------------------------------------------- */
 
 .pip-companion { border-color: var(--good); color: var(--good); }
+
+/* A milestone choice is marked out, because taking one is a bigger decision
+   than an ordinary level and the screen should say so before it is read. */
+.choice-talent { border-color: var(--kyo); }
+.choice-talent .choice-kind { background: var(--kyo); color: var(--ink); }

@@ -39,6 +39,21 @@ export function newMotion(): Motion {
  * would be a lie about what happened.
  */
 export function noteMoves(motion: Motion, actors: Actor[], now: number): void {
+  /*
+   * Expire finished slides here, by the clock.
+   *
+   * They used to be dropped lazily, inside `offsetOf`, which only runs for an
+   * actor the renderer actually draws. A creature that stepped and then walked
+   * out of view was never asked for its offset again, so its slide sat in the
+   * map for ever, `moving()` stayed true, and the app asked for another animation
+   * frame on every frame — a render loop that never stopped, burning a core and
+   * rebuilding the whole overlay sixty times a second behind whatever screen was
+   * open.
+   */
+  for (const [id, slide] of motion.slides) {
+    if (now - slide.started >= SLIDE_MS) motion.slides.delete(id);
+  }
+
   const live = new Set<string>();
   for (const a of actors) {
     live.add(a.id);
@@ -69,7 +84,7 @@ export function offsetOf(motion: Motion, id: string, now: number): { dx: number;
   const slide = motion.slides.get(id);
   if (!slide) return { dx: 0, dy: 0 };
   const t = (now - slide.started) / SLIDE_MS;
-  if (t >= 1) { motion.slides.delete(id); return { dx: 0, dy: 0 }; }
+  if (t >= 1) return { dx: 0, dy: 0 };
   const eased = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
   const back = 1 - eased;
   return {

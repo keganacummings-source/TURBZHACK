@@ -5,5 +5,7 @@
     "focus": 7,
     "hpMax": -15
   },
-  "weight": 5
+  "weight": 5,
+  "group": "magic",
+  "tier": 2
 }

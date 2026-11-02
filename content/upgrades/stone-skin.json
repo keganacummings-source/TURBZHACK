@@ -4,5 +4,7 @@
   "modify": {
     "armour": 4
   },
-  "weight": 6
+  "weight": 6,
+  "group": "body",
+  "tier": 1
 }

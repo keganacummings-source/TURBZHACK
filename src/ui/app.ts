@@ -507,19 +507,33 @@ export async function boot(): Promise<void> {
    * wants to compare them at a glance, not read a list.
    */
   const levelUpHtml = () => {
-    const choices = game?.pendingChoices ?? [];
-    return `<h2>Level ${game?.progress.level}</h2>
-      <p class="dim">Take one. Press its number, or click it.</p>
+    if (!game) return "";
+    const choices = game.pendingChoices ?? [];
+    const milestone = game.pendingMilestone;
+    const kindOf = (c: (typeof choices)[number]) => {
+      if (c.kind === "spell") return "spell";
+      if (milestone) return "talent";
+      return reg.upgrades.get(c.id)?.group ?? "upgrade";
+    };
+
+    return `<h2>${milestone ? `Milestone — level ${game.progress.level}` : `Level ${game.progress.level}`}</h2>
+      <p class="dim">${milestone
+        ? "These are the big ones, and each can only be taken once."
+        : "Take one. Press its number, or click it."}</p>
       <div class="choices">
         ${choices.map((c, i) => `
-          <button class="choice choice-${c.kind}" data-choice="${i}">
+          <button class="choice choice-${c.kind} ${milestone ? "choice-talent" : ""}" data-choice="${i}">
             <span class="choice-key">${i + 1}</span>
             <h3>${escapeHtml(c.name)}</h3>
             <p class="choice-detail">${escapeHtml(c.detail)}</p>
             <p class="dim">${escapeHtml(c.about)}</p>
-            <span class="choice-kind">${c.kind === "spell" ? "spell" : "upgrade"}</span>
+            <span class="choice-kind">${escapeHtml(kindOf(c))}</span>
           </button>`).join("")}
-      </div>`;
+      </div>
+      <p>${game.rerollsLeft > 0
+        ? `<button data-reroll="1">Think again (${game.rerollsLeft} left)</button>
+           <span class="dim">Or press r. One per level.</span>`
+        : `<span class="dim">No rerolls left this level.</span>`}</p>`;
   };
 
   /**
@@ -613,11 +627,15 @@ export async function boot(): Promise<void> {
        * game looks frozen for no visible reason, so surface it here too.
        */
       if (screen !== "levelup") setScreen("levelup");
+      // One reroll, on r, while the choice is up. Deliberately not a bindable
+      // action: it only exists on this screen, and a key that does nothing
+      // everywhere else does not belong in the controls list.
+      if (e.key === "r" && game.reroll()) { e.preventDefault(); render(); return; }
       const n = Number(e.key);
       if (n >= 1 && n <= game.pendingChoices.length) {
         e.preventDefault();
         game.chooseUpgrade(n - 1);
-        setScreen("play");
+        setScreen(game.pendingChoices ? "levelup" : "play");
       }
       return;
     }
@@ -834,10 +852,14 @@ export async function boot(): Promise<void> {
       if (drop) { game.drop(drop.dataset.drop!); render(); return; }
       if (use) { game.use(use.dataset.use!); setScreen("play"); return; }
     }
+    if (t.closest("[data-reroll]") && game?.reroll()) { render(); return; }
     const card = t.closest<HTMLElement>("[data-choice]");
     if (card && game?.pendingChoices) {
       game.chooseUpgrade(Number(card.dataset.choice));
-      setScreen("play");
+      // There may be another level waiting behind this one, and leaving the
+      // screen would strand it: the game stops taking input while a choice is
+      // pending, so it would look frozen.
+      setScreen(game.pendingChoices ? "levelup" : "play");
       return;
     }
     if (t.id === "again") { game = null; setScreen("class-select"); }

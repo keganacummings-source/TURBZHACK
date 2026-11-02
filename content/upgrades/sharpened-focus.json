@@ -4,5 +4,7 @@
   "modify": {
     "focus": 3
   },
-  "weight": 12
+  "weight": 12,
+  "group": "magic",
+  "tier": 1
 }

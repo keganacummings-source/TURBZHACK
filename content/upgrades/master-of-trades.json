@@ -1,0 +1,13 @@
+{
+  "name": "Master of Trades",
+  "group": "trade",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "Nothing takes you as long as it used to.",
+  "perks": {
+    "gatherSpeed": -2,
+    "craftSpeed": -2,
+    "gatherLuck": 0.5
+  }
+}

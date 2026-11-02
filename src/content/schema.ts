@@ -381,10 +381,48 @@ export type SpeciesDef = ContentBase & {
  */
 export type UpgradeDef = ContentBase & {
   /** What it raises. Added to the current value, so negatives are allowed. */
-  modify: Partial<Record<
+  modify?: Partial<Record<
     "might" | "focus" | "accuracy" | "evasion" | "armour" | "hpMax" | "staminaMax" | "manaMax",
     number
   >>;
+  /**
+   * What it changes outside combat: trades, companions, regeneration.
+   *
+   * Separate from `modify` because these are not numbers on the actor — they are
+   * things the Game consults when working out how fast a seam gives way or how
+   * many companions you may keep, and putting them on the actor would mean
+   * equipment could accidentally change them.
+   */
+  perks?: Partial<Record<
+    | "gatherSpeed"      // turns off every harvest
+    | "gatherLuck"       // better odds on the rare yields, as a fraction
+    | "craftSpeed"       // turns off every craft
+    | "party"            // more companions
+    | "tame"             // better taming odds, as a fraction
+    | "regen"            // health regained per turn once the delay has passed
+    | "regenDelay",      // turns of not being hit before regeneration starts
+    number
+  >>;
+  /**
+   * Which part of a character this belongs to.
+   *
+   * The roll takes a spread across groups rather than a flat draw, so that a
+   * level-up is a choice between KINDS of thing — tougher, deadlier, better at a
+   * trade — instead of five variations on max health.
+   */
+  group?: "body" | "arms" | "magic" | "trade" | "company";
+  /**
+   * 1 is common, 3 is a capstone. Gated against level like a spell's tier.
+   */
+  tier?: number;
+  /**
+   * Only offered at a milestone level, and only once.
+   *
+   * Talents are the big ones. Mixing them into the ordinary roll would mean
+   * either seeing one at level 2 or never seeing one at all, so they get their
+   * own levels.
+   */
+  talent?: boolean;
   /** Relative commonness in the roll. Default 10. */
   weight?: number;
 };

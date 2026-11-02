@@ -4,5 +4,7 @@
   "modify": {
     "evasion": 5
   },
-  "weight": 11
+  "weight": 11,
+  "group": "body",
+  "tier": 1
 }

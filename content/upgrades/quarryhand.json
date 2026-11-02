@@ -1,0 +1,10 @@
+{
+  "name": "Quarryhand",
+  "group": "trade",
+  "tier": 1,
+  "weight": 8,
+  "about": "You have done this before.",
+  "perks": {
+    "gatherSpeed": -1
+  }
+}

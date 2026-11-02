@@ -6,5 +6,7 @@
     "focus": 4,
     "armour": -1
   },
-  "weight": 6
+  "weight": 6,
+  "group": "magic",
+  "tier": 1
 }

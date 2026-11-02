@@ -1,0 +1,12 @@
+{
+  "name": "Ironhide",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "Very little of it reaches you now.",
+  "modify": {
+    "armour": 10,
+    "evasion": -4
+  }
+}

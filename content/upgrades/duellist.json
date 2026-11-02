@@ -1,9 +1,13 @@
 {
   "name": "Duellist",
-  "about": "Accurate and quick, but no tougher.",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "One at a time, and each one briefly.",
   "modify": {
-    "accuracy": 5,
-    "evasion": 5
-  },
-  "weight": 8
+    "might": 8,
+    "accuracy": 8,
+    "evasion": 8
+  }
 }

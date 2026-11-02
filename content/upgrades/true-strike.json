@@ -1,0 +1,10 @@
+{
+  "name": "True Strike",
+  "group": "arms",
+  "tier": 1,
+  "weight": 8,
+  "about": "You miss less.",
+  "modify": {
+    "accuracy": 6
+  }
+}

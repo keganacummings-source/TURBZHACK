@@ -4,5 +4,7 @@
   "modify": {
     "hpMax": 20
   },
-  "weight": 12
+  "weight": 12,
+  "group": "body",
+  "tier": 1
 }

@@ -1,0 +1,10 @@
+{
+  "name": "Footwork",
+  "group": "arms",
+  "tier": 1,
+  "weight": 8,
+  "about": "Harder to put a hand on.",
+  "modify": {
+    "evasion": 6
+  }
+}

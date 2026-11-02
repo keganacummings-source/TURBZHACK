@@ -1,0 +1,10 @@
+{
+  "name": "Clear Head",
+  "group": "magic",
+  "tier": 1,
+  "weight": 8,
+  "about": "More to spend.",
+  "modify": {
+    "manaMax": 25
+  }
+}

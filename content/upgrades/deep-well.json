@@ -4,5 +4,7 @@
   "modify": {
     "manaMax": 25
   },
-  "weight": 12
+  "weight": 12,
+  "group": "magic",
+  "tier": 2
 }

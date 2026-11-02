@@ -1,0 +1,10 @@
+{
+  "name": "Quick Knit",
+  "group": "body",
+  "tier": 1,
+  "weight": 7,
+  "about": "You close up faster than you should.",
+  "perks": {
+    "regen": 2
+  }
+}

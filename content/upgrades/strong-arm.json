@@ -4,5 +4,7 @@
   "modify": {
     "might": 3
   },
-  "weight": 12
+  "weight": 12,
+  "group": "arms",
+  "tier": 1
 }

@@ -4,5 +4,7 @@
   "modify": {
     "accuracy": 12
   },
-  "weight": 5
+  "weight": 5,
+  "group": "arms",
+  "tier": 1
 }

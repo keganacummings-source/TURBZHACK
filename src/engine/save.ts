@@ -77,6 +77,12 @@ export type SaveFile = {
   deadXp: [string, number][];
   /** World bosses already killed, so their lairs stay empty. */
   bossesKilled?: string[];
+  /** Everything levelling changed outside combat. */
+  perks?: Record<string, number>;
+  talentsTaken?: string[];
+  party?: string[];
+  skills?: Record<string, number>;
+  crafts?: Record<string, number>;
   actors: unknown[];
   nextId: number;
   messages: unknown[];

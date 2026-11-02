@@ -1,0 +1,10 @@
+{
+  "name": "Steady Hands",
+  "group": "trade",
+  "tier": 1,
+  "weight": 8,
+  "about": "Less fumbling at the bench.",
+  "perks": {
+    "craftSpeed": -1
+  }
+}

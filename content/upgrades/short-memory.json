@@ -1,0 +1,10 @@
+{
+  "name": "Short Memory",
+  "group": "body",
+  "tier": 2,
+  "weight": 5,
+  "about": "You stop counting the hit sooner.",
+  "perks": {
+    "regenDelay": -3
+  }
+}

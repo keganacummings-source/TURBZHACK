@@ -1,0 +1,10 @@
+{
+  "name": "A Kind Word",
+  "group": "company",
+  "tier": 1,
+  "weight": 8,
+  "about": "Things are readier to hear you out.",
+  "perks": {
+    "tame": 0.15
+  }
+}

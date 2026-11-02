@@ -4,5 +4,7 @@
   "modify": {
     "staminaMax": 25
   },
-  "weight": 11
+  "weight": 11,
+  "group": "body",
+  "tier": 2
 }

@@ -17,7 +17,10 @@ import type { StatusDef } from "./engine/status.ts";
 import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
 import type { AbilityDef, ClassDef, EnemyDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
-import { applyChoice, levelForXp, progressOf, rollChoices, PER_LEVEL, type Choice } from "./engine/progress.ts";
+import {
+  applyChoice, isMilestone, levelForXp, newPerks, rollChoices, xpForLevel,
+  PER_LEVEL, type Choice, type Perks,
+} from "./engine/progress.ts";
 import {
   applyLoadout, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
 } from "./engine/equipment.ts";
@@ -73,6 +76,37 @@ export class Game {
    * chosen, which is what makes it feel like a decision rather than a popup.
    */
   pendingChoices: Choice[] | null = null;
+
+  /**
+   * One reroll per level-up.
+   *
+   * A roll of five things none of which suit the character you are building is a
+   * level that happened to you rather than one you spent. One reroll makes the
+   * roll a hand rather than a verdict, and only one keeps it a decision: with
+   * unlimited rerolls everyone would simply fish for the same best option every
+   * time and the roll would stop mattering at all.
+   */
+  rerollsLeft = 0;
+
+  /**
+   * Whether the pending choice is a milestone one.
+   *
+   * Kept beside the choices so the UI can say so without re-deriving it from a
+   * level number that may already have moved on.
+   */
+  pendingMilestone = false;
+
+  /**
+   * What levelling has changed outside combat.
+   *
+   * Separate from the player's stats because equipment recomputes those from
+   * scratch whenever anything is worn — a perk stored there would be wiped by
+   * putting a hat on.
+   */
+  perks: Perks = newPerks();
+
+  /** Talents already taken, so a milestone never offers the same one twice. */
+  talentsTaken: string[] = [];
 
   /** Item ids in the pack, and what is worn. */
   pack: string[] = [];
@@ -713,11 +747,34 @@ export class Game {
       if (!alive.has(id)) gained += worth;
     }
     this.rememberWorth();
-    if (gained <= 0) return;
-
     this.xp += gained;
+    this.checkLevel();
+  }
+
+  /**
+   * Spend any experience that has earned a level.
+   *
+   * Split out from `awardXp` because it used to return early when no creature
+   * had died this turn, which meant experience arriving from anywhere else —
+   * the console, a test, a script, anything a mod might do — raised the number
+   * on the HUD and never levelled anybody up. Two of the tests were quietly
+   * skipping themselves because of it.
+   *
+   * Safe to call every turn: when nothing has changed the loop does not run.
+   */
+  private checkLevel(): void {
     const now = levelForXp(this.xp);
     while (this.playerLevel < now) {
+      /*
+       * One level at a time, and stop at an unspent choice.
+       *
+       * Earning several levels in one kill used to run this loop straight
+       * through, and each pass overwrote the last one's `pendingChoices` — so
+       * four of the five choices were silently thrown away and the player got
+       * one. `chooseUpgrade` calls back in here, so the levels arrive in order
+       * with a decision each.
+       */
+      if (this.pendingChoices) return;
       this.playerLevel++;
       this.player.pools.hpMax += PER_LEVEL.hpMax;
       this.player.pools.hp += PER_LEVEL.hpMax;
@@ -727,15 +784,10 @@ export class Game {
       this.player.pools.mana += PER_LEVEL.manaMax;
       this.player.clampPools();
       this.log(`You reach level ${this.playerLevel}.`, "good");
-      // The roll is forked by level, so it is the same five every time for a
-      // given seed — the choice is a decision, not something to reroll.
-      this.pendingChoices = rollChoices(
-        this.playerLevel,
-        this.player.spells,
-        this.reg.spells as Map<string, SpellDef>,
-        this.reg.upgrades as Map<string, UpgradeDef>,
-        this.rng.fork(`level:${this.playerLevel}`),
-      );
+      this.pendingMilestone = isMilestone(this.playerLevel);
+      this.rerollsLeft = 1;
+      this.pendingChoices = this.rollFor(this.playerLevel, 0);
+      if (this.pendingMilestone) this.log("A milestone. These are the big ones.", "good");
     }
   }
 
@@ -745,14 +797,71 @@ export class Game {
     if (!offered) return false;
     const pick = offered[index];
     if (!pick) return false;
-    this.log(applyChoice(this.player, pick, this.reg.upgrades as Map<string, UpgradeDef>), "good");
+    this.log(
+      applyChoice(this.player, pick, this.reg.upgrades as Map<string, UpgradeDef>, this.perks),
+      "good");
+    // A talent is once only, so remember it: the next milestone must not offer
+    // Beastfriend again to someone who already has it.
+    if (pick.kind === "upgrade" && this.reg.upgrades.get(pick.id)?.talent) {
+      this.talentsTaken.push(pick.id);
+    }
     this.pendingChoices = null;
+    this.pendingMilestone = false;
+    this.rerollsLeft = 0;
+    // Perks can change the player's body, so re-apply what is worn on top of
+    // the new baseline rather than leaving the two out of step.
+    this.refreshGear();
+    // There may be another level waiting behind this one.
+    this.checkLevel();
     return true;
   }
 
-  /** Level, and how far into the next one. */
-  get progress() {
-    return progressOf(this.xp);
+  /**
+   * The roll for a level. `attempt` is how many rerolls have been spent.
+   *
+   * Forked by level AND attempt, so the first roll of a level is the same every
+   * time you reach it — which is what stops the roll being save-scummed — while a
+   * reroll is genuinely a different hand rather than the same one again.
+   */
+  private rollFor(level: number, attempt: number): Choice[] {
+    // A milestone excludes the talents already taken; an ordinary level
+    // excludes the spells already known. Both go through `known`.
+    const known = isMilestone(level) ? this.talentsTaken : this.player.spells;
+    return rollChoices(
+      level,
+      known,
+      this.reg.spells as Map<string, SpellDef>,
+      this.reg.upgrades as Map<string, UpgradeDef>,
+      this.rng.fork(`level:${level}:${attempt}`),
+    );
+  }
+
+  /** Spend the reroll. False when there is none left or nothing is pending. */
+  reroll(): boolean {
+    if (!this.pendingChoices || this.rerollsLeft <= 0) return false;
+    this.rerollsLeft--;
+    this.pendingChoices = this.rollFor(this.playerLevel, 1);
+    this.log("You think again.", "plain");
+    return true;
+  }
+
+  /**
+   * Level, and how far into the next one.
+   *
+   * Reported from `playerLevel` rather than from the experience total, because
+   * the two come apart whenever levels are queued: with five levels earned and
+   * one spent, the raw total says 6 and the character is still a 2. The screen
+   * that says "Level 6" while handing out level 2's choice is lying, and with a
+   * debug-sized pile of experience it said "Level 99".
+   */
+  get progress(): { level: number; into: number; need: number } {
+    const base = xpForLevel(this.playerLevel);
+    const next = xpForLevel(this.playerLevel + 1);
+    return {
+      level: this.playerLevel,
+      into: Math.max(0, Math.min(next - base, this.xp - base)),
+      need: Math.max(1, next - base),
+    };
   }
 
   /**
@@ -903,6 +1012,11 @@ export class Game {
       cooldowns: [...this.cooldowns],
       deadXp: [...this.deadXp],
       bossesKilled: [...this.bossesKilled],
+      perks: { ...this.perks },
+      talentsTaken: [...this.talentsTaken],
+      party: [...this.party],
+      skills: { ...this.skills },
+      crafts: { ...this.crafts },
       actors: this.actors.map((a) => a.toSave()),
       nextId: this.nextId,
       messages: this.messages.slice(-60),
@@ -933,6 +1047,13 @@ export class Game {
     this.cooldowns = new Map(save.cooldowns);
     this.deadXp = new Map(save.deadXp);
     this.bossesKilled = new Set(save.bossesKilled ?? []);
+    // Everything below may be absent in a file written before it existed, so
+    // each falls back to a fresh value rather than leaving the field undefined.
+    this.perks = { ...newPerks(), ...(save.perks ?? {}) };
+    this.talentsTaken = [...(save.talentsTaken ?? [])];
+    this.party = [...(save.party ?? [])];
+    if (save.skills) this.skills = { ...this.skills, ...save.skills };
+    if (save.crafts) this.crafts = { ...this.crafts, ...save.crafts };
     this.nextId = save.nextId;
     this.messages = save.messages as Message[];
     this.over = save.over as Game["over"];
@@ -1082,7 +1203,8 @@ export class Game {
     const key = `${this.levelKey}:${this.level.idx(x, y)}`;
     // Skill and the right tool both shorten the job; bare hands double it.
     const skill = this.skills[h.skill];
-    const need = Math.max(1, Math.round((h.turns ?? 2) * (withTool ? 1 : 2) - Math.floor(skill / 4)));
+    const need = Math.max(1, Math.round(
+      (h.turns ?? 2) * (withTool ? 1 : 2) - Math.floor(skill / 4) + this.perks.gatherSpeed));
     const done = (this.digging.get(key) ?? 0) + 1;
 
     if (done < need) {
@@ -1098,7 +1220,7 @@ export class Game {
     for (const y2 of h.yields) {
       // Skill improves the odds on the rarer entries without ever exceeding
       // certainty, so a maxed trade finds gemstones often but not always.
-      const chance = Math.min(1, y2.chance * (1 + skill / 50));
+      const chance = Math.min(1, y2.chance * (1 + skill / 50 + this.perks.gatherLuck));
       if (rng.next() >= chance) continue;
       for (let n = 0; n < (y2.amount ?? 1); n++) got.push(y2.item);
     }
@@ -1214,7 +1336,8 @@ export class Game {
     this.log(`You make ${madeCount > 1 ? `${madeCount} × ${name}` : name}.`, "good");
 
     // Skill shortens the job, to a floor of one turn.
-    const turns = Math.max(1, (r.turns ?? 2) - Math.floor(this.crafts[r.craft] / 5));
+    const turns = Math.max(1,
+      (r.turns ?? 2) - Math.floor(this.crafts[r.craft] / 5) + this.perks.craftSpeed);
     for (let t = 0; t < turns; t++) {
       if (this.over) break;
       this.finishTurn({ tookTurn: true });
@@ -1223,11 +1346,16 @@ export class Game {
 
   // --- taming and followers -----------------------------------------------
 
+  /** How many companions you may keep, talents included. */
+  get partyLimit(): number {
+    return PARTY_LIMIT + this.perks.party;
+  }
+
   /** Could this creature be talked round at all? */
   canTame(who: Actor): boolean {
     if (who.isPlayer || !who.alive) return false;
     if (who.stance === "friendly") return false;
-    if (this.party.length >= PARTY_LIMIT) return false;
+    if (this.party.length >= this.partyLimit) return false;
     return !!this.reg.enemies.get(who.def)?.tameable;
   }
 
@@ -1258,6 +1386,7 @@ export class Game {
     const t = this.reg.enemies.get(who.def)?.tameable;
     if (!t) return 0;
     let chance = t.chance;
+    chance += this.perks.tame;
     if ((t.food ?? []).some((f) => this.pack.includes(f))) chance += 0.3;
     if (who.pools.hp < who.pools.hpMax / 2) chance += 0.2;
     if (who.pools.hp < who.pools.hpMax / 5) chance += 0.2;
@@ -1268,7 +1397,7 @@ export class Game {
   tame(who: Actor): void {
     if (this.over || this.pendingChoices) return;
     if (!this.canTame(who)) {
-      this.log(this.party.length >= PARTY_LIMIT
+      this.log(this.party.length >= this.partyLimit
         ? "You already have as many companions as you can keep track of."
         : `${who.name} is not interested in you.`, "warn");
       return;

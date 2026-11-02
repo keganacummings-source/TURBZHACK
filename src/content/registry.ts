@@ -324,6 +324,13 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       checkParts(def, out);
       break;
 
+    case "upgrades":
+      oneOf("group", ["body", "arms", "magic", "trade", "company"]);
+      num("tier", { min: 1, max: 3 });
+      num("weight", { min: 0 });
+      checkEffect(def, out);
+      break;
+
     case "statuses":
       num("turns", { min: 1 });
       num("breakChance", { min: 0, max: 1 });
@@ -475,6 +482,26 @@ function checkParts(def: Record<string, unknown>, out: string[]): void {
   const makes = def["makes"] as { item?: unknown; amount?: unknown } | undefined;
   if (!makes || typeof makes !== "object") out.push(`"makes" must be { "item": ..., "amount": ... }`);
   else if (typeof makes.item !== "string" || !makes.item) out.push(`"makes.item" must name an item`);
+}
+
+/**
+ * An upgrade has to actually do something.
+ *
+ * It can raise a stat, or grant a perk, or both — but one with neither is a
+ * level-up spent on nothing, and the only way the player finds out is by taking
+ * it.
+ */
+function checkEffect(def: Record<string, unknown>, out: string[]): void {
+  const modify = def["modify"] as Record<string, unknown> | undefined;
+  const perks = def["perks"] as Record<string, unknown> | undefined;
+  const hasModify = !!modify && Object.values(modify).some((v) => typeof v === "number" && v !== 0);
+  const hasPerk = !!perks && Object.values(perks).some((v) => typeof v === "number" && v !== 0);
+  if (!hasModify && !hasPerk) out.push(`has neither a "modify" nor a "perks" effect, so taking it would do nothing`);
+
+  const PERKS = ["gatherSpeed", "gatherLuck", "craftSpeed", "party", "tame", "regen", "regenDelay"];
+  for (const key of Object.keys(perks ?? {})) {
+    if (!PERKS.includes(key)) out.push(`"perks.${key}" is not a perk — use ${PERKS.join(", ")}`);
+  }
 }
 
 function checkPools(def: Record<string, unknown>, out: string[]): void {
