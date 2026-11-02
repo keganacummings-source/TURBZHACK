@@ -87,6 +87,7 @@ export type SaveFile = {
   coin?: number;
   tameSkill?: number;
   knownRecipes?: string[];
+  nextHandle?: number;
   markets?: unknown[];
   standing?: [number, number][];
   quests?: unknown[];
@@ -147,6 +148,36 @@ export function deleteSlot(slot: number): void {
 }
 
 export const SLOTS_AVAILABLE = [1, 2, 3] as const;
+
+/**
+ * The autosave lives in a slot of its own, apart from the three the player
+ * uses by hand.
+ *
+ * A separate slot so an autosave never silently overwrites a save the player
+ * made deliberately — the automatic one is a safety net under the manual ones,
+ * not a competitor for them.
+ */
+export const AUTOSAVE_SLOT = 0;
+
+/** How often the game saves itself, in turns. */
+export const AUTOSAVE_EVERY = 1000;
+
+/**
+ * The most recent save of any kind, autosave included.
+ *
+ * This is what "load your last save" on death reaches for: whichever slot was
+ * written most recently, so a death sends you back to the last point the game
+ * was in a known-good state, whether that was your doing or the autosave's.
+ */
+export function mostRecentSave(): { slot: number; file: SaveFile } | null {
+  let best: { slot: number; file: SaveFile } | null = null;
+  for (const slot of [AUTOSAVE_SLOT, ...SLOTS_AVAILABLE]) {
+    const file = readSlot(slot);
+    if (!file) continue;
+    if (!best || file.at > best.file.at) best = { slot, file };
+  }
+  return best;
+}
 
 export function listSlots(): (SlotInfo | null)[] {
   return SLOTS_AVAILABLE.map((slot) => {

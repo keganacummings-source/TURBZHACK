@@ -1,0 +1,10 @@
+{
+  "name": "of the Ox",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "attributes": {
+    "endurance": 2
+  },
+  "about": "You tire later than you used to."
+}

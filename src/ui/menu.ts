@@ -10,7 +10,7 @@
 import {
   ACTIONS, controlsText, keyLabel, type Bindings,
 } from "./input.ts";
-import { listSlots, SLOTS_AVAILABLE } from "../engine/save.ts";
+import { AUTOSAVE_SLOT, listSlots, readSlot, SLOTS_AVAILABLE } from "../engine/save.ts";
 
 const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
@@ -77,9 +77,16 @@ export function savesHtml(mode: "save" | "load", inRun: boolean): string {
     return `${Math.round(hours / 24)} day${Math.round(hours / 24) === 1 ? "" : "s"} ago`;
   };
 
+  const auto = readSlot(AUTOSAVE_SLOT);
   return `
     <h2>${mode === "save" ? "Save" : "Load"}</h2>
     <table class="slots">
+      ${auto ? `<tr>
+        <td class="dim">Auto</td>
+        <td>${esc(auto.label)}</td>
+        <td class="dim">${when(auto.at)}</td>
+        <td>${mode === "load" ? `<button data-load="${AUTOSAVE_SLOT}">Load</button>` : '<span class="dim">written for you</span>'}</td>
+      </tr>` : ""}
       ${SLOTS_AVAILABLE.map((n) => {
         const info = slots[n - 1];
         return `<tr>

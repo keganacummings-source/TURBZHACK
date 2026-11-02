@@ -226,6 +226,14 @@ export type ItemInstance = {
   quality?: QualityId;
   /** Who made it, for the log and for pride. */
   maker?: string;
+  /**
+   * Affix ids riding on this particular piece.
+   *
+   * This is what makes two Steel Axes different objects: one might be "Flaming …
+   * of the Bear" and the other plain. Stored as ids and resolved against the
+   * enchantment registry wherever the item's numbers or name are worked out.
+   */
+  affixes?: string[];
 };
 
 /** The numbers a weapon actually has, after class, material and quality. */
@@ -312,14 +320,19 @@ export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
  * "this particular one was made of something", which is exactly what a crafted
  * item is.
  */
-export function fullName(def: ItemDef, inst?: ItemInstance): string {
+export function fullName(
+  def: ItemDef, inst?: ItemInstance, affixes?: { prefix?: string; suffix?: string },
+): string {
   const parts: string[] = [];
+  if (affixes?.prefix) parts.push(affixes.prefix);
   const quality = inst?.quality ?? "plain";
   if (QUALITY[quality].name) parts.push(QUALITY[quality].name);
   const material = inst?.material;
   if (material && MATERIAL[material]) parts.push(MATERIAL[material].name);
   parts.push(def.name ?? String(def.id));
-  return parts.join(" ");
+  // "Flaming Steel Axe of the Bear": the suffix comes after the noun.
+  const base = parts.join(" ");
+  return affixes?.suffix ? `${base} ${affixes.suffix}` : base;
 }
 
 /**

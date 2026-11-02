@@ -1,0 +1,18 @@
+{
+  "name": "Light",
+  "place": "prefix",
+  "slots": [
+    "body",
+    "head",
+    "hands",
+    "feet",
+    "cloak",
+    "offhand",
+    "shield"
+  ],
+  "tier": 1,
+  "modify": {
+    "evasion": 5
+  },
+  "about": "You forget you are wearing it."
+}

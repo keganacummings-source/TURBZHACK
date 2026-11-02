@@ -201,7 +201,7 @@ export function menuAt(game: Game, x: number, y: number): ContextMenu {
   }
 
   if (here.length) {
-    facts.push(["On the ground", here.map((id) => game.reg.items.get(id)?.name ?? id).join(", ")]);
+    facts.push(["On the ground", here.map((id) => game.displayName(id)).join(", ")]);
   }
 
   // Things to do with the square itself, after anything to do with its occupant.

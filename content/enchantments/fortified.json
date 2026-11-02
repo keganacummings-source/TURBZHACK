@@ -1,0 +1,18 @@
+{
+  "name": "Fortified",
+  "place": "prefix",
+  "slots": [
+    "body",
+    "head",
+    "hands",
+    "feet",
+    "cloak",
+    "offhand",
+    "shield"
+  ],
+  "tier": 3,
+  "modify": {
+    "armour": 5
+  },
+  "about": "Closer to a wall than a garment."
+}

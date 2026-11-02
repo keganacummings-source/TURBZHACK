@@ -1,0 +1,18 @@
+{
+  "name": "Frostbound",
+  "place": "prefix",
+  "slots": [
+    "body",
+    "head",
+    "hands",
+    "feet",
+    "cloak",
+    "offhand",
+    "shield"
+  ],
+  "tier": 2,
+  "resist": {
+    "cold": 0.6
+  },
+  "about": "The cold goes around it."
+}

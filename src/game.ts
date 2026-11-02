@@ -16,6 +16,7 @@ import {
 } from "./engine/companions.ts";
 import { newMarket, quote, stall, trade, type Market, type Quote } from "./engine/market.ts";
 import { makeQuest, isDone, ordinal, progressLine, type ActiveQuest } from "./engine/quests.ts";
+import { affixEffect, affixNames, affixValueFactor, isEnchantable, rollAffixes, type Enchants } from "./engine/affixes.ts";
 import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
@@ -35,12 +36,12 @@ import {
   PER_LEVEL, type Choice, type Perks,
 } from "./engine/progress.ts";
 import {
-  applyLoadout, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
+  applyLoadout, describe, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
 } from "./engine/equipment.ts";
 import type { EnchantmentDef, ItemDef } from "./content/schema.ts";
 import { BIOME_BY_ID, generateContinent, placeLairs, REGION_BANDS, type Continent, type Village } from "./world/continent.ts";
 import { DUNGEON_FLOORS, generateDungeon, type Dungeon } from "./world/dungeon.ts";
-import { SAVE_VERSION, decodeRuns, encodeRuns, type SaveFile } from "./engine/save.ts";
+import { AUTOSAVE_EVERY, SAVE_VERSION, decodeRuns, encodeRuns, type SaveFile } from "./engine/save.ts";
 
 /** How far you can see. Dungeons are dark; outdoors you can see across a field. */
 export const SIGHT_DUNGEON = 8;
@@ -716,8 +717,9 @@ export class Game {
    * and means no system can advance a quest it does not understand.
    */
   private noteProgress(kind: ActiveQuest["kind"], target: string, by = 1): void {
+    const base = this.baseOf(target);
     for (const q of this.quests) {
-      if (q.kind !== kind || q.target !== target) continue;
+      if (q.kind !== kind || this.baseOf(q.target) !== base) continue;
       if (isDone(q)) continue;
       q.done = kind === "delve" ? Math.max(q.done, by) : Math.min(q.need, q.done + by);
       if (isDone(q)) this.log(`Done: ${q.ask} — take it back.`, "good");
@@ -865,7 +867,10 @@ export class Game {
       if (this.loot.has(at)) continue;
       const pick = rng.weighted(pool, (i) => i.weight_find ?? 10);
       if (!pick) continue;
-      this.loot.set(at, [String(pick.id)]);
+      const itemId = this.mint(String(pick.id));
+      this.loot.set(at, [itemId]);
+      // Found gear is unique. Deeper finds roll richer and can reach tier 3.
+      this.rollGear(itemId, { luck: 0.1 + depth * 0.03 + this.player.derived.gatherLuck, maxTier: depth >= 6 ? 3 : 2 });
       made++;
     }
   }
@@ -1019,10 +1024,32 @@ export class Game {
     this.awardXp();
     this.tickCompanions();
     this.refreshFov();
+    this.maybeAutosave();
     if (!this.player.alive) {
       this.over = { won: false, reason: "You died." };
       this.log("Your run ends here.", "bad");
     }
+  }
+
+  /** The turn the game last saved itself, so it can do it again on schedule. */
+  private lastAutosaveTurn = 0;
+
+  /**
+   * Save the run automatically, every so many turns.
+   *
+   * To its own slot, so it never treads on a save the player made by hand, and
+   * the UI is handed the actual writing because the engine has no business
+   * touching the browser's storage — `onAutosave` is set by the app. A death
+   * reaches for whichever save is most recent, so a steady autosave means a
+   * death costs at most the last stretch of a run rather than the whole thing.
+   */
+  onAutosave: ((game: Game) => void) | null = null;
+
+  private maybeAutosave(): void {
+    if (this.over || !this.player.alive) return;
+    if (this.turn - this.lastAutosaveTurn < AUTOSAVE_EVERY) return;
+    this.lastAutosaveTurn = this.turn;
+    this.onAutosave?.(this);
   }
 
   /**
@@ -1101,7 +1128,7 @@ export class Game {
       for (const entry of table) {
         if (rng.next() >= entry.chance) continue;
         if (!this.reg.items.has(entry.item)) continue;
-        got.push(entry.item);
+        got.push(this.mint(entry.item));
       }
       if (!got.length) continue;
 
@@ -1110,7 +1137,13 @@ export class Game {
       pile.push(...got);
       this.loot.set(key, pile);
 
-      const names = got.map((id) => this.reg.items.get(id)?.name ?? id);
+      for (const id of got) {
+        this.rollGear(id, def?.boss
+          ? { luck: 0.6, maxTier: 3, atLeast: 1 }
+          : { luck: 0.2 + (def?.xp ?? 0) / 500, maxTier: (def?.xp ?? 0) >= 150 ? 3 : 2 });
+        this.noteProgress("gather", this.baseOf(id));
+      }
+      const names = got.map((id) => this.displayName(id));
       if (def?.boss) this.log(`${a.name} falls, leaving ${names.join(" and ")}.`, "good");
       else this.log(`It drops ${names.join(" and ")}.`, "good");
     }
@@ -1307,6 +1340,7 @@ export class Game {
       this.worn,
       this.reg.items as Map<string, ItemDef>,
       this.reg.enchantments as Map<string, EnchantmentDef>,
+      this.instances,
     );
     applyLoadout(this.player, load);
   }
@@ -1317,9 +1351,10 @@ export class Game {
       this.worn,
       this.reg.items as Map<string, ItemDef>,
       this.reg.enchantments as Map<string, EnchantmentDef>,
+      this.instances,
     );
     const punch = this.reg.abilities.get("punch")!;
-    const held = this.worn.weapon ? this.reg.items.get(this.worn.weapon) : undefined;
+    const held = this.worn.weapon ? this.itemDef(this.worn.weapon) : undefined;
     if (!held || !load.weapon) {
       /*
        * Bare hands are still a weapon class, so Agility and unarmed practice
@@ -1343,17 +1378,28 @@ export class Game {
      * it: the stamina cost stays the hand's, while the damage, the reach, the
      * accuracy and the time it takes all come from the steel and the arm.
      */
-    const stats = weaponStats(held, this.instanceOf(this.worn.weapon!));
+    const inst = this.instanceOf(this.worn.weapon!);
+    const stats = weaponStats(held, inst);
     const skill = this.skillIn(stats.class);
+    /*
+     * An affix's bonus damage is part of the swing, not just a stat on the
+     * character. A Flaming sword hits for its fire on top of the steel, and its
+     * burning rides along — so the affix effect of the held weapon is read here
+     * and folded into the attack the player actually makes.
+     */
+    const affix = affixEffect([
+      ...(held.enchantments ?? []), ...(inst?.affixes ?? []),
+    ], this.reg.enchantments as Enchants);
+    const applies = [...load.applies, ...affix.applies];
     return {
       ...punch,
       id: `weapon:${stats.class}`,
-      name: stats.name,
-      damage: damageWith(stats, this.player.attributes, skill),
-      kind: load.weapon.kind,
+      name: this.displayName(this.worn.weapon!),
+      damage: damageWith(stats, this.player.attributes, skill) + affix.bonusDamage,
+      kind: affix.bonusKind ?? load.weapon.kind,
       range: stats.reach,
       cost: swingCost(stats, this.player.attributes),
-      applies: load.applies.length ? load.applies : undefined,
+      applies: applies.length ? [...new Set(applies)] : undefined,
       say: "{caster} strike{s} {target} with the " + stats.name.toLowerCase() + ".",
     };
   }
@@ -1438,15 +1484,123 @@ export class Game {
    */
   instances = new Map<string, ItemInstance>();
 
+  /**
+   * A running counter for unique equipment handles.
+   *
+   * Two found Steel Axes have to be two different objects, or one's affixes leak
+   * onto the other — which bit immediately, a scattered staff overwriting the
+   * one in the player's hand. So each piece of equipment that enters the pack or
+   * the ground gets a handle of its own, `shortsword#7`, and its instance is
+   * stored under that. Stackable things — ore, potions — keep their plain id and
+   * stack as before.
+   */
+  private nextHandle = 1;
+
+  /** The base content id of a pack handle: "short-sword#7" -> "short-sword". */
+  baseOf(packId: string): string {
+    const hash = packId.indexOf("#");
+    return hash < 0 ? packId : packId.slice(0, hash);
+  }
+
+  /** The content definition for a pack id, handle or not. */
+  itemDef(packId: string): ItemDef | undefined {
+    return this.reg.items.get(this.baseOf(packId));
+  }
+
+  /**
+   * Mint a pack id for a freshly created item.
+   *
+   * Equipment gets a unique handle so it can carry its own affixes; everything
+   * else keeps its base id so it still stacks. This is the single place a new
+   * pack id is made, so the rule lives in one spot.
+   */
+  private mint(baseId: string): string {
+    const def = this.reg.items.get(baseId);
+    return def && isEnchantable(def) ? `${baseId}#${this.nextHandle++}` : baseId;
+  }
+
   instanceOf(itemId: string): ItemInstance | undefined {
     return this.instances.get(itemId);
   }
 
-  /** The name to show for an item, crafted quality and material included. */
+  /** The pack handles for a base item id (several, if you hold several). */
+  handlesOf(baseId: string): string[] {
+    return this.pack.filter((id) => this.baseOf(id) === baseId);
+  }
+
+  /** The most recently acquired handle for a base id, or undefined. */
+  handleOf(baseId: string): string | undefined {
+    const matches = this.handlesOf(baseId);
+    return matches[matches.length - 1];
+  }
+
+  /** What an item does, in words, affixes included. */
+  describeItem(itemId: string): string {
+    const def = this.itemDef(itemId);
+    if (!def) return "";
+    const base = describe(def);
+    const affixes = this.instances.get(itemId)?.affixes ?? [];
+    const words = affixes
+      .map((a) => this.reg.enchantments.get(a)?.about ?? "")
+      .filter(Boolean);
+    const effect = affixEffect(affixes, this.reg.enchantments as Enchants);
+    const bits: string[] = [];
+    if (effect.bonusDamage) bits.push(`+${effect.bonusDamage} ${effect.bonusKind ?? "physical"}`);
+    for (const [k, v] of Object.entries(effect.attributes)) if (v) bits.push(`+${v} ${k}`);
+    if (effect.armour) bits.push(`+${effect.armour} armour`);
+    if (effect.evasion) bits.push(`${effect.evasion > 0 ? "+" : ""}${effect.evasion}% dodge`);
+    if (effect.accuracy) bits.push(`${effect.accuracy > 0 ? "+" : ""}${effect.accuracy}% hit`);
+    if (effect.hpMax) bits.push(`+${effect.hpMax} health`);
+    if (effect.manaMax) bits.push(`+${effect.manaMax} mana`);
+    if (effect.speed) bits.push(`+${effect.speed} speed`);
+    for (const [k, m] of Object.entries(effect.resist)) if (typeof m === "number" && m < 1) bits.push(`${k} resisted`);
+    const affixText = bits.length ? ` · ${bits.join(" · ")}` : "";
+    return (base === "no effect" && bits.length ? bits.join(" · ") : base + affixText);
+  }
+
+  /** The name to show for an item: affixes, quality and material included. */
   displayName(itemId: string): string {
-    const def = this.reg.items.get(itemId);
+    const def = this.itemDef(itemId);
     if (!def) return itemId;
-    return fullName(def, this.instances.get(itemId));
+    const inst = this.instances.get(itemId);
+    return fullName(def, inst, affixNames(inst?.affixes, this.reg.enchantments as Enchants));
+  }
+
+  /** What an item is worth, affixes included, for selling and for the sheet. */
+  worthOf(itemId: string): number {
+    const def = this.itemDef(itemId);
+    if (!def) return 0;
+    const inst = this.instances.get(itemId);
+    return Math.round(itemValue(def, inst)
+      * affixValueFactor(inst?.affixes, this.reg.enchantments as Enchants));
+  }
+
+  /**
+   * Give a freshly generated piece of gear its material, quality and affixes.
+   *
+   * Everything that produces equipment — a find on the ground, a boss's drop, a
+   * purchase, a craft — comes through here, so "every piece is unique" is true by
+   * construction rather than by remembering to roll at four different call sites.
+   * `luck` and `tier` shape how rich the roll is: a deep find or a boss drop is
+   * better than a village-shop one.
+   *
+   * It does nothing to a stack of materials or a potion, and it never overwrites
+   * an instance that already exists — a crafted masterwork that then gets dropped
+   * and picked up keeps what the smith gave it.
+   */
+  private rollGear(itemId: string, opts: { luck?: number; maxTier?: number; atLeast?: number; material?: MaterialId } = {}): void {
+    const def = this.itemDef(itemId);
+    if (!def || !isEnchantable(def)) return;
+    if (this.instances.has(itemId)) return;
+    const rng = this.rng.fork(`gear:${itemId}:${this.turn}:${this.nextHandle}`);
+    const affixes = rollAffixes(def, this.reg.enchantments as Enchants, rng, {
+      luck: opts.luck, maxTier: opts.maxTier, atLeast: opts.atLeast,
+    });
+    const material = opts.material ?? (def.material as MaterialId | undefined);
+    // Only record an instance if there is something to record; a plain iron
+    // sword with no affixes needs no entry and can still stack.
+    if (!affixes.length && !material) return;
+    this.instances.set(itemId, { item: itemId, material, quality: "plain", affixes });
   }
 
   /** Put something on. */
@@ -1466,7 +1620,7 @@ export class Game {
   /** Drink, read, or wave the thing. */
   use(itemId: string): void {
     if (this.over || this.pendingChoices) return;
-    const item = this.reg.items.get(itemId);
+    const item = this.itemDef(itemId);
     if (!item?.casts) { this.log("Nothing happens.", "warn"); return; }
     const spell = this.reg.spells.get(item.casts);
     if (!spell) { this.log("Nothing happens.", "warn"); return; }
@@ -1506,8 +1660,8 @@ export class Game {
     if (!here?.length) { this.log("There is nothing here.", "warn"); return; }
     for (const id of here) {
       this.pack.push(id);
-      this.noteProgress("gather", id);
-      this.log(`You pick up ${this.reg.items.get(id)?.name ?? id}.`, "good");
+      this.noteProgress("gather", this.baseOf(id));
+      this.log(`You pick up ${this.displayName(id)}.`, "good");
     }
     this.loot.delete(key);
     this.finishTurn({ tookTurn: true });
@@ -1520,7 +1674,7 @@ export class Game {
     this.pack.splice(at, 1);
     const key = `${this.levelKey}:${this.level.idx(this.player.pos.x, this.player.pos.y)}`;
     this.loot.set(key, [...(this.loot.get(key) ?? []), itemId]);
-    this.log(`You drop ${this.reg.items.get(itemId)?.name ?? itemId}.`, "plain");
+    this.log(`You drop ${this.displayName(itemId)}.`, "plain");
   }
 
   /**
@@ -1560,6 +1714,7 @@ export class Game {
       coin: this.coin,
       tameSkill: this.tameSkill,
       knownRecipes: [...this.knownRecipes],
+      nextHandle: this.nextHandle,
       markets: [...this.markets].map(([k, m]) => [k, { ...m, stock: { ...m.stock } }] as [number, Market]),
       standing: [...this.standing],
       quests: this.quests.map((q) => ({ ...q })),
@@ -1608,6 +1763,7 @@ export class Game {
     this.coin = save.coin ?? 0;
     this.tameSkill = save.tameSkill ?? 0;
     this.knownRecipes = new Set(save.knownRecipes ?? []);
+    this.nextHandle = save.nextHandle ?? 1;
     this.markets = new Map((save.markets ?? []) as [number, Market][]);
     this.standing = new Map((save.standing ?? []) as [number, number][]);
     this.quests = (save.quests ?? []) as ActiveQuest[];
@@ -1694,7 +1850,7 @@ export class Game {
 
   /** The class of whatever is in hand, for practice and for the sheet. */
   get heldClass(): string {
-    const held = this.worn.weapon ? this.reg.items.get(this.worn.weapon) : undefined;
+    const held = this.worn.weapon ? this.itemDef(this.worn.weapon) : undefined;
     return held ? classOf(held) : "unarmed";
   }
 
@@ -1885,7 +2041,8 @@ export class Game {
 
   /** How many of an item are in the pack. */
   countOf(itemId: string): number {
-    return this.pack.filter((i) => i === itemId).length;
+    const base = this.baseOf(itemId);
+    return this.pack.filter((i) => this.baseOf(i) === base).length;
   }
 
   /** Everything you could make right now, and why you cannot make the rest. */
@@ -2003,10 +2160,24 @@ export class Game {
        * caring about.
        */
       const inst = this.forgeInstance(r, material);
-      this.pack.push(r.makes.item);
-      this.instances.set(r.makes.item, inst);
-      this.noteProgress("gather", r.makes.item);
-      madeName = fullName(def, inst);
+      /*
+       * A well-made thing sometimes comes out with a quality of its own kind —
+       * an affix. The better the craft, the likelier and the richer, so chasing
+       * masterworks is also chasing the chance of something genuinely special.
+       */
+      const rank = qualityRank(inst.quality ?? "plain");
+      const rng = this.rng.fork(`craftaffix:${r.id}:${this.turn}`);
+      const affixes = rank >= 2
+        ? rollAffixes(def, this.reg.enchantments as Enchants, rng,
+            { luck: 0.1 * rank + this.player.derived.gatherLuck, maxTier: rank >= 4 ? 3 : 2, atLeast: rank >= 4 ? 1 : 0 })
+        : [];
+      inst.affixes = affixes;
+      const handle = this.mint(String(r.makes.item));
+      inst.item = handle;
+      this.pack.push(handle);
+      this.instances.set(handle, inst);
+      this.noteProgress("gather", String(r.makes.item));
+      madeName = this.displayName(handle);
     } else {
       for (let k = 0; k < madeCount; k++) {
         this.pack.push(r.makes.item);
@@ -2134,7 +2305,7 @@ export class Game {
    * pull until it pays.
    */
   reforge(itemId: string, cost: { item: string; amount: number }): boolean {
-    const def = this.reg.items.get(itemId);
+    const def = this.itemDef(itemId);
     if (!def || def.slot === "material") return false;
     if (!this.stationsInReach.has("forge") && !this.stationsInReach.has("bench")) {
       this.log("You need a forge or a bench for that.", "warn");
@@ -2445,9 +2616,11 @@ export class Game {
       return false;
     }
     this.coin -= q.buy;
-    this.pack.push(itemId);
+    const handle = this.mint(itemId);
+    this.pack.push(handle);
+    this.rollGear(handle, { luck: 0.05 + this.player.derived.gatherLuck, maxTier: 2 });
     trade(this.marketOf(index), itemId, -1, this.turn);
-    this.log(`You buy ${def.name} for ${q.buy}.`, "plain");
+    this.log(`You buy ${this.displayName(handle)} for ${q.buy}.`, "plain");
     this.finishTurn({ tookTurn: true });
     return true;
   }
@@ -2459,10 +2632,14 @@ export class Game {
     const at = this.pack.indexOf(itemId);
     if (at < 0) { this.log(`You are not carrying any ${def.name}.`, "warn"); return false; }
     const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
+    // An affixed piece is worth more than its base; the market pays accordingly.
+    const factor = affixValueFactor(this.instances.get(itemId)?.affixes, this.reg.enchantments as Enchants);
+    const price = Math.round(q.sell * factor);
     this.pack.splice(at, 1);
-    this.coin += q.sell;
+    this.instances.delete(itemId);
+    this.coin += price;
     trade(this.marketOf(index), itemId, 1, this.turn);
-    this.log(`You sell ${def.name} for ${q.sell}.`, "good");
+    this.log(`You sell ${def.name} for ${price}.`, "good");
     this.finishTurn({ tookTurn: true });
     return true;
   }

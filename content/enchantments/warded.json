@@ -1,8 +1,0 @@
-{
-  "name": "Warded",
-  "about": "Turns part of a blow aside.",
-  "modify": {
-    "armour": 3
-  },
-  "tier": 2
-}

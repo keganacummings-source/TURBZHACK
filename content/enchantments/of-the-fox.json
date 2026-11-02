@@ -1,0 +1,10 @@
+{
+  "name": "of the Fox",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "attributes": {
+    "cunning": 2
+  },
+  "about": "You notice things."
+}

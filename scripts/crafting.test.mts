@@ -36,16 +36,15 @@ test("a forged weapon takes the material it was made from", () => {
   // Iron version.
   g.pack.push("iron-ingot", "iron-ingot", "wood");
   g.craft("forge-short-sword");
-  const iron = g.instanceOf("short-sword");
+  const iron = g.instanceOf(g.handleOf("short-sword")!);
   assert.ok(iron, "forging a sword left no instance");
   assert.equal(iron!.material, "iron", "an iron sword is not iron");
 
   // Steel version of the same recipe: same recipe, better metal.
-  g.instances.delete("short-sword");
-  g.pack = g.pack.filter((i) => i !== "short-sword");
+  g.pack = g.pack.filter((i) => g.baseOf(i) !== "short-sword");
   g.pack.push("steel-ingot", "steel-ingot", "wood");
   g.craft("forge-short-sword");
-  const steel = g.instanceOf("short-sword");
+  const steel = g.instanceOf(g.handleOf("short-sword")!);
   assert.equal(steel!.material, "steel", "forging from steel did not make a steel sword");
 
   // And the steel one really is better.
@@ -61,7 +60,7 @@ test("the best material among the ingredients is the one that counts", () => {
   //  giving steel, which `materialUsed` should prefer by rank.)
   g.pack.push("steel-ingot", "steel-ingot", "wood");
   g.craft("forge-short-sword");
-  assert.equal(g.instanceOf("short-sword")?.material, "steel");
+  assert.equal(g.instanceOf(g.handleOf("short-sword")!)?.material, "steel");
 });
 
 test("skill moves the quality, over many tries", () => {
@@ -75,7 +74,7 @@ test("skill moves the quality, over many tries", () => {
       g.crafts.smithing = skill;
       g.pack.push("iron-ingot", "iron-ingot", "wood");
       g.craft("forge-short-sword");
-      total += Object.keys(QUALITY).indexOf(g.instanceOf("short-sword")?.quality ?? "plain");
+      total += Object.keys(QUALITY).indexOf(g.instanceOf(g.handleOf("short-sword")!)?.quality ?? "plain");
     }
     return total / n;
   };
@@ -93,7 +92,7 @@ test("a craft always costs its materials, success or not", () => {
   // Three in, one out.
   assert.equal(g.pack.filter((i) => i === "iron-ingot").length, 0, "the ingots were not consumed");
   assert.equal(g.pack.filter((i) => i === "wood").length, 0, "the wood was not consumed");
-  assert.ok(g.pack.includes("short-sword"));
+  assert.ok(g.handlesOf("short-sword").length > 0);
   assert.ok(g.pack.length < before, "forging added items without taking any");
 });
 
@@ -141,10 +140,10 @@ test("reforging can improve an item, costs materials, and is not a free retry", 
   assert.ok(g.countOf("iron-ingot") < before, "reforging cost no materials");
 
   // Reforging without the cost in hand is refused.
-  const q = g.instanceOf("short-sword")?.quality;
+  const q = g.instanceOf(g.handleOf("short-sword")!)?.quality;
   g.pack = g.pack.filter((i) => i !== "iron-ingot");
   g.reforge("short-sword", { item: "iron-ingot", amount: 1 });
-  assert.equal(g.instanceOf("short-sword")?.quality, q, "a reforge with no materials still changed the item");
+  assert.equal(g.instanceOf(g.handleOf("short-sword")!)?.quality, q, "a reforge with no materials still changed the item");
 });
 
 test("a crafted weapon's quality and material survive a save", () => {
@@ -153,10 +152,11 @@ test("a crafted weapon's quality and material survive a save", () => {
   g.crafts.smithing = 30;
   g.craft("forge-short-sword");
   g.learnRecipe("steel-ingot");
-  const inst = g.instanceOf("short-sword");
+  const handle = g.handleOf("short-sword")!;
+  const inst = g.instanceOf(handle);
 
   const back = loadGame(reg, g.toSave());
-  assert.deepEqual(back.instanceOf("short-sword"), inst, "the crafted weapon came back generic");
+  assert.deepEqual(back.instanceOf(handle), inst, "the crafted weapon came back generic");
   assert.equal(back.knowsRecipe("steel-ingot"), true, "a learned recipe was forgotten");
 });
 

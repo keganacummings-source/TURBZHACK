@@ -22,7 +22,7 @@ import { ATTRIBUTES, ATTRIBUTE_INFO, explainPoint, type AttributeId } from "../e
 import { WEAPON_CLASS } from "../engine/weapons.ts";
 import { bondWord as companionBond, hunger as companionHunger, stateOf as companionState } from "../engine/companions.ts";
 import { newMotion, noteMoves, moving } from "../render/motion.ts";
-import { deleteSlot, readSlot, writeSlot } from "../engine/save.ts";
+import { AUTOSAVE_EVERY, AUTOSAVE_SLOT, deleteSlot, mostRecentSave, readSlot, writeSlot } from "../engine/save.ts";
 import { loadGame } from "../game.ts";
 import { BIOME_BY_ID } from "../world/continent.ts";
 import { openDesigner } from "./designer.ts";
@@ -75,6 +75,18 @@ export async function boot(): Promise<void> {
 
   /** Where to go back to when a sub-screen is closed. */
   let menuReturn: Screen = "play";
+
+  /**
+   * Save the run to the autosave slot.
+   *
+   * Handed to every game via `onAutosave`, because the engine must not touch
+   * browser storage itself. A failed write is logged rather than thrown — an
+   * autosave that cannot be written should not take the run down with it.
+   */
+  function autosave(g: Game): void {
+    const res = writeSlot(AUTOSAVE_SLOT, g.toSave());
+    g.log(res.ok ? "The game saves itself." : res.message, res.ok ? "plain" : "warn");
+  }
 
   /** Travel ticks while this is running. */
   let travelTimer: number | null = null;
@@ -454,7 +466,7 @@ export async function boot(): Promise<void> {
     if (!game) return "";
     if (!game.stationsInReach.has("forge") && !game.stationsInReach.has("bench")) return "";
     const gear = [...new Set(game.pack)].filter((id) => {
-      const slot = reg.items.get(id)?.slot;
+      const slot = game!.itemDef(id)?.slot;
       return slot && !["potion", "scroll", "misc", "material", "food"].includes(slot);
     });
     if (!gear.length) return "";
@@ -634,6 +646,7 @@ export async function boot(): Promise<void> {
       const seedInput = ($("seed") as HTMLInputElement).value.trim();
       game = new Game(reg, seedInput || Date.now());
       game.movementHint = movementHint(bindings);
+      game.onAutosave = autosave;
       game.start(pickedBg, pickedSpecies);
       /*
        * The run, on the window, on purpose.
@@ -705,11 +718,11 @@ export async function boot(): Promise<void> {
     const items = reg.items;
     const wornRows = SLOTS.map((slot) => {
       const id = game!.worn[slot];
-      const item = id ? items.get(id) : undefined;
+      const item = id ? game!.itemDef(id) : undefined;
       return `<tr>
         <td class="dim">${SLOT_NAME[slot]}</td>
         <td>${item ? escapeHtml(game!.displayName(id!)) : '<span class="dim">—</span>'}</td>
-        <td class="choice-detail">${item ? escapeHtml(describe(item)) : ""}</td>
+        <td class="choice-detail">${item ? escapeHtml(game!.describeItem(id!)) : ""}</td>
         <td>${item ? `<button data-off="${slot}">take off</button>` : ""}</td>
       </tr>`;
     }).join("");
@@ -726,7 +739,7 @@ export async function boot(): Promise<void> {
     for (const id of game.pack) counts.set(id, (counts.get(id) ?? 0) + 1);
     const packRows = game.pack.length
       ? [...counts].map(([id, n]) => {
-          const item = items.get(id);
+          const item = game!.itemDef(id);
           if (!item) return "";
           const inst = game!.instanceOf(id);
           const name = game!.displayName(id);
@@ -734,7 +747,7 @@ export async function boot(): Promise<void> {
           return `<tr>
             <td class="dim">${n > 1 && !inst ? `×${n}` : ""}</td>
             <td>${escapeHtml(name)}</td>
-            <td class="choice-detail">${escapeHtml(describe(item))}</td>
+            <td class="choice-detail">${escapeHtml(game!.describeItem(id))}</td>
             <td>
               ${wearable ? `<button data-wear="${id}">wear</button>` : ""}
               ${item.casts ? `<button data-use="${id}">use</button>` : ""}
@@ -751,10 +764,26 @@ export async function boot(): Promise<void> {
       <p class="dim">i or Esc closes. g picks up what you are standing on.</p>`;
   };
 
-  const deadHtml = () => `<h2>You died</h2>
-    <p>${escapeHtml(game?.over?.reason ?? "")}</p>
-    <p class="dim">Turn ${game?.turn} · seed ${game?.seedWord}</p>
-    <p><button id="again">Start again</button></p>`;
+  const deadHtml = () => {
+    const last = mostRecentSave();
+    // When to say when: a save from this very run is "pick up where you left
+    // off"; one from another run is still offered, but named honestly so nobody
+    // loads a stranger's character by accident.
+    const sameRun = last && game && last.file.seed === game.seed;
+    const when = last
+      ? (() => {
+          const mins = Math.round((Date.now() - last.file.at) / 60000);
+          return mins < 1 ? "moments ago" : mins < 60 ? `${mins} min ago` : `${Math.round(mins / 60)}h ago`;
+        })()
+      : "";
+    return `<h2>You died</h2>
+      <p>${escapeHtml(game?.over?.reason ?? "")}</p>
+      <p class="dim">Turn ${game?.turn} · seed ${game?.seedWord}</p>
+      ${last
+        ? `<p><button id="load-last">${sameRun ? "Load your last save" : "Load last save"} — ${escapeHtml(last.file.label)} (${when})</button></p>`
+        : `<p class="dim">No save to go back to. The game saves itself every ${AUTOSAVE_EVERY} turns, and you can save by hand from the menu.</p>`}
+      <p><button id="again">Start again</button></p>`;
+  };
 
   const problemsHtml = (reg: Registry) => `
     <h2>Content problems</h2>
@@ -993,6 +1022,7 @@ export async function boot(): Promise<void> {
       stopTravel();
       game = loadGame(reg, file);
       game.movementHint = movementHint(bindings);
+      game.onAutosave = autosave;
       (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
       game.log("Loaded.", "good");
       setScreen("play");
@@ -1100,6 +1130,19 @@ export async function boot(): Promise<void> {
       // screen would strand it: the game stops taking input while a choice is
       // pending, so it would look frozen.
       setScreen(game.pendingChoices ? "levelup" : "play");
+      return;
+    }
+    if (t.id === "load-last") {
+      const last = mostRecentSave();
+      if (last) {
+        game = loadGame(reg, last.file);
+        game.movementHint = movementHint(bindings);
+        game.onAutosave = autosave;
+        (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
+        game.log("You take up where you left off.", "good");
+        setScreen("play");
+        resize();
+      }
       return;
     }
     if (t.id === "again") { game = null; setScreen("class-select"); }

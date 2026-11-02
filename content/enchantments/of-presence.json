@@ -1,0 +1,10 @@
+{
+  "name": "of Presence",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "attributes": {
+    "presence": 2
+  },
+  "about": "Rooms quiet a little when you enter."
+}

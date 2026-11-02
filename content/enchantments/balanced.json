@@ -1,0 +1,13 @@
+{
+  "name": "Balanced",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 1,
+  "modify": {
+    "accuracy": 4,
+    "evasion": 2
+  },
+  "about": "It sits right in the hand."
+}

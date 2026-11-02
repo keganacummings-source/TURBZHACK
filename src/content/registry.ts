@@ -385,6 +385,17 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       checkEffect(def, out);
       break;
 
+    case "enchantments":
+      oneOf("place", ["prefix", "suffix"]);
+      num("tier", { min: 1, max: 3 });
+      num("weight", { min: 0 });
+      num("bonusDamage", { min: 0 });
+      strList("slots");
+      strList("applies");
+      checkAttributeMap(def, "attributes", out);
+      checkResist(def, out);
+      break;
+
     case "statuses":
       num("turns", { min: 1 });
       num("breakChance", { min: 0, max: 1 });

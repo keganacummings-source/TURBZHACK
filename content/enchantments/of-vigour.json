@@ -1,0 +1,10 @@
+{
+  "name": "of Vigour",
+  "place": "suffix",
+  "slots": [],
+  "tier": 1,
+  "modify": {
+    "hpMax": 15
+  },
+  "about": "A little more to give."
+}

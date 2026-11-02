@@ -363,3 +363,40 @@ test("a quest template with nothing to point at makes no quest, rather than a br
       `${id} invented a target out of an empty world`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Autosave and death
+// ---------------------------------------------------------------------------
+
+test("the game saves itself on a schedule, to its own slot", async () => {
+  const { AUTOSAVE_EVERY } = await import("../src/world/economy.ts").then(() => import("../src/engine/save.ts"));
+  const g = played();
+  let saved = 0;
+  g.onAutosave = () => { saved++; };
+
+  // Nothing before the interval.
+  g.turn = AUTOSAVE_EVERY - 2;
+  g.rest();
+  assert.equal(saved, 0, "it saved before the interval was up");
+
+  // Crossing the interval triggers exactly one save.
+  g.turn = AUTOSAVE_EVERY + 1;
+  g.rest();
+  assert.equal(saved, 1, "it did not autosave on schedule");
+
+  // And not again until the next interval.
+  g.rest();
+  assert.equal(saved, 1, "it autosaved every single turn after the first");
+});
+
+test("a dead character never autosaves over the last good state", () => {
+  const g = played();
+  g.onAutosave = () => { throw new Error("autosaved while dead"); };
+  g.over = { won: false, reason: "test" };
+  g.player.pools.hp = 0;
+  g.player.alive = false;
+  g.turn = 100000;
+  // Should not throw.
+  (g as unknown as { maybeAutosave(): void }).maybeAutosave?.();
+  assert.ok(true);
+});

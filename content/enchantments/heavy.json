@@ -1,9 +1,13 @@
 {
   "name": "Heavy",
-  "about": "Hits harder, slows you down.",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 1,
   "bonusDamage": 4,
   "modify": {
-    "speed": -10
+    "accuracy": -3
   },
-  "tier": 1
+  "about": "It hits harder and slower."
 }

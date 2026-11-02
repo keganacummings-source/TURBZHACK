@@ -1,0 +1,10 @@
+{
+  "name": "of the Bear",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "attributes": {
+    "strength": 2
+  },
+  "about": "Strength you did not have this morning."
+}

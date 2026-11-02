@@ -220,18 +220,41 @@ export type EnemyDef = ContentBase & {
  * A lasting modifier, on an actor or an item. Unlike a status it has no
  * duration — it is a property of the thing, not something happening to it.
  */
+/**
+ * An affix: a random modifier that makes one piece of gear its own.
+ *
+ * Every piece of equipment that enters the game — crafted, bought, found,
+ * dropped — can carry up to a couple of these, so two Steel Axes are rarely the
+ * same object. An affix is a prefix ("Flaming") or a suffix ("of the Bear"), and
+ * which it is decides where it sits in the name, so a fully-rolled item reads
+ * "Flaming Steel Axe of the Bear".
+ *
+ * (The field is still called "enchantments" in the content folder for
+ * continuity, but an enchantment and an affix are the same thing: a named bundle
+ * of modifiers that rides on an item.)
+ */
 export type EnchantmentDef = ContentBase & {
-  /** Added to the bearer's stats. */
-  modify?: Partial<Record<"hpMax" | "staminaMax" | "manaMax" | "armour" | "speed", number>>;
+  /** Where its name goes: before the item ("Flaming") or after ("of the Bear"). */
+  place?: "prefix" | "suffix";
+  /** Which slots it can land on. Empty means any. "weapon" includes the off-hand. */
+  slots?: string[];
+  /** Added to the bearer's stats and pools. */
+  modify?: Partial<Record<
+    "hpMax" | "staminaMax" | "manaMax" | "armour" | "speed"
+    | "might" | "focus" | "accuracy" | "evasion", number>>;
+  /** Added to the bearer's attributes while worn. */
+  attributes?: Partial<Record<string, number>>;
   /** Multipliers added to the bearer's resistances. */
   resist?: Partial<Record<DamageKind, number>>;
-  /** Extra damage on the bearer's attacks. */
+  /** Extra damage on the bearer's attacks, and what kind. */
   bonusDamage?: number;
   bonusKind?: DamageKind;
   /** Statuses the bearer's attacks apply. */
   applies?: string[];
-  /** How good it is, for pricing and for generation. */
+  /** How good it is: 1 common, 3 rare. Decides when it appears and what it adds. */
   tier?: number;
+  /** Relative commonness within its tier. Default 10. */
+  weight?: number;
   script?: string;
 };
 

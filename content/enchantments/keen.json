@@ -1,0 +1,12 @@
+{
+  "name": "Keen",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 1,
+  "modify": {
+    "accuracy": 8
+  },
+  "about": "Sharpened past reason."
+}

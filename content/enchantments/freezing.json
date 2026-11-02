@@ -1,0 +1,14 @@
+{
+  "name": "Freezing",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 2,
+  "bonusDamage": 4,
+  "bonusKind": "cold",
+  "applies": [
+    "chilled"
+  ],
+  "about": "Cold enough to slow a thing down."
+}

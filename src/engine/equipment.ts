@@ -19,6 +19,13 @@
 import type { Actor } from "./actor.ts";
 import type { ItemDef, EnchantmentDef } from "../content/schema.ts";
 import { derive, withAttributes, type AttributeId, type Attributes } from "./attributes.ts";
+import { affixEffect } from "./affixes.ts";
+
+/** The base content id behind a pack handle: "short-sword#7" -> "short-sword". */
+export function baseId(packId: string): string {
+  const hash = packId.indexOf("#");
+  return hash < 0 ? packId : packId.slice(0, hash);
+}
 import { WEAPON_CLASS, classOf } from "./weapons.ts";
 import type { DamageKind } from "./types.ts";
 
@@ -87,6 +94,11 @@ export type Loadout = {
   weapon: { damage: number; kind: DamageKind; name: string } | null;
   /** Statuses the wearer's attacks apply, from enchantments. */
   applies: string[];
+  /** Pools and speed added by affixes. */
+  hpMax: number;
+  staminaMax: number;
+  manaMax: number;
+  speed: number;
   /** Attributes added by what is worn. */
   attributes: Partial<Attributes>;
   /**
@@ -103,6 +115,7 @@ export type Loadout = {
 
 const EMPTY: Loadout = {
   armour: 0, might: 0, focus: 0, accuracy: 0, evasion: 0,
+  hpMax: 0, staminaMax: 0, manaMax: 0, speed: 0,
   resist: {}, weapon: null, applies: [], attributes: {}, armourLoad: 0, demands: {},
 };
 
@@ -116,13 +129,25 @@ export function loadoutOf(
   worn: Worn,
   items: Map<string, ItemDef>,
   enchantments: Map<string, EnchantmentDef>,
+  instances?: Map<string, { affixes?: string[] }>,
 ): Loadout {
-  const out: Loadout = { ...EMPTY, resist: {}, applies: [] };
+  /*
+   * Fresh copies of every object field, not just a spread of EMPTY.
+   *
+   * A spread copies the references, so `out.attributes` was the SAME object as
+   * EMPTY.attributes on every call — and mutating it meant each loadout wrote its
+   * gear's attribute bonuses permanently into the shared default. It showed up as
+   * a helm's +2 Strength that never came off, because by then "+2 Strength" was
+   * baked into the empty loadout every character started from.
+   */
+  const out: Loadout = {
+    ...EMPTY, resist: {}, applies: [], attributes: {}, demands: {},
+  };
 
   for (const slot of SLOTS) {
     const id = worn[slot];
     if (!id) continue;
-    const item = items.get(id);
+    const item = items.get(baseId(id));
     if (!item) continue;
 
     out.armour += item.armour ?? 0;
@@ -159,18 +184,31 @@ export function loadoutOf(
       out.weapon = { damage: item.damage, kind: (item.kind ?? "physical") as DamageKind, name: item.name };
     }
 
-    for (const eid of item.enchantments ?? []) {
-      const e = enchantments.get(eid);
-      if (!e) continue;
-      out.armour += e.modify?.armour ?? 0;
-      out.might += e.bonusDamage ?? 0;
-      for (const [kind, mult] of Object.entries(e.resist ?? {})) {
-        if (typeof mult !== "number") continue;
-        const k = kind as DamageKind;
-        out.resist[k] = (out.resist[k] ?? 1) * mult;
-      }
-      for (const s of e.applies ?? []) if (!out.applies.includes(s)) out.applies.push(s);
+    /*
+     * Affixes: both the ones baked into the file and the ones rolled onto this
+     * particular copy. The two are the same kind of thing — a named bundle of
+     * modifiers — so they are gathered into one list and applied once.
+     */
+    const affixIds = [...(item.enchantments ?? []), ...(instances?.get(id)?.affixes ?? [])];
+    const eff = affixEffect(affixIds, enchantments);
+    out.armour += eff.armour;
+    out.might += eff.might + eff.bonusDamage;   // a flaming weapon hits harder
+    out.focus += eff.focus;
+    out.accuracy += eff.accuracy;
+    out.evasion += eff.evasion;
+    out.hpMax += eff.hpMax;
+    out.staminaMax += eff.staminaMax;
+    out.manaMax += eff.manaMax;
+    out.speed += eff.speed;
+    for (const [k, v] of Object.entries(eff.attributes)) {
+      if (typeof v !== "number") continue;
+      out.attributes[k as AttributeId] = (out.attributes[k as AttributeId] ?? 0) + v;
     }
+    for (const [k, mult] of Object.entries(eff.resist)) {
+      if (typeof mult !== "number") continue;
+      out.resist[k as DamageKind] = (out.resist[k as DamageKind] ?? 1) * mult;
+    }
+    for (const st of eff.applies) if (!out.applies.includes(st)) out.applies.push(st);
   }
   return out;
 }
@@ -209,10 +247,10 @@ export function applyLoadout(actor: Actor, load: Loadout): void {
    * current value is scaled rather than clamped, so you come out of it as hurt
    * as you went in rather than suddenly at death's door.
    */
-  setPool(actor.pools, "hp", "hpMax", actor.data["poolHp"] as number ?? 0, d.hpBonus);
-  setPool(actor.pools, "stamina", "staminaMax", actor.data["poolStamina"] as number ?? 0, d.staminaBonus);
-  setPool(actor.pools, "mana", "manaMax", actor.data["poolMana"] as number ?? 0, d.manaBonus);
-  actor.speed = d.speed;
+  setPool(actor.pools, "hp", "hpMax", actor.data["poolHp"] as number ?? 0, d.hpBonus + load.hpMax);
+  setPool(actor.pools, "stamina", "staminaMax", actor.data["poolStamina"] as number ?? 0, d.staminaBonus + load.staminaMax);
+  setPool(actor.pools, "mana", "manaMax", actor.data["poolMana"] as number ?? 0, d.manaBonus + load.manaMax);
+  actor.speed = d.speed + load.speed;
 
   actor.resist = { ...actor.baseResist };
   for (const [kind, mult] of Object.entries(load.resist)) {
@@ -278,7 +316,7 @@ export function equip(
   items: Map<string, ItemDef>,
   preferSlot?: Slot,
 ): { ok: boolean; message: string } {
-  const item = items.get(itemId);
+  const item = items.get(baseId(itemId));
   if (!item) return { ok: false, message: "That is not a thing." };
 
   const slots = slotsFor(item);
@@ -297,7 +335,7 @@ export function equip(
   worn[slot] = itemId;
   if (displaced) pack.push(displaced);
 
-  const off = displaced ? ` You put away ${items.get(displaced)?.name ?? displaced}.` : "";
+  const off = displaced ? ` You put away ${items.get(baseId(displaced))?.name ?? displaced}.` : "";
   return { ok: true, message: `You equip ${item.name}.${off}` };
 }
 
@@ -312,7 +350,7 @@ export function unequip(
   if (!id) return { ok: false, message: `Nothing is in that slot.` };
   delete worn[slot];
   pack.push(id);
-  return { ok: true, message: `You take off ${items.get(id)?.name ?? id}.` };
+  return { ok: true, message: `You take off ${items.get(baseId(id))?.name ?? id}.` };
 }
 
 /** A one-line description of an item, for the pack list. */
