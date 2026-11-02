@@ -1,0 +1,13 @@
+{
+  "name": "Potion of Mending",
+  "sprite": "itm-potion",
+  "slot": "potion",
+  "about": "Closes what is open.",
+  "casts": "mend",
+  "charges": 1,
+  "depth": {
+    "min": 0,
+    "max": 12
+  },
+  "weight_find": 18
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Shield",
+  "sprite": "arm-shield",
+  "slot": "shield",
+  "about": "A wall you carry.",
+  "armour": 5,
+  "evasion": -3,
+  "accuracy": -3,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 9
+}

@@ -87,6 +87,18 @@ export class Actor {
   armour: number;
   resist: Record<string, number>;
   stats: CombatStats;
+  /*
+   * What this actor is WITHOUT its gear.
+   *
+   * `stats`, `armour` and `resist` are always base plus whatever is worn, and
+   * equipment.ts recomputes them from scratch on every change. Keeping the
+   * base separately is what makes that possible: without it there is no way to
+   * take a bonus off again except by remembering to subtract exactly what was
+   * added, which is the bug every equipment system eventually has.
+   */
+  baseStats: CombatStats;
+  baseArmour: number;
+  baseResist: Record<string, number>;
   statuses: ActiveStatus[] = [];
   data: Record<string, unknown>;
 
@@ -118,6 +130,9 @@ export class Actor {
     this.armour = init.armour ?? 0;
     this.resist = { ...(init.resist ?? {}) };
     this.stats = { ...BASE_STATS, ...(init.stats ?? {}) };
+    this.baseStats = { ...this.stats };
+    this.baseArmour = this.armour;
+    this.baseResist = { ...this.resist };
     this.data = { ...(init.data ?? {}) };
   }
 

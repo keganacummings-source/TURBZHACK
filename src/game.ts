@@ -17,6 +17,10 @@ import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
 import type { AbilityDef, ClassDef, EnemyDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
 import { applyChoice, levelForXp, progressOf, rollChoices, PER_LEVEL, type Choice } from "./engine/progress.ts";
+import {
+  applyLoadout, equip, loadoutOf, unequip, SLOTS, type Slot, type Worn,
+} from "./engine/equipment.ts";
+import type { EnchantmentDef, ItemDef } from "./content/schema.ts";
 import { generateContinent, type Continent } from "./world/continent.ts";
 import { generateDungeon, type Dungeon } from "./world/dungeon.ts";
 
@@ -64,6 +68,12 @@ export class Game {
    * chosen, which is what makes it feel like a decision rather than a popup.
    */
   pendingChoices: Choice[] | null = null;
+
+  /** Item ids in the pack, and what is worn. */
+  pack: string[] = [];
+  worn: Worn = {};
+  /** Loot lying on the ground, keyed `levelKey:tileIndex`. */
+  loot = new Map<string, string[]>();
 
   private nextId = 1;
   /** What each living creature is worth, so a death can be priced after the fact. */
@@ -129,6 +139,17 @@ export class Game {
      * the player had done anything.
      */
     this.player.energy = ENERGY_PER_ACTION;
+
+    // The starting kit goes into the pack and the wearable parts go on, so
+    // that what you begin with is the same kind of thing as what you find.
+    this.pack = [...((def as ClassDef).items ?? [])];
+    for (const id of [...this.pack]) {
+      const item = this.reg.items.get(id);
+      if (item?.slot && !["potion", "scroll", "misc"].includes(item.slot)) {
+        equip(this.pack, this.worn, id, this.reg.items as Map<string, ItemDef>);
+      }
+    }
+    this.refreshGear();
     this.actors = [this.player];
     this.place = { kind: "overworld" };
     this.populate();
@@ -161,12 +182,6 @@ export class Game {
     });
     a.speed = (def as EnemyDef).speed ?? 100;
 
-    // Starting gear is applied as flat bonuses: this game has no inventory
-    // screen yet, and an item you cannot take off is still an item that counts.
-    for (const itemId of (def as ClassDef).items ?? []) {
-      const item = this.reg.items.get(itemId);
-      if (item?.armour) a.armour += item.armour;
-    }
     a.clampPools();
     return a;
   }
@@ -235,6 +250,39 @@ export class Game {
       if (!pick) continue;
 
       this.actors.push(this.makeActor(String(pick.id), pick, { x, y }));
+      made++;
+    }
+    this.scatterLoot(rng, depth);
+  }
+
+  /**
+   * Leave gear lying about.
+   *
+   * Which gear is decided entirely by the item files: each lists the depths it
+   * belongs to and how often it turns up, so making a sword rarer is editing
+   * that sword. Deeper floors get more of it and better of it, which is the
+   * only reason to go down.
+   */
+  private scatterLoot(rng: Rng, depth: number): void {
+    const level = this.level;
+    const key = this.levelKey;
+    const pool = [...this.reg.items.values()].filter((i) => {
+      if ((i.weight_find ?? 10) <= 0) return false;
+      const min = i.depth?.min ?? 0;
+      const max = i.depth?.max ?? 99;
+      return depth >= min && depth <= max;
+    });
+    if (!pool.length) return;
+
+    const want = this.place.kind === "overworld" ? 24 : 4 + Math.floor(depth * 1.2);
+    for (let tries = 0, made = 0; tries < want * 40 && made < want; tries++) {
+      const x = rng.int(level.w), y = rng.int(level.h);
+      if (level.solid(x, y)) continue;
+      const at = `${key}:${level.idx(x, y)}`;
+      if (this.loot.has(at)) continue;
+      const pick = rng.weighted(pool, (i) => i.weight_find ?? 10);
+      if (!pick) continue;
+      this.loot.set(at, [String(pick.id)]);
       made++;
     }
   }
@@ -407,6 +455,124 @@ export class Game {
     return progressOf(this.xp);
   }
 
+  /**
+   * Recompute what the gear is worth and put it on the player.
+   *
+   * Called after anything touches the pack or the worn map. Totals are built
+   * from scratch every time rather than added and subtracted as things go on
+   * and off, which is the only way to be sure taking a sword off cannot leave
+   * part of it behind.
+   */
+  refreshGear(): void {
+    const load = loadoutOf(
+      this.worn,
+      this.reg.items as Map<string, ItemDef>,
+      this.reg.enchantments as Map<string, EnchantmentDef>,
+    );
+    applyLoadout(this.player, load);
+  }
+
+  /** The weapon in hand, or bare hands. */
+  get weaponAbility(): AbilityDef {
+    const load = loadoutOf(
+      this.worn,
+      this.reg.items as Map<string, ItemDef>,
+      this.reg.enchantments as Map<string, EnchantmentDef>,
+    );
+    const punch = this.reg.abilities.get("punch")!;
+    if (!load.weapon) return punch;
+    /*
+     * A wielded weapon becomes the attack you make by walking into things.
+     *
+     * Built here rather than stored as a content file, because it is the
+     * COMBINATION of a weapon and the bare-handed attack it replaces — the
+     * stamina cost and the reach stay the hand's, only the damage and the kind
+     * come from the steel.
+     */
+    return {
+      ...punch,
+      id: `weapon:${load.weapon.name}`,
+      name: load.weapon.name,
+      damage: load.weapon.damage,
+      kind: load.weapon.kind,
+      applies: load.applies.length ? load.applies : undefined,
+      say: "{caster} strike{s} {target} with the " + load.weapon.name.toLowerCase() + ".",
+    };
+  }
+
+  /** Put something on. */
+  wear(itemId: string, slot?: Slot): void {
+    const out = equip(this.pack, this.worn, itemId, this.reg.items as Map<string, ItemDef>, slot);
+    this.log(out.message, out.ok ? "good" : "warn");
+    if (out.ok) this.refreshGear();
+  }
+
+  /** Take something off. */
+  remove(slot: Slot): void {
+    const out = unequip(this.pack, this.worn, slot, this.reg.items as Map<string, ItemDef>);
+    this.log(out.message, out.ok ? "plain" : "warn");
+    if (out.ok) this.refreshGear();
+  }
+
+  /** Drink, read, or wave the thing. */
+  use(itemId: string): void {
+    if (this.over || this.pendingChoices) return;
+    const item = this.reg.items.get(itemId);
+    if (!item?.casts) { this.log("Nothing happens.", "warn"); return; }
+    const spell = this.reg.spells.get(item.casts);
+    if (!spell) { this.log("Nothing happens.", "warn"); return; }
+
+    const shape = spell.target ?? "actor";
+    const victim = shape === "self" ? this.player : this.nearestHostile(spell.range ?? 1);
+    if (!victim) { this.log("There is nothing to use it on.", "warn"); return; }
+
+    // An item's spell is free: the charge IS the cost.
+    const saved = this.player.pools.mana;
+    this.player.pools.mana = Math.max(saved, spell.mana);
+    const result = castSpell(this.actionCtx, this.player, spell, victim);
+    this.player.pools.mana = saved;
+
+    if (!result.tookTurn) { for (const m of result.messages ?? []) this.log(m.text, m.tone); return; }
+    const at = this.pack.indexOf(itemId);
+    if (at >= 0) this.pack.splice(at, 1);
+    this.log(`You use the ${item.name.toLowerCase()}.`, "magic");
+    this.finishTurn(result);
+  }
+
+  /** The key for the level the player is on, for the loot map. */
+  private get levelKey(): string {
+    return this.place.kind === "overworld" ? "o" : `d${this.place.entrance}:${this.place.depth}`;
+  }
+
+  /** What is lying on a tile. */
+  lootAt(x: number, y: number): string[] {
+    return this.loot.get(`${this.levelKey}:${this.level.idx(x, y)}`) ?? [];
+  }
+
+  /** Pick everything up off the tile you are standing on. */
+  pickUp(): void {
+    if (this.over || this.pendingChoices) return;
+    const key = `${this.levelKey}:${this.level.idx(this.player.pos.x, this.player.pos.y)}`;
+    const here = this.loot.get(key);
+    if (!here?.length) { this.log("There is nothing here.", "warn"); return; }
+    for (const id of here) {
+      this.pack.push(id);
+      this.log(`You pick up ${this.reg.items.get(id)?.name ?? id}.`, "good");
+    }
+    this.loot.delete(key);
+    this.finishTurn({ tookTurn: true });
+  }
+
+  /** Drop something where you stand. */
+  drop(itemId: string): void {
+    const at = this.pack.indexOf(itemId);
+    if (at < 0) return;
+    this.pack.splice(at, 1);
+    const key = `${this.levelKey}:${this.level.idx(this.player.pos.x, this.player.pos.y)}`;
+    this.loot.set(key, [...(this.loot.get(key) ?? []), itemId]);
+    this.log(`You drop ${this.reg.items.get(itemId)?.name ?? itemId}.`, "plain");
+  }
+
   refreshFov(): void {
     computeFov(this.level, this.player.pos, this.sight);
   }
@@ -414,8 +580,8 @@ export class Game {
   /** Walk, or attack whatever is in the way. */
   move(dx: number, dy: number): void {
     if (this.over || this.pendingChoices) return;
-    const punch = this.reg.abilities.get("punch");
-    const res = moveOrAttack(this.actionCtx, this.player, dx, dy, punch);
+    // Whatever is in your hand, or your fist if it is empty.
+    const res = moveOrAttack(this.actionCtx, this.player, dx, dy, this.weaponAbility);
     // Stepping onto stairs or a dungeon mouth takes you through them at once,
     // so the map never needs a separate "use" key for the common case.
     if (res.tookTurn) {

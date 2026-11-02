@@ -1,0 +1,13 @@
+{
+  "name": "Scroll of Warding",
+  "sprite": "itm-scroll",
+  "slot": "scroll",
+  "about": "A skin of hardened air.",
+  "casts": "ward",
+  "charges": 1,
+  "depth": {
+    "min": 2,
+    "max": 12
+  },
+  "weight_find": 9
+}

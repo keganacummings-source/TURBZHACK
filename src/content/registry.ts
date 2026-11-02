@@ -313,10 +313,23 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
     case "items":
       num("damage", { min: 0 });
       num("armour");
+      num("might");
+      num("focus");
+      num("accuracy");
+      num("evasion");
       num("charges", { min: 0 });
       num("weight", { min: 0 });
+      num("weight_find", { min: 0 });
       damageKind("kind");
       strList("enchantments");
+      checkResist(def, out);
+      if (def.slot !== undefined) {
+        const slots = ["weapon", "offhand", "shield", "body", "head", "hands", "feet", "cloak", "ring", "amulet"];
+        if (typeof def.slot !== "string") out.push(`"slot" must be a string`);
+        else if (!slots.includes(def.slot) && !["potion", "scroll", "misc"].includes(def.slot)) {
+          out.push(`"slot" is "${def.slot}" — use one of ${slots.join(", ")}, or potion/scroll/misc for something only carried`);
+        }
+      }
       break;
 
     case "tiles":

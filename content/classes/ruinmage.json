@@ -27,6 +27,8 @@
     "staff-strike"
   ],
   "items": [
-    "worn-robe"
+    "robe",
+    "ruin-staff",
+    "potion-of-mending"
   ]
 }

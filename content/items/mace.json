@@ -1,0 +1,13 @@
+{
+  "name": "Mace",
+  "sprite": "wpn-mace",
+  "slot": "weapon",
+  "about": "Nothing clever about it.",
+  "damage": 13,
+  "kind": "physical",
+  "depth": {
+    "min": 1,
+    "max": 9
+  },
+  "weight_find": 13
+}

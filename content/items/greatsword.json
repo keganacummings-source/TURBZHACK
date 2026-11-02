@@ -1,0 +1,15 @@
+{
+  "name": "Greatsword",
+  "sprite": "wpn-greatsword",
+  "slot": "weapon",
+  "about": "Two hands, and worth them.",
+  "damage": 20,
+  "kind": "physical",
+  "accuracy": -6,
+  "evasion": -3,
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 8
+}

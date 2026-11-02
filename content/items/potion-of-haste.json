@@ -1,0 +1,13 @@
+{
+  "name": "Potion of Haste",
+  "sprite": "itm-potion-2",
+  "slot": "potion",
+  "about": "Everything, quicker.",
+  "casts": "haste",
+  "charges": 1,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 8
+}

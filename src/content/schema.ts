@@ -190,11 +190,24 @@ export type EnchantmentDef = ContentBase & {
 // ---------------------------------------------------------------------------
 
 export type ItemDef = ContentBase & {
-  /** "weapon" | "armour" | "potion" | "scroll" | "misc" — free text, used for sorting. */
+  /**
+   * Where it is worn. One of the slots in equipment.ts — weapon, offhand,
+   * body, head, hands, feet, cloak, ring, amulet — or "shield", which is a
+   * friendlier name for offhand. Leave it out for something you only carry,
+   * like a potion.
+   */
   slot?: string;
+  /** Weapon damage, used only in the weapon hand. */
   damage?: number;
   kind?: DamageKind;
+  /** All of these are ADDED to the wearer while it is worn. */
   armour?: number;
+  might?: number;
+  focus?: number;
+  accuracy?: number;
+  evasion?: number;
+  /** Multiplied into the wearer's resistances: 0 immune, 0.5 halved, 2 double. */
+  resist?: Partial<Record<DamageKind, number>>;
   /** Enchantment ids baked into it. */
   enchantments?: string[];
   /** Using it casts this spell. */
@@ -202,6 +215,10 @@ export type ItemDef = ContentBase & {
   /** Uses before it is gone. Absent means it is not consumed. */
   charges?: number;
   weight?: number;
+  /** How often it is found. Default 10; 0 means it is never generated. */
+  weight_find?: number;
+  /** Roughly how deep it starts appearing. */
+  depth?: { min?: number; max?: number };
   script?: string;
 };
 

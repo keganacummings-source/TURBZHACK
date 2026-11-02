@@ -1,0 +1,15 @@
+{
+  "name": "Plate Armour",
+  "sprite": "arm-plate",
+  "slot": "body",
+  "about": "You will not be hurt, and you will not be quick.",
+  "armour": 12,
+  "evasion": -10,
+  "accuracy": -5,
+  "focus": -3,
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight_find": 5
+}

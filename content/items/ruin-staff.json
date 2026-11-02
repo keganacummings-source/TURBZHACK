@@ -1,0 +1,14 @@
+{
+  "name": "Ruin Staff",
+  "sprite": "wpn-staff",
+  "slot": "weapon",
+  "about": "Cut for a mage's hand. The spells come easier with it.",
+  "damage": 9,
+  "kind": "physical",
+  "focus": 5,
+  "depth": {
+    "min": 0,
+    "max": 12
+  },
+  "weight_find": 12
+}

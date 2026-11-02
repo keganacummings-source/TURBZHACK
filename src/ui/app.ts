@@ -13,13 +13,15 @@ import { draw, drawOverview, viewFor } from "../render/draw.ts";
 import { commandFor, controlsText } from "./input.ts";
 import { BIOME_BY_ID } from "../world/continent.ts";
 import { openDesigner } from "./designer.ts";
+import { SLOTS, SLOT_NAME, describe, type Slot } from "../engine/equipment.ts";
 import type { Registry } from "../content/registry.ts";
 
-type Screen = "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup";
+type Screen = "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup" | "pack";
 
 const $ = (id: string) => document.getElementById(id)!;
 
 export async function boot(): Promise<void> {
+  await markWebfont();
   const reg = await loadContent();
   const atlas = newAtlas();
   await loadSprites(atlas, spriteKeys(reg));
@@ -52,7 +54,7 @@ export async function boot(): Promise<void> {
     // Every screen that is drawn INTO the overlay has to be listed here, or the
     // markup is built and then left hidden — which looks exactly like the game
     // having frozen, because for the level-up it also stops taking input.
-    if (next === "map" || next === "help" || next === "problems" || next === "dead" || next === "levelup") {
+    if (next === "map" || next === "help" || next === "problems" || next === "dead" || next === "levelup" || next === "pack") {
       $("overlay").classList.remove("hidden");
     }
     render();
@@ -64,6 +66,7 @@ export async function boot(): Promise<void> {
     if (screen === "help") { renderOverlay(helpHtml()); }
     if (screen === "problems") { renderOverlay(problemsHtml(reg)); return; }
     if (screen === "levelup") { renderOverlay(levelUpHtml()); }
+    if (screen === "pack") { renderOverlay(packHtml()); }
     if (screen === "dead") { renderOverlay(deadHtml()); }
 
     draw(ctx, game, atlas, viewFor(game, canvas, scale));
@@ -194,6 +197,52 @@ export async function boot(): Promise<void> {
       </div>`;
   };
 
+  /**
+   * The pack and what is worn.
+   *
+   * One screen for both, because the only thing you ever want to do with an
+   * item in the pack is put it on, and the only thing you want to do with what
+   * is worn is take it off.
+   */
+  const packHtml = () => {
+    if (!game) return "";
+    const items = reg.items;
+    const wornRows = SLOTS.map((slot) => {
+      const id = game!.worn[slot];
+      const item = id ? items.get(id) : undefined;
+      return `<tr>
+        <td class="dim">${SLOT_NAME[slot]}</td>
+        <td>${item ? escapeHtml(item.name) : '<span class="dim">—</span>'}</td>
+        <td class="choice-detail">${item ? escapeHtml(describe(item)) : ""}</td>
+        <td>${item ? `<button data-off="${slot}">take off</button>` : ""}</td>
+      </tr>`;
+    }).join("");
+
+    const packRows = game.pack.length
+      ? game.pack.map((id, i) => {
+          const item = items.get(id);
+          if (!item) return "";
+          const wearable = !!item.slot && !["potion", "scroll", "misc"].includes(item.slot);
+          return `<tr>
+            <td class="dim">${i + 1}</td>
+            <td>${escapeHtml(item.name)}</td>
+            <td class="choice-detail">${escapeHtml(describe(item))}</td>
+            <td>
+              ${wearable ? `<button data-wear="${id}">wear</button>` : ""}
+              ${item.casts ? `<button data-use="${id}">use</button>` : ""}
+              <button data-drop="${id}">drop</button>
+            </td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="4" class="dim">Your pack is empty. Walk over something and press g.</td></tr>`;
+
+    return `<h2>Gear</h2>
+      <table class="pack-table">${wornRows}</table>
+      <h2>Pack</h2>
+      <table class="pack-table">${packRows}</table>
+      <p class="dim">i or Esc closes. g picks up what you are standing on.</p>`;
+  };
+
   const deadHtml = () => `<h2>You died</h2>
     <p>${escapeHtml(game?.over?.reason ?? "")}</p>
     <p class="dim">Turn ${game?.turn} · seed ${game?.seedWord}</p>
@@ -244,6 +293,7 @@ export async function boot(): Promise<void> {
     if (cmd.kind === "close") { if (screen !== "play") setScreen(game ? "play" : "class-select"); return; }
     if (cmd.kind === "help") { setScreen(screen === "help" ? "play" : "help"); return; }
     if (cmd.kind === "map") { setScreen(screen === "map" ? "play" : "map"); return; }
+    if (cmd.kind === "pack") { setScreen(screen === "pack" ? "play" : "pack"); return; }
     if (cmd.kind === "designer") { openDesigner(atlas, () => render()); return; }
 
     if (!game || screen !== "play" || game.over) return;
@@ -251,6 +301,7 @@ export async function boot(): Promise<void> {
     switch (cmd.kind) {
       case "move": game.move(cmd.dir.dx, cmd.dir.dy); break;
       case "rest": game.rest(); break;
+      case "pickup": game.pickUp(); break;
       case "ability": game.ability(cmd.id); break;
       case "spell": {
         const id = game.player.spells[cmd.slot];
@@ -266,6 +317,16 @@ export async function boot(): Promise<void> {
 
   document.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
+    if (game) {
+      const wear = t.closest<HTMLElement>("[data-wear]");
+      const off = t.closest<HTMLElement>("[data-off]");
+      const use = t.closest<HTMLElement>("[data-use]");
+      const drop = t.closest<HTMLElement>("[data-drop]");
+      if (wear) { game.wear(wear.dataset.wear!); render(); return; }
+      if (off) { game.remove(off.dataset.off as Slot); render(); return; }
+      if (drop) { game.drop(drop.dataset.drop!); render(); return; }
+      if (use) { game.use(use.dataset.use!); setScreen("play"); return; }
+    }
     const card = t.closest<HTMLElement>("[data-choice]");
     if (card && game?.pendingChoices) {
       game.chooseUpgrade(Number(card.dataset.choice));
@@ -282,6 +343,50 @@ export async function boot(): Promise<void> {
   window.addEventListener("resize", resize);
   setScreen(screen);
   resize();
+}
+
+/**
+ * Tell the stylesheet whether the webfonts actually arrived.
+ *
+ * VT323 is tall and narrow and needs about a third more size than a normal
+ * monospace to read the same. Sizing for it when it has NOT loaded — offline,
+ * or inside the .exe — makes every line enormous and wraps the log every three
+ * words. The stylesheet carries both sets of sizes and this picks one.
+ *
+ * Never throws and never waits long: a missing font must not stop the game
+ * starting, so a failure here just means the fallback sizes stay.
+ */
+async function markWebfont(): Promise<void> {
+  try {
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    // Give the CDN a moment, but not more than a moment.
+    if (fonts) await Promise.race([fonts.ready, new Promise((r) => setTimeout(r, 1200))]);
+
+    /*
+     * Measured, not asked.
+     *
+     * `document.fonts.check('12px "VT323"')` returns true even when the font
+     * never arrived — it answers "could this be rendered", and a fallback
+     * counts. With the CDN blocked it said yes and the whole UI rendered at
+     * VT323's sizes in a monospace, which wraps the log every three words.
+     *
+     * Rendering the same string twice and comparing widths cannot be fooled:
+     * if VT323 really loaded it is narrower than the generic monospace, and if
+     * it did not, the two measurements are identical.
+     */
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const sample = "MMMMMMMMMMWWWWWWWWWWiiiiiiiiii0123456789";
+    ctx.font = '40px monospace';
+    const plain = ctx.measureText(sample).width;
+    ctx.font = '40px "VT323", monospace';
+    const vt = ctx.measureText(sample).width;
+
+    if (Math.abs(vt - plain) > 1) document.documentElement.classList.add("webfont");
+  } catch {
+    // No webfont, fallback sizes, game still starts.
+  }
 }
 
 function escapeHtml(s: string): string {

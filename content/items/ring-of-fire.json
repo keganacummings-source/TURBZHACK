@@ -1,0 +1,14 @@
+{
+  "name": "Ring of Fire",
+  "sprite": "itm-ring",
+  "slot": "ring",
+  "about": "Flame finds you dull.",
+  "resist": {
+    "fire": 0.4
+  },
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 5
+}

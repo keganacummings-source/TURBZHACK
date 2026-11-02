@@ -1,0 +1,13 @@
+{
+  "name": "Helm",
+  "sprite": "arm-helm",
+  "slot": "head",
+  "about": "Steel, and you can hear nothing in it.",
+  "armour": 3,
+  "accuracy": -2,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 9
+}

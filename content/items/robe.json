@@ -1,0 +1,13 @@
+{
+  "name": "Robe",
+  "sprite": "arm-robe",
+  "slot": "body",
+  "about": "Barely armour. It is, however, yours.",
+  "armour": 1,
+  "focus": 2,
+  "depth": {
+    "min": 0,
+    "max": 12
+  },
+  "weight_find": 14
+}

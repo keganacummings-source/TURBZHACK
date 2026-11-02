@@ -1,0 +1,12 @@
+{
+  "name": "Amulet of the Quick",
+  "sprite": "itm-amulet",
+  "slot": "amulet",
+  "about": "You are where the blow is not.",
+  "evasion": 8,
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight_find": 5
+}

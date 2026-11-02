@@ -1,0 +1,14 @@
+{
+  "name": "War Axe",
+  "sprite": "wpn-axe",
+  "slot": "weapon",
+  "about": "Heavy at the business end.",
+  "damage": 16,
+  "kind": "physical",
+  "accuracy": -3,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 10
+}

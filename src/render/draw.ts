@@ -70,6 +70,14 @@ export function draw(ctx: CanvasRenderingContext2D, game: Game, atlas: Atlas, vi
         continue;
       }
 
+      // Loot first: a creature standing on a sword hides the sword, which is
+      // correct — you find out what it was standing on when it is dead.
+      const here = game.lootAt(tx, ty);
+      if (here.length) {
+        const item = game.reg.items.get(here[0]!);
+        drawSprite(ctx, atlas, item?.sprite ?? here[0]!, px, py, scale);
+      }
+
       // Creatures are only drawn where you can actually see them.
       const who = game.actorAt(tx, ty);
       if (who) {

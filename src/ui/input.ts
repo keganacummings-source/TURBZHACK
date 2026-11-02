@@ -13,6 +13,8 @@ export type Command =
   | { kind: "rest" }
   | { kind: "ability"; id: string }
   | { kind: "spell"; slot: number }
+  | { kind: "pack" }
+  | { kind: "pickup" }
   | { kind: "map" }
   | { kind: "help" }
   | { kind: "designer" }
@@ -38,6 +40,8 @@ export const BINDINGS: Binding[] = [
   { keys: ["1"], what: "Cast your first spell", command: { kind: "spell", slot: 0 } },
   { keys: ["2"], what: "Cast your second spell", command: { kind: "spell", slot: 1 } },
   { keys: ["3"], what: "Cast your third spell", command: { kind: "spell", slot: 2 } },
+  { keys: ["i"], what: "Pack and gear", command: { kind: "pack" } },
+  { keys: ["g", ","], what: "Pick up what you are standing on", command: { kind: "pickup" } },
   { keys: ["m"], what: "Overview map", command: { kind: "map" } },
   { keys: ["?"], what: "This list", command: { kind: "help" } },
   { keys: ["t"], what: "Texture designer", command: { kind: "designer" } },
@@ -72,7 +76,7 @@ export function controlsText(): { group: string; rows: [string, string][] }[] {
   const keyLabel = (keys: string[]) =>
     keys.map((k) => (k === " " ? "Space" : k)).join(" / ");
   const moves = BINDINGS.filter((b) => b.command.kind === "move");
-  const fight = BINDINGS.filter((b) => b.command.kind === "ability" || b.command.kind === "spell");
+  const fight = BINDINGS.filter((b) => b.command.kind === "ability" || b.command.kind === "spell" || b.command.kind === "pickup");
   const other = BINDINGS.filter((b) => !moves.includes(b) && !fight.includes(b));
   return [
     { group: "Moving", rows: moves.map((b) => [keyLabel(b.keys), b.what] as [string, string]) },

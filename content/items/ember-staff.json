@@ -1,0 +1,17 @@
+{
+  "name": "Ember Staff",
+  "sprite": "wpn-staff-magic",
+  "slot": "weapon",
+  "about": "Warm to the touch, always.",
+  "damage": 10,
+  "kind": "fire",
+  "focus": 8,
+  "enchantments": [
+    "kindling"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight_find": 5
+}

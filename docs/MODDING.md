@@ -272,3 +272,64 @@ gives *"You punch Wolf."* and *"Goblin punches you."* Use `{s}` for verbs that
 take a plain s — `bite{s}`, `hurl{s}` — and `{es}` for the rest. There is a
 test that every `say` in the content folder has one, because without it you get
 "You punches Goblin."
+
+---
+
+## Your first weapon
+
+`content/items/frost-brand.json`:
+
+```json
+{
+  "name": "Frost Brand",
+  "sprite": "wpn-longsword",
+  "slot": "weapon",
+  "about": "The blade is always cold.",
+  "damage": 14,
+  "kind": "cold",
+  "accuracy": 2,
+  "focus": 2,
+  "enchantments": ["kindling"],
+  "depth": { "min": 4, "max": 12 },
+  "weight_find": 6
+}
+```
+
+`slot` is one of `weapon`, `offhand` (or `shield`, which means the same),
+`body`, `head`, `hands`, `feet`, `cloak`, `ring`, `amulet` — or `potion`,
+`scroll` or `misc` for something you only carry.
+
+Everything except `damage` is **added to the wearer**: `armour`, `might`,
+`focus`, `accuracy`, `evasion`, and `resist` (which multiplies). `damage` and
+`kind` only count in the weapon hand — a sword in your off-hand is just weight.
+
+`depth` and `weight_find` decide where it turns up in the world. `weight_find`
+of 0 means it is never generated, which is how you make something only a script
+can grant.
+
+Make it a trade and it becomes a decision:
+
+```json
+"armour": 12, "evasion": -10, "accuracy": -5, "focus": -3
+```
+
+## Items that do something
+
+```json
+{ "name": "Potion of Haste", "slot": "potion", "casts": "haste", "charges": 1 }
+```
+
+`casts` names any spell file. Using it costs no mana — the charge is the cost.
+
+## The art
+
+Sprite names are just file names in `assets/tiles16/`. The ones that came from
+elsewhere are prefixed so you can tell at a glance:
+
+| prefix | source |
+|---|---|
+| `wpn-` `arm-` `itm-` `dcss-` | Dungeon Crawl Stone Soup |
+| everything else | TURBZ, or the in-game designer |
+
+`npm test` checks that every sprite a content file names actually exists, so a
+typo is caught before you ever see a mauve square.

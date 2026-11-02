@@ -1,0 +1,14 @@
+{
+  "name": "Short Sword",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "about": "An honest blade.",
+  "damage": 11,
+  "kind": "physical",
+  "accuracy": 2,
+  "depth": {
+    "min": 1,
+    "max": 7
+  },
+  "weight_find": 14
+}

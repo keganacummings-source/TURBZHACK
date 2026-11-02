@@ -52,6 +52,8 @@ Walk onto a dungeon mouth or a staircase to use it.
 | `z` | Punch — 5 damage, free |
 | `x` | Kick — 10 damage, 25 stamina |
 | `c` | Staff strike — 8 damage, 10 stamina |
+| `i` | Pack and gear |
+| `g` | Pick up what you are standing on |
 | `1` `2` `3` | Cast a spell |
 | `.` or space | Wait a turn |
 | `m` | Overview map, showing only what you have seen |
@@ -80,6 +82,24 @@ them live in a content file you can change.
 One class, and it is the only one. 90 HP, 80 stamina, 120 mana, and a spell
 list of exactly two: **Spark** and **Frost Touch**. Everything else you take
 from the world.
+
+### Gear
+
+Weapons, armour, rings and amulets lie about the world and come off the things
+you kill. Ten slots — weapon, off-hand, body, head, hands, feet, cloak, two
+rings, amulet — and almost everything is a trade:
+
+| | |
+|---|---|
+| Plate Armour | +12 armour, −10% dodge, −5% hit, −3 focus |
+| Greatsword | 20 damage, −6% hit, −3% dodge |
+| Ruin Staff | 9 damage, +5 focus |
+
+**What you are holding is what you swing.** Walking into something attacks it
+with the weapon in your hand, or your fist if it is empty.
+
+`i` opens the pack. Totals are recomputed from scratch every time anything
+changes, so taking a sword off can never leave part of it behind.
 
 ### Levelling
 
@@ -131,7 +151,8 @@ npm test
 
 ### The art
 
-All of it comes from TURBZ.
+**Terrain, creatures and the Ruinmage come from TURBZ.** **Weapons, armour and
+items come from Dungeon Crawl Stone Soup.**
 
 **Tiles** are the New Texture set reduced to 16×16 by box averaging —
 nearest-neighbour threw away three pixels in four and turned the dithering to
@@ -146,7 +167,31 @@ longest side so a tall robed figure stays tall.
 ```bash
 python3 tools/make-tiles.py   ../TURBZ/public/MapAssets/NewTex assets/tiles16
 python3 tools/make-sprites.py ../TURBZ/public/sprites          assets/tiles16
+
+# DCSS needs its tile SOURCES, not the atlases the game ships — those are
+# packed, so they cannot be sliced on a grid.
+git clone --depth 1 --filter=blob:none --sparse https://github.com/crawl/crawl
+cd crawl && git sparse-checkout set crawl-ref/source/rltiles && cd ..
+python3 tools/import-dcss.py crawl/crawl-ref/source/rltiles assets/tiles16
 ```
 
-Both are re-runnable, so when you redraw something in TURBZ you re-run them.
-Or draw straight over any of it with the in-game designer on `t`.
+All three are re-runnable, so when you redraw something you re-run them. Or
+draw straight over any of it with the in-game designer on `t`.
+
+RLTiles, which Crawl's art is built on, is public domain, and most of Crawl's
+own additions are CC0 — but its LICENSE says the situation "may be complex for
+older pieces", so [ATTRIBUTION.md](ATTRIBUTION.md) records the exact source
+file behind every imported sprite. **No DCSS code is used anywhere here**;
+Crawl's engine is GPL and this one shares nothing with it.
+
+### The look
+
+The palette and the two typefaces are TURBZ's: warm near-black, bone text, gold
+for anything that matters, blood red for anything that hurts. Press Start 2P
+and VT323 load from Google Fonts. Without them the game falls back to the
+system monospace and resizes itself to suit — which is what you will see
+offline, and it is laid out to work.
+
+To make it self-contained, drop `press-start-2p.woff2` and `vt323.woff2` into
+`assets/fonts/` and add an `@font-face` for each at the top of
+`src/ui/style.css`.

@@ -1,0 +1,14 @@
+{
+  "name": "Club",
+  "sprite": "wpn-club",
+  "slot": "weapon",
+  "about": "A branch with ambitions.",
+  "damage": 8,
+  "kind": "physical",
+  "accuracy": -2,
+  "depth": {
+    "min": 0,
+    "max": 3
+  },
+  "weight_find": 16
+}

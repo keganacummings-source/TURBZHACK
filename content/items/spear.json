@@ -1,0 +1,14 @@
+{
+  "name": "Spear",
+  "sprite": "wpn-spear",
+  "slot": "weapon",
+  "about": "Reach, which is most of a fight.",
+  "damage": 12,
+  "kind": "physical",
+  "accuracy": 4,
+  "depth": {
+    "min": 1,
+    "max": 9
+  },
+  "weight_find": 12
+}
