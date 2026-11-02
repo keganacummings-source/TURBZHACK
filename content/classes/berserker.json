@@ -9,15 +9,15 @@
     "war-axe",
     "leather-armour"
   ],
-  "pools": {
-    "hp": 35,
-    "stamina": 35,
-    "mana": -35
-  },
   "stats": {
     "might": 8,
     "accuracy": -2,
     "evasion": -3
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "strength": 3,
+    "endurance": 1,
+    "wits": -2
+  }
 }

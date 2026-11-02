@@ -11,5 +11,8 @@
     "min": 4,
     "max": 12
   },
-  "weight_find": 8
+  "weight_find": 8,
+  "weaponClass": "sword",
+  "material": "steel",
+  "value": 320
 }

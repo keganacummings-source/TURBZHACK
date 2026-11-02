@@ -10,15 +10,15 @@
     "leather-armour",
     "scroll-of-warding"
   ],
-  "pools": {
-    "hp": -10,
-    "mana": 40
-  },
   "stats": {
     "focus": 3,
     "evasion": 8
   },
   "spells": [
     "blink"
-  ]
+  ],
+  "attributes": {
+    "wits": 2,
+    "agility": 1
+  }
 }

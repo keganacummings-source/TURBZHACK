@@ -9,16 +9,15 @@
     "ember-staff",
     "leather-armour"
   ],
-  "pools": {
-    "hp": 10,
-    "stamina": 10,
-    "mana": 25
-  },
   "stats": {
     "might": 3,
     "focus": 4
   },
   "spells": [
     "ember-bolt"
-  ]
+  ],
+  "attributes": {
+    "wits": 2,
+    "presence": 1
+  }
 }

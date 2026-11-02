@@ -8,15 +8,15 @@
   "items": [
     "robe"
   ],
-  "pools": {
-    "hp": 10,
-    "stamina": 40,
-    "mana": -10
-  },
   "stats": {
     "might": 6,
     "accuracy": 5,
     "evasion": 5
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "agility": 2,
+    "endurance": 1,
+    "presence": 1
+  }
 }

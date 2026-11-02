@@ -10,14 +10,14 @@
     "leather-armour",
     "cap"
   ],
-  "pools": {
-    "stamina": 20,
-    "mana": -10
-  },
   "stats": {
     "accuracy": 7
   },
   "spells": [
     "arrow"
-  ]
+  ],
+  "attributes": {
+    "agility": 2,
+    "cunning": 2
+  }
 }

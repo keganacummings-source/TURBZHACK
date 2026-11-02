@@ -3,9 +3,12 @@
   "sprite": "wpn-sword",
   "slot": "weapon",
   "about": "Still warm. It does not cool.",
-  "damage": 26,
+  "damage": 22,
   "kind": "fire",
   "accuracy": 4,
   "unique": true,
-  "source": "Dropped by Ashmaw, the Cinder Wyrm, in the Cinderland."
+  "source": "Dropped by Ashmaw, the Cinder Wyrm, in the Cinderland.",
+  "weaponClass": "sword",
+  "material": "meteoric",
+  "value": 2400
 }

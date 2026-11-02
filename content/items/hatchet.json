@@ -3,7 +3,7 @@
   "sprite": "wpn-axe",
   "slot": "weapon",
   "about": "For wood. Also for whatever is near the wood.",
-  "damage": 9,
+  "damage": 11,
   "kind": "physical",
   "accuracy": -2,
   "tool": "woodcutting",
@@ -11,5 +11,8 @@
     "min": 0,
     "max": 12
   },
-  "weight_find": 6
+  "weight_find": 6,
+  "weaponClass": "axe",
+  "material": "iron",
+  "value": 45
 }

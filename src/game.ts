@@ -10,6 +10,11 @@ import { Actor, type ActorSave } from "./engine/actor.ts";
 import { Rng, seedFrom, seedName } from "./engine/rng.ts";
 import { computeFov, distance, type Level } from "./engine/grid.ts";
 import { findPath } from "./engine/path.ts";
+import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
+import {
+  WEAPON_CLASS, accuracyWith, classOf, damageWith, itemValue, skillFor, swingCost, weaponStats,
+  type ItemInstance,
+} from "./engine/weapons.ts";
 import { monsterTurn, type AiCtx } from "./engine/ai.ts";
 import { castSpell, moveOrAttack, useAbility, wait, actorAt, type ActionCtx } from "./engine/actions.ts";
 import { ENERGY_PER_ACTION, playerActed, type TurnContext } from "./engine/turns.ts";
@@ -107,6 +112,16 @@ export class Game {
 
   /** Talents already taken, so a milestone never offers the same one twice. */
   talentsTaken: string[] = [];
+
+  /**
+   * Attribute points earned and not yet spent.
+   *
+   * Kept as a bank rather than forced at the moment of levelling, so a level-up
+   * is one decision instead of three and the points can be saved towards a
+   * threshold — several items ask for 13 Strength, and being able to aim at that
+   * is the sort of planning the attribute system exists to allow.
+   */
+  attributePoints = 0;
 
   /** Item ids in the pack, and what is worn. */
   pack: string[] = [];
@@ -268,6 +283,9 @@ export class Game {
     const hpMax = Math.max(1, 100 + (species.pools?.hp ?? 0) + (bg.pools?.hp ?? 0));
     const staminaMax = floor(100 + (species.pools?.stamina ?? 0) + (bg.pools?.stamina ?? 0));
     const manaMax = floor(50 + (species.pools?.mana ?? 0) + (bg.pools?.mana ?? 0));
+    // Species and background no longer carry raw pool modifiers — Endurance,
+    // Strength and Wits do — so these three are the plain 100/100/50 unless a
+    // mod puts a `pools` block back, which still works.
 
     const stats: Record<string, number> = {};
     for (const key of ["might", "focus", "accuracy", "evasion"] as const) {
@@ -285,6 +303,23 @@ export class Game {
       }
     }
 
+    /*
+     * Species and background both shift the attributes, and they add.
+     *
+     * What goes in here is the DIFFERENCE from average, not the final value:
+     * the Actor constructor applies these on top of a base of 10. Passing the
+     * finished number instead doubled every attribute, which turned a Conjurer's
+     * 80 health into 134 and was invisible on the character sheet because 20
+     * Strength looks like a perfectly plausible number.
+     */
+    const attributes: Record<string, number> = {};
+    for (const src of [species.attributes, bg.attributes]) {
+      for (const [key, value] of Object.entries(src ?? {})) {
+        if (typeof value !== "number") continue;
+        attributes[key] = (attributes[key] ?? 0) + value;
+      }
+    }
+
     const a = new Actor({
       id: `a${this.nextId++}`,
       def: this.classId,
@@ -298,11 +333,24 @@ export class Game {
       armour: (species.armour ?? 0) + (bg.armour ?? 0),
       resist,
       stats,
+      attributes: attributes as never,
     });
     a.speed = species.speed ?? 100;
     a.baseStats = { ...a.stats };
     a.baseArmour = a.armour;
     a.baseResist = { ...a.resist };
+    /*
+     * Record the pool bases, so attributes can move the maximums later.
+     *
+     * `applyLoadout` reconciles each pool against its base plus whatever
+     * Endurance and Wits are currently worth. Without a recorded base it has no
+     * way to tell a bonus from the pool itself and leaves the maximums alone —
+     * which is correct for a goblin and wrong for the player, who will be
+     * spending attribute points all run.
+     */
+    a.data["poolHp"] = hpMax;
+    a.data["poolStamina"] = staminaMax;
+    a.data["poolMana"] = manaMax;
     a.clampPools();
     return a;
   }
@@ -776,14 +824,12 @@ export class Game {
        */
       if (this.pendingChoices) return;
       this.playerLevel++;
-      this.player.pools.hpMax += PER_LEVEL.hpMax;
-      this.player.pools.hp += PER_LEVEL.hpMax;
-      this.player.pools.staminaMax += PER_LEVEL.staminaMax;
-      this.player.pools.stamina += PER_LEVEL.staminaMax;
-      this.player.pools.manaMax += PER_LEVEL.manaMax;
-      this.player.pools.mana += PER_LEVEL.manaMax;
+      this.raisePoolBase("hp", PER_LEVEL.hpMax);
+      this.raisePoolBase("stamina", PER_LEVEL.staminaMax);
+      this.raisePoolBase("mana", PER_LEVEL.manaMax);
       this.player.clampPools();
       this.log(`You reach level ${this.playerLevel}.`, "good");
+      this.attributePoints += POINTS_PER_LEVEL;
       this.pendingMilestone = isMilestone(this.playerLevel);
       this.rerollsLeft = 1;
       this.pendingChoices = this.rollFor(this.playerLevel, 0);
@@ -834,6 +880,49 @@ export class Game {
       this.reg.upgrades as Map<string, UpgradeDef>,
       this.rng.fork(`level:${level}:${attempt}`),
     );
+  }
+
+  /**
+   * Raise a pool's recorded base, and the pool with it.
+   *
+   * The base has to move as well as the pool. Equipment recomputes every
+   * maximum from `base + whatever the attributes are worth`, so a level-up that
+   * only touched `pools.hpMax` had its gains silently wiped the next time
+   * anything was worn or an attribute was raised — which showed up as a point of
+   * Endurance appearing to give no health at all, because it was replacing the
+   * level's six rather than adding to it.
+   */
+  private raisePoolBase(which: "hp" | "stamina" | "mana", by: number): void {
+    const key = which === "hp" ? "poolHp" : which === "stamina" ? "poolStamina" : "poolMana";
+    const maxKey = which === "hp" ? "hpMax" : which === "stamina" ? "staminaMax" : "manaMax";
+    this.player.data[key] = ((this.player.data[key] as number) ?? this.player.pools[maxKey]) + by;
+    this.player.pools[maxKey] += by;
+    this.player.pools[which] += by;
+  }
+
+  /**
+   * Put a banked point into an attribute.
+   *
+   * Does not cost a turn and cannot be undone. Irreversible because the whole
+   * value of a character build is that it was chosen: a respec button turns six
+   * attributes into one slider that is always set to whatever the current fight
+   * wants.
+   */
+  raiseAttribute(which: AttributeId): boolean {
+    if (this.attributePoints <= 0) return false;
+    const now = this.player.baseAttributes[which];
+    const next = clampAttribute(now + 1);
+    if (next === now) {
+      this.log(`Your ${which} is as high as it goes.`, "warn");
+      return false;
+    }
+    this.attributePoints--;
+    this.player.baseAttributes[which] = next;
+    // Re-derive everything: pools, evasion, speed and the weapon numbers all
+    // hang off this.
+    this.refreshGear();
+    this.log(`${which.charAt(0).toUpperCase()}${which.slice(1)} is now ${next}.`, "good");
+    return true;
   }
 
   /** Spend the reroll. False when there is none left or nothing is pending. */
@@ -889,24 +978,70 @@ export class Game {
       this.reg.enchantments as Map<string, EnchantmentDef>,
     );
     const punch = this.reg.abilities.get("punch")!;
-    if (!load.weapon) return punch;
+    const held = this.worn.weapon ? this.reg.items.get(this.worn.weapon) : undefined;
+    if (!held || !load.weapon) {
+      /*
+       * Bare hands are still a weapon class, so Agility and unarmed practice
+       * both count. Without this, punching was the one attack in the game that
+       * ignored the entire weapon system.
+       */
+      const fists = weaponStats({ id: "punch", name: "Punch", damage: punch.damage } as ItemDef);
+      return {
+        ...punch,
+        damage: damageWith(fists, this.player.attributes, this.skillIn("unarmed")),
+        range: 1,
+        cost: 1,
+      };
+    }
+
     /*
      * A wielded weapon becomes the attack you make by walking into things.
      *
      * Built here rather than stored as a content file, because it is the
-     * COMBINATION of a weapon and the bare-handed attack it replaces — the
-     * stamina cost and the reach stay the hand's, only the damage and the kind
-     * come from the steel.
+     * COMBINATION of a weapon, the hand that swings it and the practice behind
+     * it: the stamina cost stays the hand's, while the damage, the reach, the
+     * accuracy and the time it takes all come from the steel and the arm.
      */
+    const stats = weaponStats(held, this.instanceOf(this.worn.weapon!));
+    const skill = this.skillIn(stats.class);
     return {
       ...punch,
-      id: `weapon:${load.weapon.name}`,
-      name: load.weapon.name,
-      damage: load.weapon.damage,
+      id: `weapon:${stats.class}`,
+      name: stats.name,
+      damage: damageWith(stats, this.player.attributes, skill),
       kind: load.weapon.kind,
+      range: stats.reach,
+      cost: swingCost(stats, this.player.attributes),
       applies: load.applies.length ? load.applies : undefined,
-      say: "{caster} strike{s} {target} with the " + load.weapon.name.toLowerCase() + ".",
+      say: "{caster} strike{s} {target} with the " + stats.name.toLowerCase() + ".",
     };
+  }
+
+  /**
+   * Weapon practice, per class.
+   *
+   * One skill per class rather than one for all melee, so that picking up an axe
+   * after fifty levels of swordplay genuinely means starting again. That is the
+   * thing that makes a weapon choice a commitment instead of an inventory sort.
+   */
+  weaponSkills: Record<string, number> = {};
+
+  skillIn(cls: string): number {
+    return this.weaponSkills[cls] ?? 0;
+  }
+
+  /**
+   * Instance data for a specific item in the pack or worn.
+   *
+   * Two Iron Axes are the same content file and may not be the same object: one
+   * of them might be masterwork. This is where that difference lives, keyed by
+   * the item id — which means one entry per KIND of item rather than per copy,
+   * and so an item with instance data does not stack.
+   */
+  instances = new Map<string, ItemInstance>();
+
+  instanceOf(itemId: string): ItemInstance | undefined {
+    return this.instances.get(itemId);
   }
 
   /** Put something on. */
@@ -1014,6 +1149,9 @@ export class Game {
       bossesKilled: [...this.bossesKilled],
       perks: { ...this.perks },
       talentsTaken: [...this.talentsTaken],
+      attributePoints: this.attributePoints,
+      weaponSkills: { ...this.weaponSkills },
+      instances: [...this.instances].map(([k, v]) => [k, { ...v }] as [string, ItemInstance]),
       party: [...this.party],
       skills: { ...this.skills },
       crafts: { ...this.crafts },
@@ -1051,6 +1189,9 @@ export class Game {
     // each falls back to a fresh value rather than leaving the field undefined.
     this.perks = { ...newPerks(), ...(save.perks ?? {}) };
     this.talentsTaken = [...(save.talentsTaken ?? [])];
+    this.attributePoints = save.attributePoints ?? 0;
+    this.weaponSkills = { ...(save.weaponSkills ?? {}) };
+    this.instances = new Map((save.instances ?? []) as [string, ItemInstance][]);
     this.party = [...(save.party ?? [])];
     if (save.skills) this.skills = { ...this.skills, ...save.skills };
     if (save.crafts) this.crafts = { ...this.crafts, ...save.crafts };
@@ -1086,7 +1227,12 @@ export class Game {
   move(dx: number, dy: number): void {
     if (this.over || this.pendingChoices) return;
     // Whatever is in your hand, or your fist if it is empty.
-    const res = moveOrAttack(this.actionCtx, this.player, dx, dy, this.weaponAbility);
+    const attack = this.weaponAbility;
+    const res = moveOrAttack(this.actionCtx, this.player, dx, dy, attack);
+    // Walking into something is a swing, so it counts as practice too.
+    if (res.tookTurn && this.actorAt(this.player.pos.x + dx, this.player.pos.y + dy)) {
+      this.practise(this.heldClass);
+    }
     // Stepping onto stairs or a dungeon mouth takes you through them at once,
     // so the map never needs a separate "use" key for the common case.
     if (res.tookTurn) {
@@ -1105,13 +1251,48 @@ export class Game {
   }
 
   /** Use an ability on an adjacent creature, picking the nearest hostile. */
+  /**
+   * Practice: swinging a weapon makes you better with that weapon.
+   *
+   * Only on a real swing at a real target, and only for the player — a goblin
+   * does not need a skill table. The curve is deliberately slow and uncapped
+   * rather than fast and capped, because the point is that a weapon you have
+   * used all run is better in your hands than a better weapon you just picked
+   * up, and that has to stay true at level 30.
+   */
+  private practise(cls: string): void {
+    this.weaponSkills[cls] = (this.weaponSkills[cls] ?? 0) + 1;
+    const skill = this.weaponSkills[cls]!;
+    // Milestones are worth saying out loud; every single swing is not.
+    if (skill % 25 === 0) {
+      this.log(`Your ${WEAPON_CLASS[cls as keyof typeof WEAPON_CLASS]?.name.toLowerCase() ?? cls} work is improving.`, "good");
+    }
+  }
+
+  /** The class of whatever is in hand, for practice and for the sheet. */
+  get heldClass(): string {
+    const held = this.worn.weapon ? this.reg.items.get(this.worn.weapon) : undefined;
+    return held ? classOf(held) : "unarmed";
+  }
+
   ability(id: string, target?: Actor): void {
     if (this.over || this.pendingChoices) return;
     const def = this.reg.abilities.get(id);
     if (!def) { this.log(`There is no ability "${id}".`, "warn"); return; }
-    const victim = target ?? this.nearestHostile(def.range ?? 1);
+    /*
+     * Punching with a weapon in hand swings the weapon.
+     *
+     * "punch" is what the keyboard and the right-click menu both send for a
+     * plain attack, so this is where a held weapon takes over — otherwise a
+     * character with a masterwork blade would attack for 5 damage because they
+     * pressed the attack key.
+     */
+    const use = id === "punch" ? this.weaponAbility : def;
+    const victim = target ?? this.nearestHostile(use.range ?? 1);
     if (!victim) { this.log("Nothing within reach.", "warn"); return; }
-    this.finishTurn(useAbility(this.actionCtx, this.player, def, victim));
+    const result = useAbility(this.actionCtx, this.player, use, victim);
+    if (result.tookTurn && id === "punch") this.practise(this.heldClass);
+    this.finishTurn(result);
   }
 
   /** Cast one of the player's spells at the nearest hostile it can reach. */

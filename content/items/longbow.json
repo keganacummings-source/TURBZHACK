@@ -1,0 +1,19 @@
+{
+  "name": "Longbow",
+  "sprite": "wpn-crossbow",
+  "slot": "weapon",
+  "weaponClass": "bow",
+  "material": "wood",
+  "damage": 17,
+  "kind": "physical",
+  "value": 210,
+  "about": "A draw weight that takes a shoulder to manage.",
+  "requires": {
+    "strength": 13
+  },
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 5
+}

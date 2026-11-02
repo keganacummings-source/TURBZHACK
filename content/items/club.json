@@ -3,12 +3,15 @@
   "sprite": "wpn-club",
   "slot": "weapon",
   "about": "A branch with ambitions.",
-  "damage": 8,
+  "damage": 12,
   "kind": "physical",
   "accuracy": -2,
   "depth": {
     "min": 0,
     "max": 3
   },
-  "weight_find": 16
+  "weight_find": 16,
+  "weaponClass": "mace",
+  "material": "wood",
+  "value": 8
 }

@@ -3,7 +3,7 @@
   "sprite": "wpn-dagger",
   "slot": "weapon",
   "about": "Small, sharp, and mostly used on plants.",
-  "damage": 6,
+  "damage": 9,
   "kind": "physical",
   "accuracy": 2,
   "tool": "foraging",
@@ -11,5 +11,8 @@
     "min": 0,
     "max": 12
   },
-  "weight_find": 6
+  "weight_find": 6,
+  "weaponClass": "dagger",
+  "material": "iron",
+  "value": 35
 }

@@ -10,5 +10,8 @@
     "min": 4,
     "max": 12
   },
-  "weight_find": 8
+  "weight_find": 8,
+  "weaponClass": "mace",
+  "material": "steel",
+  "value": 210
 }

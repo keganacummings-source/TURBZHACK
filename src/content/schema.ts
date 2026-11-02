@@ -82,6 +82,8 @@ export type SpellDef = ContentBase & {
 // ---------------------------------------------------------------------------
 
 export type ClassDef = ContentBase & {
+  /** What this training did to the attributes, over the species' own. */
+  attributes?: Partial<Record<string, number>>;
   /** Added to the 100/100/50 base. Negative to lower it. */
   pools?: Partial<Record<"hp" | "stamina" | "mana", number>>;
   /** Flat damage reduction. */
@@ -110,6 +112,15 @@ export type ClassDef = ContentBase & {
  */
 export type AbilityDef = ContentBase & {
   damage: number;
+  /**
+   * Turns per use, 1 being the standard pace.
+   *
+   * Set by a weapon's class when the ability is the swing of a weapon, so a
+   * dagger genuinely gets more swings than a maul rather than merely claiming
+   * to. A content file may set it directly for an ability that is meant to be
+   * slow — a wind-up — but most do not.
+   */
+  cost?: number;
   kind?: DamageKind;
   stamina?: number;
   mana?: number;
@@ -128,6 +139,8 @@ export type AbilityDef = ContentBase & {
 // ---------------------------------------------------------------------------
 
 export type EnemyDef = ContentBase & {
+  /** Its attributes, as differences from the average of 10. */
+  attributes?: Partial<Record<string, number>>;
   /** Added to the 100/100/50 base, same as a class. */
   pools?: Partial<Record<"hp" | "stamina" | "mana", number>>;
   armour?: number;
@@ -275,6 +288,27 @@ export type ItemDef = ContentBase & {
   /** Weapon damage, used only in the weapon hand. */
   damage?: number;
   kind?: DamageKind;
+  /**
+   * Which weapon class this is: dagger, sword, axe, mace, polearm, staff, bow.
+   *
+   * The class decides reach, swing speed, which attribute the damage scales off
+   * and which skill it trains, so it is the most important thing a weapon file
+   * says — more so than its damage number, which is only the baseline the class
+   * and the material multiply.
+   */
+  weaponClass?: string;
+  /** What it is made of by default: wood, bone, copper, iron, steel, silver, meteoric. */
+  material?: string;
+  /** What it is worth in coin, before material, quality or haggling. */
+  value?: number;
+  /**
+   * Which attributes it demands, and what it gives.
+   *
+   * `requires` is a soft requirement: you can wear plate with eight Strength,
+   * and it will cost you. `attributes` is added to the wearer outright.
+   */
+  requires?: Partial<Record<string, number>>;
+  attributes?: Partial<Record<string, number>>;
   /** All of these are ADDED to the wearer while it is worn. */
   armour?: number;
   might?: number;
@@ -363,6 +397,8 @@ export type SpeciesDef = ContentBase & {
   /** Spells and abilities the body itself grants. */
   spells?: string[];
   abilities?: string[];
+  /** How this body differs from the average of 10 in each attribute. */
+  attributes?: Partial<Record<string, number>>;
   /** One line on the species-select screen. */
   blurb?: string;
   /** Lower is easier to play. Shown as a hint, nothing more. */

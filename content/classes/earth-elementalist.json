@@ -10,11 +10,6 @@
     "robe",
     "buckler"
   ],
-  "pools": {
-    "hp": -5,
-    "stamina": -15,
-    "mana": 50
-  },
   "stats": {
     "focus": 5,
     "might": 2
@@ -22,5 +17,9 @@
   "armour": 2,
   "spells": [
     "spark"
-  ]
+  ],
+  "attributes": {
+    "wits": 2,
+    "endurance": 1
+  }
 }

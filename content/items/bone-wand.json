@@ -1,0 +1,20 @@
+{
+  "name": "Bone Wand",
+  "sprite": "wpn-staff-magic",
+  "slot": "weapon",
+  "weaponClass": "staff",
+  "material": "bone",
+  "damage": 7,
+  "kind": "physical",
+  "focus": 8,
+  "value": 260,
+  "about": "Somebody's radius, and it still has ideas.",
+  "requires": {
+    "wits": 13
+  },
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 5
+}

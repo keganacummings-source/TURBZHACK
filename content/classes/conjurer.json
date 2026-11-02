@@ -9,16 +9,15 @@
     "ruin-staff",
     "robe"
   ],
-  "pools": {
-    "hp": -20,
-    "stamina": -20,
-    "mana": 60
-  },
   "stats": {
     "focus": 6
   },
   "spells": [
     "spark",
     "shock-bolt"
-  ]
+  ],
+  "attributes": {
+    "wits": 3,
+    "endurance": -1
+  }
 }

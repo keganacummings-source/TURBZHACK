@@ -21,6 +21,8 @@
  *      editing the original.
  */
 import { CARRIED_SLOTS } from "../engine/equipment.ts";
+import { ATTRIBUTES } from "../engine/attributes.ts";
+import { MATERIALS, WEAPON_CLASSES } from "../engine/weapons.ts";
 import {
   CONTENT_KINDS,
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
@@ -309,6 +311,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       strList("abilities");
       strList("biomes");
       checkBand(def, "region", 0, 5, out);
+      checkAttributeMap(def, "attributes", out);
       checkDrops(def, out);
       oneOf("ai", ["melee", "caster", "wander", "skittish"]);
       oneOf("stance", ["hostile", "neutral", "friendly"]);
@@ -372,9 +375,25 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("charges", { min: 0 });
       num("weight", { min: 0 });
       num("weight_find", { min: 0 });
+      num("value", { min: 0 });
       damageKind("kind");
       strList("enchantments");
+      oneOf("weaponClass", [...WEAPON_CLASSES]);
+      oneOf("material", [...MATERIALS]);
       checkResist(def, out);
+      checkAttributeMap(def, "requires", out);
+      checkAttributeMap(def, "attributes", out);
+      /*
+       * A weapon has to say what kind of weapon it is.
+       *
+       * Without a class it falls back to "unarmed", which means a sword that
+       * forgot the field would quietly have the reach, speed and scaling of a
+       * fist — and look fine on the character sheet while doing a third of the
+       * damage its file claims.
+       */
+      if (def.slot === "weapon" && def.weaponClass === undefined) {
+        out.push(`is a weapon with no "weaponClass", so it would swing like a fist`);
+      }
       if (def.slot !== undefined) {
         const slots = ["weapon", "offhand", "shield", "body", "head", "hands", "feet", "cloak", "ring", "amulet"];
         if (typeof def.slot !== "string") out.push(`"slot" must be a string`);
@@ -463,6 +482,23 @@ function checkDrops(def: Record<string, unknown>, out: string[]): void {
       out.push(`"drops[${i}].chance" must be above 0 and at most 1, not ${String(chance)}`);
     }
   });
+}
+
+/** Attribute names, for `requires` and `attributes` on an item. */
+function checkAttributeMap(def: Record<string, unknown>, field: string, out: string[]): void {
+  const map = def[field];
+  if (map === undefined) return;
+  if (typeof map !== "object" || map === null || Array.isArray(map)) {
+    out.push(`"${field}" must be an object like { "strength": 12 }`);
+    return;
+  }
+  for (const [key, value] of Object.entries(map)) {
+    if (!(ATTRIBUTES as readonly string[]).includes(key)) {
+      out.push(`"${field}.${key}" is not an attribute — use ${ATTRIBUTES.join(", ")}`);
+    } else if (typeof value !== "number" || !Number.isFinite(value)) {
+      out.push(`"${field}.${key}" must be a number`);
+    }
+  }
 }
 
 /** A recipe's inputs and output: both have to name real amounts of real items. */

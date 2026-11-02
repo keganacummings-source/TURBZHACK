@@ -3,7 +3,7 @@
   "sprite": "wpn-pickaxe",
   "slot": "weapon",
   "about": "A tool that will do as a weapon, badly.",
-  "damage": 8,
+  "damage": 12,
   "kind": "physical",
   "accuracy": -4,
   "tool": "mining",
@@ -11,5 +11,8 @@
     "min": 0,
     "max": 12
   },
-  "weight_find": 6
+  "weight_find": 6,
+  "weaponClass": "mace",
+  "material": "iron",
+  "value": 45
 }

@@ -1,0 +1,17 @@
+{
+  "name": "Oak Staff",
+  "sprite": "wpn-staff",
+  "slot": "weapon",
+  "weaponClass": "staff",
+  "material": "wood",
+  "damage": 9,
+  "kind": "physical",
+  "focus": 4,
+  "value": 120,
+  "about": "Plain, balanced, and it carries a spell well.",
+  "depth": {
+    "min": 0,
+    "max": 8
+  },
+  "weight_find": 8
+}

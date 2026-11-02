@@ -1,0 +1,16 @@
+{
+  "name": "Falchion",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "weaponClass": "sword",
+  "material": "iron",
+  "damage": 16,
+  "kind": "physical",
+  "value": 95,
+  "about": "Heavy at the tip, which is where it matters.",
+  "depth": {
+    "min": 2,
+    "max": 10
+  },
+  "weight_find": 8
+}

@@ -10,5 +10,8 @@
     "min": 3,
     "max": 12
   },
-  "weight_find": 10
+  "weight_find": 10,
+  "weaponClass": "axe",
+  "material": "iron",
+  "value": 110
 }

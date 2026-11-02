@@ -3,11 +3,14 @@
   "sprite": "wpn-mace",
   "slot": "weapon",
   "about": "Nothing clever about it.",
-  "damage": 13,
+  "damage": 15,
   "kind": "physical",
   "depth": {
     "min": 1,
     "max": 9
   },
-  "weight_find": 13
+  "weight_find": 13,
+  "weaponClass": "mace",
+  "material": "iron",
+  "value": 90
 }

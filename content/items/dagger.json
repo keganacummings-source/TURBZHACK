@@ -3,12 +3,15 @@
   "sprite": "wpn-dagger",
   "slot": "weapon",
   "about": "Quick, and it misses less than it has any right to.",
-  "damage": 7,
+  "damage": 10,
   "kind": "physical",
   "accuracy": 6,
   "depth": {
     "min": 0,
     "max": 4
   },
-  "weight_find": 16
+  "weight_find": 16,
+  "weaponClass": "dagger",
+  "material": "iron",
+  "value": 30
 }

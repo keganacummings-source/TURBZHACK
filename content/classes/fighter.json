@@ -12,14 +12,13 @@
     "shield",
     "potion-of-mending"
   ],
-  "pools": {
-    "hp": 20,
-    "stamina": 20,
-    "mana": -20
-  },
   "stats": {
     "might": 3,
     "accuracy": 3
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "strength": 2,
+    "endurance": 1
+  }
 }

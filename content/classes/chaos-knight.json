@@ -9,16 +9,16 @@
     "morningstar",
     "ring-mail"
   ],
-  "pools": {
-    "hp": 15,
-    "stamina": 15,
-    "mana": 10
-  },
   "stats": {
     "might": 4,
     "focus": 2
   },
   "spells": [
     "hex-bolt"
-  ]
+  ],
+  "attributes": {
+    "strength": 1,
+    "presence": 2,
+    "wits": 1
+  }
 }

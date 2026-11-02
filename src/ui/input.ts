@@ -81,6 +81,7 @@ export type Command =
   | { kind: "help" }
   | { kind: "wiki" }
   | { kind: "craft" }
+  | { kind: "sheet" }
   | { kind: "menu" }
   | { kind: "designer" }
   | { kind: "close" };
@@ -128,6 +129,10 @@ export const ACTIONS: Action[] = [
   { id: "pack", what: "Pack and gear", group: "Screens", command: { kind: "pack" }, keys: ["i"] },
   { id: "map", what: "Overview map", group: "Screens", command: { kind: "map" }, keys: ["m"] },
   { id: "craft", what: "Crafting", group: "Screens", command: { kind: "craft" }, keys: ["c"] },
+  // "p" rather than NetHack's Ctrl-X: a key that needs a modifier is a key that
+  // depends on the browser reporting the modified character, which not every
+  // layout does.
+  { id: "sheet", what: "Character sheet", group: "Screens", command: { kind: "sheet" }, keys: ["p", "@"] },
   { id: "wiki", what: "Wiki", group: "Screens", command: { kind: "wiki" }, keys: ["w"] },
   { id: "help", what: "Controls", group: "Screens", command: { kind: "help" }, keys: ["?", "/"] },
   { id: "designer", what: "Texture designer", group: "Screens", command: { kind: "designer" }, keys: ["t"] },

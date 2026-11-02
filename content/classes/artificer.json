@@ -10,13 +10,13 @@
     "club",
     "leather-armour"
   ],
-  "pools": {
-    "hp": -5,
-    "mana": 20
-  },
   "stats": {
     "focus": 3,
     "accuracy": 3
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "cunning": 3,
+    "wits": 1
+  }
 }

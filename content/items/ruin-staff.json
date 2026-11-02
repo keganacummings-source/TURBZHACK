@@ -10,5 +10,8 @@
     "min": 0,
     "max": 12
   },
-  "weight_find": 12
+  "weight_find": 12,
+  "weaponClass": "staff",
+  "material": "wood",
+  "value": 140
 }

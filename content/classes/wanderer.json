@@ -10,11 +10,6 @@
     "leather-armour",
     "potion-of-mending"
   ],
-  "pools": {
-    "hp": 5,
-    "stamina": 5,
-    "mana": 10
-  },
   "stats": {
     "might": 1,
     "focus": 1,
@@ -23,5 +18,10 @@
   },
   "spells": [
     "spark"
-  ]
+  ],
+  "attributes": {
+    "cunning": 1,
+    "presence": 1,
+    "endurance": 1
+  }
 }

@@ -8,6 +8,7 @@
  * must never mean touching the engine.
  */
 import type { ActiveStatus, Pools, Pos, Stance } from "./types.ts";
+import { absoluteAttributes, derive, newAttributes, withAttributes, type Attributes } from "./attributes.ts";
 
 /** Base stats every actor starts from, before its definition adjusts them. */
 export const BASE_POOLS: Pools = {
@@ -69,6 +70,8 @@ export type ActorInit = {
   resist?: Record<string, number>;
   /** Combat stats, merged over BASE_STATS. */
   stats?: Partial<CombatStats>;
+  /** The six attributes. Anything left out stays at the average of 10. */
+  attributes?: Partial<Attributes>;
   /** Anything the definition or a script wants to hang on the actor. */
   data?: Record<string, unknown>;
 };
@@ -99,6 +102,16 @@ export class Actor {
   baseStats: CombatStats;
   baseArmour: number;
   baseResist: Record<string, number>;
+  /**
+   * The six attributes, and the same without gear.
+   *
+   * Kept in the same base-and-total shape as the combat stats, and for the same
+   * reason: a ring of might raises Strength while it is worn, and the only way
+   * to take that off again reliably is to recompute the total from a base that
+   * never changed.
+   */
+  attributes: Attributes;
+  baseAttributes: Attributes;
   statuses: ActiveStatus[] = [];
   data: Record<string, unknown>;
 
@@ -133,6 +146,8 @@ export class Actor {
     this.baseStats = { ...this.stats };
     this.baseArmour = this.armour;
     this.baseResist = { ...this.resist };
+    this.attributes = withAttributes(newAttributes(), init.attributes);
+    this.baseAttributes = { ...this.attributes };
     this.data = { ...(init.data ?? {}) };
   }
 
@@ -146,6 +161,7 @@ export class Actor {
       armour: this.armour, resist: { ...this.resist }, stats: { ...this.stats },
       baseStats: { ...this.baseStats }, baseArmour: this.baseArmour,
       baseResist: { ...this.baseResist },
+      attributes: { ...this.attributes }, baseAttributes: { ...this.baseAttributes },
       statuses: this.statuses.map((s) => ({ ...s })),
       data: { ...this.data },
       alive: this.alive, turnsSinceHurt: this.turnsSinceHurt,
@@ -173,12 +189,28 @@ export class Actor {
     a.baseStats = { ...save.baseStats };
     a.baseArmour = save.baseArmour;
     a.baseResist = { ...save.baseResist };
+    /*
+     * A save holds finished values, not modifiers.
+     *
+     * Passing them through `withAttributes` added them to the base of ten and
+     * every attribute came back doubled — the same mistake as in character
+     * creation, and just as invisible. Saves written before attributes existed
+     * have none at all, and fall back to the average rather than to zero, which
+     * would leave a character unable to lift anything.
+     */
+    a.attributes = absoluteAttributes(save.attributes);
+    a.baseAttributes = absoluteAttributes(save.baseAttributes ?? save.attributes);
     a.statuses = save.statuses.map((s) => ({ ...s }));
     a.alive = save.alive;
     a.turnsSinceHurt = save.turnsSinceHurt;
     a.energy = save.energy;
     a.speed = save.speed;
     return a;
+  }
+
+  /** Everything the attributes produce, recomputed on demand. */
+  get derived() {
+    return derive(this.attributes);
   }
 
   /** Clamp every pool into range. Called after anything touches them. */

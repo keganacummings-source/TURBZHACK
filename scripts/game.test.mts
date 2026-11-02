@@ -25,9 +25,15 @@ test("a run starts you alive, and the species and background both count", () => 
   assert.ok(g.player.alive);
   assert.equal(g.level.solid(g.player.pos.x, g.player.pos.y), false, "you started inside a wall");
 
-  // Human Conjurer: base 100/100/50, human adds nothing, conjurer -20/-20/+60.
-  assert.equal(g.player.pools.hpMax, 80);
-  assert.equal(g.player.pools.manaMax, 110);
+  /*
+   * Human Conjurer. The pools come from the attributes now rather than from a
+   * raw modifier on the files: a Conjurer trades a point of Endurance for three
+   * of Wits, so slightly less health than average and a great deal more mana.
+   */
+  assert.equal(g.player.attributes.wits, 13);
+  assert.equal(g.player.attributes.endurance, 9);
+  assert.ok(g.player.pools.hpMax < 100, `health is ${g.player.pools.hpMax}, not below average`);
+  assert.ok(g.player.pools.manaMax > 50, `mana is ${g.player.pools.manaMax}, not above average`);
   assert.deepEqual(g.player.spells, ["spark", "shock-bolt"]);
   assert.equal(g.playerLevel, 1);
 

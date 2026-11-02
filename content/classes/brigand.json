@@ -10,13 +10,14 @@
     "leather-armour",
     "cloak"
   ],
-  "pools": {
-    "hp": -10,
-    "stamina": 20
-  },
   "stats": {
     "accuracy": 5,
     "evasion": 8
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "agility": 2,
+    "cunning": 2,
+    "presence": -1
+  }
 }

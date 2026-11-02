@@ -302,7 +302,7 @@ body.designer-open { overflow: hidden; }
 table.sheet { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
 .webfont table.sheet { font-size: 17px; }
 table.sheet td { padding: 3px 0; vertical-align: top; }
-table.sheet td:first-child { color: var(--dim); width: 76px; }
+table.sheet td:first-child { color: var(--dim); width: 76px; padding-right: 10px; white-space: nowrap; }
 .begin {
   width: 100%; padding: 8px; cursor: pointer;
   background: var(--kyo); color: var(--ink); border: none; border-radius: 3px;
@@ -424,3 +424,8 @@ table.slots td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); v
    than an ordinary level and the screen should say so before it is read. */
 .choice-talent { border-color: var(--kyo); }
 .choice-talent .choice-kind { background: var(--kyo); color: var(--ink); }
+
+/* The character sheet's attribute table: the value column is the thing being
+   read, so it is the one that gets emphasis. */
+table.attrs .attr-value { color: var(--kyo); width: 110px; }
+table.attrs td:first-child { color: var(--dim); width: 44px; letter-spacing: .1em; }

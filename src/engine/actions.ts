@@ -145,6 +145,7 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   actor.spendMana(manaCost);
   startCooldown(ctx, actor, id, def.cooldown);
 
+  const cost = def.cost ?? 1;
   const messages: NonNullable<ActionResult["messages"]> = [];
   if (def.say) messages.push({ text: say(def.say, actor, target), tone: "plain" });
 
@@ -163,7 +164,7 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
       text: `${def.name} misses ${objectName(target)}.`,
       tone: actor.isPlayer ? "warn" : "plain",
     });
-    return { tookTurn: true, messages };
+    return { tookTurn: true, cost, messages };
   }
 
   const out = applyDamage(target, {
@@ -175,7 +176,7 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   messages.push(...out.messages);
   messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, target, out.dealt));
 
-  return { tookTurn: true, messages };
+  return { tookTurn: true, cost, messages };
 }
 
 /**

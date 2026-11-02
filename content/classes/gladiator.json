@@ -10,14 +10,13 @@
     "leather-armour",
     "buckler"
   ],
-  "pools": {
-    "hp": 10,
-    "stamina": 30,
-    "mana": -15
-  },
   "stats": {
     "accuracy": 6,
     "evasion": 4
   },
-  "spells": []
+  "spells": [],
+  "attributes": {
+    "agility": 2,
+    "strength": 1
+  }
 }

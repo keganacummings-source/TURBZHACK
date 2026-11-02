@@ -9,16 +9,14 @@
     "ember-staff",
     "robe"
   ],
-  "pools": {
-    "hp": -20,
-    "stamina": -20,
-    "mana": 55
-  },
   "stats": {
     "focus": 5
   },
   "spells": [
     "spark",
     "ember-bolt"
-  ]
+  ],
+  "attributes": {
+    "wits": 3
+  }
 }

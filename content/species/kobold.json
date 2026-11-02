@@ -3,10 +3,6 @@
   "sprite": "pc-kobold",
   "blurb": "Small, quick, and much tougher than it looks.",
   "difficulty": 2,
-  "pools": {
-    "hp": -25,
-    "stamina": 15
-  },
   "stats": {
     "accuracy": 5,
     "evasion": 7
@@ -14,5 +10,11 @@
   "resist": {
     "poison": 0.5
   },
-  "speed": 110
+  "speed": 110,
+  "attributes": {
+    "agility": 3,
+    "cunning": 3,
+    "strength": -3,
+    "endurance": -2
+  }
 }

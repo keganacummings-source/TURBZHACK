@@ -67,8 +67,12 @@ export function runUntilPlayerTurn(ctx: TurnContext, decide: (a: Actor, c: TurnC
     for (const a of [...ctx.actors]) {
       if (!a.alive || a.isPlayer) continue;
       while (a.energy >= ENERGY_PER_ACTION && a.alive) {
+        // Monsters pay the same way. `takeTurn` reports what the action cost,
+        // so a creature with a fast weapon gets the benefit of it too.
         a.energy -= ENERGY_PER_ACTION;
-        takeTurn(a, ctx, decide);
+        const spent = takeTurn(a, ctx, decide);
+        if (spent > 1) a.energy -= Math.round(ENERGY_PER_ACTION * (spent - 1));
+        else if (spent < 1) a.energy += Math.round(ENERGY_PER_ACTION * (1 - spent));
       }
     }
     endOfTick(ctx);
@@ -76,8 +80,16 @@ export function runUntilPlayerTurn(ctx: TurnContext, decide: (a: Actor, c: TurnC
 }
 
 /** One actor's turn: statuses first, then it acts if it still can. */
-export function takeTurn(actor: Actor, ctx: TurnContext, decide: (a: Actor, c: TurnContext) => ActionResult): void {
-  if (!actor.alive) return;
+/**
+ * One creature's turn. Returns what the action cost, in turns.
+ *
+ * The return value exists so the scheduler can charge a fast weapon less and a
+ * slow one more; 1 is an ordinary action, and a turn that never got as far as
+ * acting (frozen, dead) still costs its full turn, because standing there
+ * stunned is what the turn was spent on.
+ */
+export function takeTurn(actor: Actor, ctx: TurnContext, decide: (a: Actor, c: TurnContext) => ActionResult): number {
+  if (!actor.alive) return 1;
 
   /*
    * Statuses tick BEFORE the action, and this is the difference between freeze
@@ -88,12 +100,13 @@ export function takeTurn(actor: Actor, ctx: TurnContext, decide: (a: Actor, c: T
   const byId = new Map(ctx.actors.map((a) => [a.id, a]));
   const ticked = tickStatuses(actor, ctx.statuses, ctx.rng, byId);
   for (const m of ticked.messages) ctx.log(m.text, m.tone);
-  if (ticked.killed || !actor.alive) return;
+  if (ticked.killed || !actor.alive) return 1;
 
-  if (!actor.canAct) return;   // still frozen: the turn is spent standing there
+  if (!actor.canAct) return 1;   // still frozen: the turn is spent standing there
 
   const result = decide(actor, ctx);
   for (const m of result.messages ?? []) ctx.log(m.text, m.tone);
+  return Math.max(0.33, result.cost ?? 1);
 }
 
 /** Bookkeeping after every tick: recovery, and clearing out the dead. */
@@ -124,7 +137,15 @@ export function playerActed(
   for (const m of result.messages ?? []) ctx.log(m.text, m.tone);
   if (!result.tookTurn) return;
 
-  player.energy -= ENERGY_PER_ACTION;
+  /*
+   * Pay for the action, which is not always one turn.
+   *
+   * A fast weapon costs less than a full action and a slow one costs more, so
+   * the energy spent is the action's own cost rather than a flat 100. Clamped at
+   * a third of a turn, because an action cheap enough to be free would let a
+   * sufficiently quick character act without the world ever moving.
+   */
+  player.energy -= Math.round(ENERGY_PER_ACTION * Math.max(0.33, result.cost ?? 1));
 
   const byId = new Map(ctx.actors.map((a) => [a.id, a]));
   const ticked = tickStatuses(player, ctx.statuses, ctx.rng, byId);

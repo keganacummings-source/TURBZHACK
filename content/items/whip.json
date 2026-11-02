@@ -10,5 +10,8 @@
     "min": 1,
     "max": 8
   },
-  "weight_find": 10
+  "weight_find": 10,
+  "weaponClass": "dagger",
+  "material": "bone",
+  "value": 55
 }

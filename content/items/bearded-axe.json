@@ -1,0 +1,19 @@
+{
+  "name": "Bearded Axe",
+  "sprite": "wpn-axe",
+  "slot": "weapon",
+  "weaponClass": "axe",
+  "material": "steel",
+  "damage": 19,
+  "kind": "physical",
+  "value": 300,
+  "about": "The hook is not decorative.",
+  "requires": {
+    "strength": 13
+  },
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 5
+}

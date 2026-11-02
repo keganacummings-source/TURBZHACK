@@ -3,10 +3,6 @@
   "sprite": "pc-mummy",
   "blurb": "Dead, dry, and in no hurry. Fire is the problem.",
   "difficulty": 3,
-  "pools": {
-    "hp": 20,
-    "mana": 20
-  },
   "stats": {
     "focus": 3,
     "evasion": -3
@@ -18,5 +14,12 @@
     "fire": 1.75,
     "pure": 0.5
   },
-  "speed": 95
+  "speed": 95,
+  "attributes": {
+    "endurance": 4,
+    "wits": 2,
+    "agility": -3,
+    "presence": -4,
+    "cunning": -1
+  }
 }

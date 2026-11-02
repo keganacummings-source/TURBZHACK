@@ -1,0 +1,19 @@
+{
+  "name": "Rondel",
+  "sprite": "wpn-dagger",
+  "slot": "weapon",
+  "weaponClass": "dagger",
+  "material": "steel",
+  "damage": 12,
+  "kind": "physical",
+  "value": 190,
+  "about": "A spike with a handle. Made for the gaps in armour.",
+  "requires": {
+    "agility": 12
+  },
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 5
+}

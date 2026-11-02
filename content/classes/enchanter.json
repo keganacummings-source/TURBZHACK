@@ -9,11 +9,6 @@
     "dagger",
     "robe"
   ],
-  "pools": {
-    "hp": -15,
-    "stamina": -10,
-    "mana": 50
-  },
   "stats": {
     "focus": 4,
     "evasion": 6
@@ -21,5 +16,9 @@
   "spells": [
     "hex-bolt",
     "web"
-  ]
+  ],
+  "attributes": {
+    "wits": 2,
+    "presence": 2
+  }
 }

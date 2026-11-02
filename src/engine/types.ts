@@ -87,6 +87,17 @@ export type Message = {
 export type ActionResult = {
   /** Whether the turn was actually used. A bumped wall costs nothing. */
   tookTurn: boolean;
+  /**
+   * How many turns' worth of energy it cost, 1 being an ordinary action.
+   *
+   * This is what makes weapon speed real rather than cosmetic. A dagger costs
+   * 0.6 of a turn and a maul 1.2, so the dagger genuinely gets more swings
+   * instead of merely saying it is fast — and the difference is paid in the one
+   * currency everything in the game shares, which is the world's turn.
+   *
+   * Left out, it is 1.
+   */
+  cost?: number;
   /** Lines to print. */
   messages?: { text: string; tone?: Message["tone"] }[];
 };

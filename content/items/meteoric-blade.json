@@ -1,0 +1,19 @@
+{
+  "name": "Meteoric Blade",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "weaponClass": "sword",
+  "material": "meteoric",
+  "damage": 20,
+  "kind": "physical",
+  "value": 1800,
+  "about": "It was finished before anyone got to it.",
+  "requires": {
+    "strength": 14
+  },
+  "depth": {
+    "min": 9,
+    "max": 12
+  },
+  "weight_find": 1
+}

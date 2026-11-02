@@ -3,10 +3,6 @@
   "sprite": "pc-formicid",
   "blurb": "Four arms, and nothing moves it off a spot it has chosen.",
   "difficulty": 2,
-  "pools": {
-    "hp": 25,
-    "stamina": 35
-  },
   "stats": {
     "might": 5,
     "accuracy": 2,
@@ -16,5 +12,12 @@
   "resist": {
     "poison": 0.5
   },
-  "speed": 95
+  "speed": 95,
+  "attributes": {
+    "strength": 3,
+    "endurance": 2,
+    "agility": -2,
+    "presence": -2,
+    "cunning": 1
+  }
 }

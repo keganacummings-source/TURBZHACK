@@ -3,7 +3,7 @@
   "sprite": "wpn-staff-magic",
   "slot": "weapon",
   "about": "Warm to the touch, always.",
-  "damage": 10,
+  "damage": 9,
   "kind": "fire",
   "focus": 8,
   "enchantments": [
@@ -13,5 +13,8 @@
     "min": 5,
     "max": 12
   },
-  "weight_find": 5
+  "weight_find": 5,
+  "weaponClass": "staff",
+  "material": "wood",
+  "value": 140
 }

@@ -17,6 +17,8 @@ import {
 import { menuHtml, controlsHtml, savesHtml } from "./menu.ts";
 import { indexWiki, wikiHtml, type WikiSection } from "./wiki.ts";
 import { menuAt, type ContextMenu } from "./context.ts";
+import { ATTRIBUTES, ATTRIBUTE_INFO, explainPoint, type AttributeId } from "../engine/attributes.ts";
+import { WEAPON_CLASS } from "../engine/weapons.ts";
 import { newMotion, noteMoves, moving } from "../render/motion.ts";
 import { deleteSlot, readSlot, writeSlot } from "../engine/save.ts";
 import { loadGame } from "../game.ts";
@@ -27,12 +29,12 @@ import type { Registry } from "../content/registry.ts";
 
 type Screen =
   | "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup"
-  | "pack" | "menu" | "controls" | "save" | "load" | "wiki" | "craft";
+  | "pack" | "menu" | "controls" | "save" | "load" | "wiki" | "craft" | "sheet";
 
 /** Screens drawn into the overlay panel rather than onto the canvas. */
 const OVERLAY_SCREENS: Screen[] = [
   "map", "help", "problems", "dead", "levelup", "pack",
-  "menu", "controls", "save", "load", "wiki", "craft",
+  "menu", "controls", "save", "load", "wiki", "craft", "sheet",
 ];
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -115,6 +117,7 @@ export async function boot(): Promise<void> {
     if (screen === "levelup") { renderOverlay(levelUpHtml()); }
     if (screen === "pack") { renderOverlay(packHtml()); }
     if (screen === "craft") { renderOverlay(craftHtml()); }
+    if (screen === "sheet") { renderOverlay(sheetHtml()); }
     if (screen === "dead") { renderOverlay(deadHtml()); }
 
     const now = performance.now();
@@ -381,6 +384,76 @@ export async function boot(): Promise<void> {
               <button data-wiki-jump="recipes/${escapeAttr(r.id)}">what is it</button></td>
         </tr>`).join("")}</table>`;
       }).join("")}
+      <p class="dim">Esc closes.</p>`;
+  };
+
+  /**
+   * The character sheet.
+   *
+   * Where the attributes live, what each one is currently worth, and what one
+   * more point would do — computed from the same `derive` the game uses, so the
+   * sheet cannot drift from the rules the way a hand-written description would.
+   */
+  const sheetHtml = () => {
+    if (!game) return "";
+    const p = game.player;
+    const d = p.derived;
+    const held = game.heldClass;
+    const weapon = game.weaponAbility;
+
+    const rows = ATTRIBUTES.map((id) => {
+      const info = ATTRIBUTE_INFO[id];
+      const can = game!.attributePoints > 0;
+      return `<tr>
+        <td class="dim">${info.short}</td>
+        <td>${escapeHtml(info.name)}</td>
+        <td class="attr-value">${p.attributes[id]}${
+          p.attributes[id] !== p.baseAttributes[id]
+            ? `<span class="dim"> (${p.baseAttributes[id]} + gear)</span>` : ""}</td>
+        <td class="choice-detail">${escapeHtml(explainPoint(p.baseAttributes, id))}</td>
+        <td>${can ? `<button data-raise="${id}">+1</button>` : ""}</td>
+      </tr>`;
+    }).join("");
+
+    const practice = Object.entries(game.weaponSkills)
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cls, v]) => `${WEAPON_CLASS[cls as keyof typeof WEAPON_CLASS]?.name ?? cls} ${v}`);
+
+    return `<h2>${escapeHtml(reg.species.get(game.speciesId)?.name ?? "")} ${escapeHtml(reg.classes.get(game.classId)?.name ?? "")}</h2>
+      <p class="dim">Level ${game.progress.level}${
+        game.attributePoints > 0
+          ? ` · <strong>${game.attributePoints} point${game.attributePoints === 1 ? "" : "s"} to spend</strong>`
+          : ""}</p>
+
+      <h3>Attributes</h3>
+      <table class="pack-table attrs">${rows}</table>
+
+      <h3>What that adds up to</h3>
+      <table class="sheet">
+        <tr><td>Health</td><td>${p.pools.hp}/${p.pools.hpMax} · ${d.regen} a turn after ${d.regenDelay} quiet turns</td></tr>
+        <tr><td>Stamina</td><td>${p.pools.stamina}/${p.pools.staminaMax}</td></tr>
+        <tr><td>Mana</td><td>${p.pools.mana}/${p.pools.manaMax}</td></tr>
+        <tr><td>Hit</td><td>${p.stats.accuracy}%</td></tr>
+        <tr><td>Dodge</td><td>${p.stats.evasion}%</td></tr>
+        <tr><td>Armour</td><td>${p.armour} · you can carry ${d.armourTolerance} before it slows you</td></tr>
+        <tr><td>Speed</td><td>${p.speed}${p.speed === 100 ? " (standard)" : p.speed > 100 ? " (quick)" : " (slow)"}</td></tr>
+      </table>
+
+      <h3>In hand</h3>
+      <table class="sheet">
+        <tr><td>Weapon</td><td>${escapeHtml(weapon.name ?? "Fists")} — ${WEAPON_CLASS[held as keyof typeof WEAPON_CLASS]?.name ?? held}</td></tr>
+        <tr><td>Damage</td><td>${weapon.damage} ${weapon.kind ?? "physical"}</td></tr>
+        <tr><td>Reach</td><td>${weapon.range ?? 1} square${(weapon.range ?? 1) === 1 ? "" : "s"}</td></tr>
+        <tr><td>Swing</td><td>${(weapon.cost ?? 1).toFixed(2)} turns</td></tr>
+        <tr><td>Practice</td><td>${practice.length ? escapeHtml(practice.join(" · ")) : "none yet"}</td></tr>
+      </table>
+
+      <h3>Trades</h3>
+      <table class="sheet">
+        ${Object.entries({ ...game.skills, ...game.crafts })
+          .map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${v}</td></tr>`).join("")}
+      </table>
       <p class="dim">Esc closes.</p>`;
   };
 
@@ -694,6 +767,7 @@ export async function boot(): Promise<void> {
     if (cmd.kind === "map") { setScreen(screen === "map" ? "play" : "map"); return; }
     if (cmd.kind === "pack") { setScreen(screen === "pack" ? "play" : "pack"); return; }
     if (cmd.kind === "craft") { setScreen(screen === "craft" ? "play" : "craft"); return; }
+    if (cmd.kind === "sheet") { setScreen(screen === "sheet" ? "play" : "sheet"); return; }
     if (cmd.kind === "designer") { openDesigner(atlas, () => render()); return; }
 
     if (!game || screen !== "play" || game.over) return;
@@ -837,6 +911,10 @@ export async function boot(): Promise<void> {
       setScreen("wiki");
       return;
     }
+
+    // --- the character sheet ------------------------------------------------
+    const raise = t.closest<HTMLElement>("[data-raise]");
+    if (raise && game) { game.raiseAttribute(raise.dataset.raise as AttributeId); render(); return; }
 
     // --- crafting ----------------------------------------------------------
     const make = t.closest<HTMLElement>("[data-craft]");

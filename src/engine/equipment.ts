@@ -18,6 +18,8 @@
  */
 import type { Actor } from "./actor.ts";
 import type { ItemDef, EnchantmentDef } from "../content/schema.ts";
+import { derive, withAttributes, type AttributeId, type Attributes } from "./attributes.ts";
+import { WEAPON_CLASS, classOf } from "./weapons.ts";
 import type { DamageKind } from "./types.ts";
 
 /**
@@ -85,11 +87,23 @@ export type Loadout = {
   weapon: { damage: number; kind: DamageKind; name: string } | null;
   /** Statuses the wearer's attacks apply, from enchantments. */
   applies: string[];
+  /** Attributes added by what is worn. */
+  attributes: Partial<Attributes>;
+  /**
+   * Total armour weight carried, for the encumbrance check.
+   *
+   * Armour past what your Strength can carry costs evasion rather than being
+   * refused. A hard requirement would mean a low-Strength character simply
+   * cannot wear plate; a soft one means they can, badly, which is a decision.
+   */
+  armourLoad: number;
+  /** Attribute minimums the worn items ask for, and how far short you are. */
+  demands: Partial<Attributes>;
 };
 
 const EMPTY: Loadout = {
   armour: 0, might: 0, focus: 0, accuracy: 0, evasion: 0,
-  resist: {}, weapon: null, applies: [],
+  resist: {}, weapon: null, applies: [], attributes: {}, armourLoad: 0, demands: {},
 };
 
 /**
@@ -112,6 +126,18 @@ export function loadoutOf(
     if (!item) continue;
 
     out.armour += item.armour ?? 0;
+    out.armourLoad += item.armour ?? 0;
+    for (const [key, value] of Object.entries(item.attributes ?? {})) {
+      if (typeof value !== "number") continue;
+      out.attributes[key as AttributeId] = (out.attributes[key as AttributeId] ?? 0) + value;
+    }
+    // The strictest demand across everything worn is the one that counts: two
+    // items each wanting 12 Strength is still a demand for 12, not 24.
+    for (const [key, value] of Object.entries(item.requires ?? {})) {
+      if (typeof value !== "number") continue;
+      const k = key as AttributeId;
+      out.demands[k] = Math.max(out.demands[k] ?? 0, value);
+    }
     out.might += item.might ?? 0;
     out.focus += item.focus ?? 0;
     out.accuracy += item.accuracy ?? 0;
@@ -122,6 +148,10 @@ export function loadoutOf(
       const k = kind as DamageKind;
       out.resist[k] = (out.resist[k] ?? 1) * mult;
     }
+
+    // A staff helps you cast simply by being a staff, so the class's own focus
+    // bonus is added here rather than being written on every staff file.
+    if (slot === "weapon") out.focus += WEAPON_CLASS[classOf(item)].focus ?? 0;
 
     // Only the weapon hand gives a weapon. A sword in the off-hand is a
     // shield's worth of nothing, which is the simplest honest rule.
@@ -154,12 +184,35 @@ export function loadoutOf(
  * part of it behind.
  */
 export function applyLoadout(actor: Actor, load: Loadout): void {
+  /*
+   * Attributes first, because everything else is derived from them.
+   *
+   * A ring that grants Strength has to raise the attribute before the pools and
+   * combat stats are worked out, or the ring would show on the sheet and do
+   * nothing — which was the shape of the original equipment bug this whole
+   * base-and-total arrangement exists to prevent.
+   */
+  actor.attributes = withAttributes(actor.baseAttributes, load.attributes);
+  const d = derive(actor.attributes);
+
   const base = actor.baseStats;
-  actor.stats.might = base.might + load.might;
-  actor.stats.focus = base.focus + load.focus;
+  actor.stats.might = base.might + load.might + d.heavyDamage;
+  actor.stats.focus = base.focus + load.focus + d.spellPower;
   actor.stats.accuracy = base.accuracy + load.accuracy;
-  actor.stats.evasion = base.evasion + load.evasion;
+  actor.stats.evasion = base.evasion + load.evasion + d.evasion + encumbrance(load, actor.attributes);
   actor.armour = actor.baseArmour + load.armour;
+
+  /*
+   * Pools follow the attributes, keeping the fraction you had.
+   *
+   * Taking off a ring of endurance must not kill you: if the maximum drops, the
+   * current value is scaled rather than clamped, so you come out of it as hurt
+   * as you went in rather than suddenly at death's door.
+   */
+  setPool(actor.pools, "hp", "hpMax", actor.data["poolHp"] as number ?? 0, d.hpBonus);
+  setPool(actor.pools, "stamina", "staminaMax", actor.data["poolStamina"] as number ?? 0, d.staminaBonus);
+  setPool(actor.pools, "mana", "manaMax", actor.data["poolMana"] as number ?? 0, d.manaBonus);
+  actor.speed = d.speed;
 
   actor.resist = { ...actor.baseResist };
   for (const [kind, mult] of Object.entries(load.resist)) {
@@ -167,6 +220,48 @@ export function applyLoadout(actor: Actor, load: Loadout): void {
     actor.resist[kind] = (actor.resist[kind] ?? 1) * mult;
   }
   actor.clampPools();
+}
+
+/**
+ * The evasion penalty for wearing more armour than you can carry.
+ *
+ * Two points of evasion per point of armour over tolerance, and nothing at all
+ * under it. A penalty that started immediately would make armour a trap for
+ * everyone; one that never arrives makes Strength irrelevant to armour, which is
+ * the thing it is supposed to be for.
+ *
+ * Failing an item's own `requires` is worse, because that is the item saying you
+ * cannot really handle it: four points of evasion per point short, and it stacks
+ * with the weight.
+ */
+export function encumbrance(load: Loadout, attr: Attributes): number {
+  const d = derive(attr);
+  const overWeight = Math.max(0, load.armourLoad - d.armourTolerance);
+  let shortfall = 0;
+  for (const [key, want] of Object.entries(load.demands)) {
+    if (typeof want !== "number") continue;
+    shortfall += Math.max(0, want - attr[key as AttributeId]);
+  }
+  return -(overWeight * 2 + shortfall * 4);
+}
+
+/**
+ * Set a pool's maximum from a stored base plus an attribute bonus, keeping the
+ * fraction of it that was full.
+ *
+ * `storedBase` of 0 means nobody has recorded a base for this pool yet — which is
+ * every actor that is not the player — so the current maximum is left alone and
+ * only the bonus is reconciled. That keeps this safe to call on a goblin.
+ */
+function setPool(
+  pools: Actor["pools"], now: "hp" | "stamina" | "mana",
+  max: "hpMax" | "staminaMax" | "manaMax", storedBase: number, bonus: number,
+): void {
+  if (!storedBase) return;
+  const was = pools[max];
+  const fraction = was > 0 ? pools[now] / was : 1;
+  pools[max] = Math.max(now === "hp" ? 1 : 0, Math.round(storedBase + bonus));
+  pools[now] = Math.round(pools[max] * fraction);
 }
 
 /**

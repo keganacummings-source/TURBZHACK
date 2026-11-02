@@ -3,14 +3,16 @@
   "sprite": "pc-hill-orc",
   "blurb": "Broad, direct, and very hard to discourage.",
   "difficulty": 1,
-  "pools": {
-    "hp": 30,
-    "stamina": 20,
-    "mana": -20
-  },
   "stats": {
     "might": 4,
     "accuracy": 3
   },
-  "armour": 1
+  "armour": 1,
+  "attributes": {
+    "strength": 4,
+    "endurance": 2,
+    "wits": -2,
+    "cunning": -1,
+    "presence": -1
+  }
 }

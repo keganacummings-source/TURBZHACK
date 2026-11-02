@@ -3,14 +3,17 @@
   "sprite": "pc-gnoll",
   "blurb": "Learns everything at once, badly and then well.",
   "difficulty": 2,
-  "pools": {
-    "hp": 15,
-    "stamina": 20
-  },
   "stats": {
     "might": 3,
     "accuracy": 3,
     "focus": 1
   },
-  "armour": 1
+  "armour": 1,
+  "attributes": {
+    "strength": 2,
+    "endurance": 1,
+    "agility": 1,
+    "wits": -3,
+    "cunning": -1
+  }
 }

@@ -80,6 +80,11 @@ export type SaveFile = {
   /** Everything levelling changed outside combat. */
   perks?: Record<string, number>;
   talentsTaken?: string[];
+  /** Banked attribute points, and practice with each weapon class. */
+  attributePoints?: number;
+  weaponSkills?: Record<string, number>;
+  /** Material and quality for particular items, keyed by item id. */
+  instances?: [string, { item: string; material?: string; quality?: string; maker?: string }][];
   party?: string[];
   skills?: Record<string, number>;
   crafts?: Record<string, number>;
