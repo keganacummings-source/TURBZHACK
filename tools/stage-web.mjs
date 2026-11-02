@@ -19,6 +19,7 @@
  */
 import { cp, mkdir, rm, access } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { isMain } from "./is-main.mjs";
 
 /**
  * What goes in, as `source -> path inside dist-web`.
@@ -58,7 +59,7 @@ export async function stageWeb(outDir = "dist-web") {
   return { out, copied };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const { out, copied } = await stageWeb(process.argv[2]);
   console.log(`staged the web game into ${out}`);
   for (const c of copied) console.log(`  ${c}`);

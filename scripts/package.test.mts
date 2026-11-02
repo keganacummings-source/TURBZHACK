@@ -122,3 +122,48 @@ test("the workflow builds the staged folder before packaging", () => {
   assert.ok(packaged > 0, "the workflow never builds the executable");
   assert.ok(staged < packaged, "the workflow packages the app before building what it packages");
 });
+
+test("a build script knows it was run directly, on Windows too", async () => {
+  /*
+   * The bug this guards against cost a whole CI run and produced no error.
+   *
+   *   import.meta.url === `file://${process.argv[1]}`
+   *
+   * is true on Linux and false on Windows — argv[1] there is `D:\a\x.mjs`, so
+   * the template makes `file://D:\a\x.mjs` while import.meta.url is
+   * `file:///D:/a/x.mjs`. Both `npm run stage` and the content indexer imported
+   * cleanly, did nothing, and exited 0; the build failed two steps later with
+   * "Unable to find your web assets".
+   */
+  const { isMain } = await import("../tools/is-main.mjs");
+  const { pathToFileURL, fileURLToPath } = await import("node:url");
+
+  /*
+   * Windows semantics cannot be faked from Linux — `pathToFileURL("D:\\a")`
+   * here produces a relative path, not a drive letter. So this tests the real
+   * round-trip on whatever platform is running it, which means the Windows
+   * runner proves the Windows case for us on every push.
+   */
+  const realFile = join(ROOT, "tools/stage-web.mjs");
+  const realUrl = pathToFileURL(realFile).href;
+  assert.equal(isMain(realUrl, realFile), true,
+    "a script's own path did not match its own file URL");
+  assert.equal(fileURLToPath(realUrl), realFile, "the URL round-trip is lossy on this platform");
+
+  // It still says no when the file was merely imported by another script.
+  assert.equal(isMain(realUrl, join(ROOT, "tools/serve.mjs")), false);
+  assert.equal(isMain(realUrl, undefined), false);
+});
+
+test("no build script uses the naive entrypoint check", async () => {
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const dir = join(ROOT, "tools");
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".mjs")) continue;
+    // is-main.mjs is the fix; its header quotes the broken pattern on purpose.
+    if (file === "is-main.mjs") continue;
+    const src = readFileSync(join(dir, file), "utf8");
+    assert.ok(!src.includes("file://${process.argv[1]}"),
+      `tools/${file} uses the entrypoint check that silently does nothing on Windows — use isMain()`);
+  }
+});

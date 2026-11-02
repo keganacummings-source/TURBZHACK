@@ -10,6 +10,7 @@
  */
 import { readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { isMain } from "./is-main.mjs";
 
 const KINDS = ["classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items"];
 
@@ -33,7 +34,7 @@ export function writeIndex(dir = "content") {
   return index;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const dir = process.argv[2] ?? "content";
   const index = writeIndex(dir);
   const total = Object.values(index).reduce((n, list) => n + list.length, 0);
