@@ -15,6 +15,7 @@ import type { Game } from "../game.ts";
 import type { Actor } from "../engine/actor.ts";
 import { distance } from "../engine/grid.ts";
 import type { AbilityDef, SpellDef } from "../content/schema.ts";
+import { bondWord, hunger, isCompanion, stateOf } from "../engine/companions.ts";
 
 export type ContextAction =
   | { kind: "look"; label: string; detail?: string }
@@ -26,6 +27,7 @@ export type ContextAction =
   | { kind: "market"; label: string; detail?: string; village: number }
   | { kind: "handin"; label: string; detail?: string; target: string }
   | { kind: "tame"; label: string; detail?: string; target: string }
+  | { kind: "feed"; label: string; detail?: string; target: string }
   | { kind: "pickup"; label: string; detail?: string }
   | { kind: "harvest"; label: string; detail?: string; x: number; y: number }
   | { kind: "enter"; label: string; detail?: string }
@@ -176,6 +178,15 @@ export function menuAt(game: Game, x: number, y: number): ContextMenu {
           kind: "tame", label: "Try to tame it", target: who.id,
           detail: game.tameOdds(who),
         });
+      }
+      if (isCompanion(who)) {
+        const st = stateOf(who, game.turn);
+        facts.push(["Bond", `${bondWord(st.bond)} (${Math.round(st.bond)})`]);
+        facts.push(["Its level", String(st.level)]);
+        if (hunger(who, game.turn) > 0.5) facts.push(["", "It is hungry."]);
+        if (game.canFeed(who)) {
+          actions.unshift({ kind: "feed", label: "Feed it", target: who.id });
+        }
       }
       if (!reach) actions.push({ kind: "walk", label: "Walk to it", x, y });
       actions.push({ kind: "wiki", label: `Look up ${who.name}`, topic: `enemies/${who.def}` });

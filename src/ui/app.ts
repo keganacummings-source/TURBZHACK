@@ -20,6 +20,7 @@ import { menuAt, type ContextMenu } from "./context.ts";
 import { marketHtml, questsHtml, talkHtml } from "./village.ts";
 import { ATTRIBUTES, ATTRIBUTE_INFO, explainPoint, type AttributeId } from "../engine/attributes.ts";
 import { WEAPON_CLASS } from "../engine/weapons.ts";
+import { bondWord as companionBond, hunger as companionHunger, stateOf as companionState } from "../engine/companions.ts";
 import { newMotion, noteMoves, moving } from "../render/motion.ts";
 import { deleteSlot, readSlot, writeSlot } from "../engine/save.ts";
 import { loadGame } from "../game.ts";
@@ -196,8 +197,12 @@ export async function boot(): Promise<void> {
     const prog = game.progress;
     const companions = game.actors.filter((a) => a.alive && a.data["companion"]);
     const party = companions.length
-      ? `<div class="hud-row">${companions.map((c) =>
-          `<span class="pip pip-companion">${escapeHtml(c.name)} ${Math.round(c.pools.hp)}/${Math.round(c.pools.hpMax)}</span>`).join("")}</div>`
+      ? `<div class="hud-row">${companions.map((c) => {
+          const st = companionState(c, game!.turn);
+          const hungry = companionHunger(c, game!.turn) > 0.5 ? " ·hungry" : "";
+          return `<span class="pip pip-companion" title="${escapeHtml(companionBond(st.bond))}">${
+            escapeHtml(c.name.split(" ")[0] ?? c.name)} L${st.level} ${Math.round(c.pools.hp)}/${Math.round(c.pools.hpMax)}${hungry}</span>`;
+        }).join("")}</div>`
       : "";
     const here = game.place.kind === "overworld" ? game.villageHere : null;
     const lines = game.questLines();
@@ -353,6 +358,16 @@ export async function boot(): Promise<void> {
       case "tame": {
         const target = g.actors.find((a) => a.id === action.target);
         if (target) g.tame(target);
+        break;
+      }
+      case "feed": {
+        const target = g.actors.find((a) => a.id === action.target);
+        // Feed it the least valuable food first — nobody feeds a pet their
+        // emberfruit when there is dried meat in the pack.
+        const food = g.pack
+          .filter((id) => { const sl = reg.items.get(id)?.slot; return sl === "food" || sl === "material"; })
+          .sort((x, y) => (reg.items.get(x)?.value ?? 0) - (reg.items.get(y)?.value ?? 0))[0];
+        if (target && food) g.feedCompanion(target, food);
         break;
       }
       case "harvest": g.harvest(action.x, action.y); break;

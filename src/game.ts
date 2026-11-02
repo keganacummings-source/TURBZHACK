@@ -10,6 +10,10 @@ import { Actor, type ActorSave } from "./engine/actor.ts";
 import { Rng, seedFrom, seedName } from "./engine/rng.ts";
 import { computeFov, distance, type Level } from "./engine/grid.ts";
 import { findPath } from "./engine/path.ts";
+import {
+  BOND_START, bondWord, creditKill, feed, grow, hunger, isCompanion, stateOf,
+  tick as companionTick,
+} from "./engine/companions.ts";
 import { newMarket, quote, stall, trade, type Market, type Quote } from "./engine/market.ts";
 import { makeQuest, isDone, ordinal, progressLine, type ActiveQuest } from "./engine/quests.ts";
 import { TRADE } from "./world/economy.ts";
@@ -914,6 +918,34 @@ export class Game {
    * because a delivery should complete when you WALK INTO the village, not when
    * you happen to step on one particular square of it.
    */
+  /**
+   * Hunger and loyalty, once per player turn.
+   *
+   * A companion that has gone too long unfed, or been left too far behind, loses
+   * heart and eventually leaves. Done here rather than in the companion's own
+   * turn so that it ticks on the player's clock — the thing being measured is
+   * how long YOU have neglected it, not how many turns it personally took.
+   */
+  private tickCompanions(): void {
+    for (const pet of [...this.actors]) {
+      if (!isCompanion(pet) || !pet.alive) continue;
+      const left = companionTick(pet, this.turn, distance(pet.pos, this.player.pos));
+      // A warning shot when it first gets hungry, so leaving is never a surprise.
+      if (hunger(pet, this.turn) > 0.5 && !pet.data["warnedHungry"]) {
+        pet.data["warnedHungry"] = true;
+        this.log(`${pet.name} is hungry.`, "warn");
+      } else if (hunger(pet, this.turn) < 0.3) {
+        pet.data["warnedHungry"] = false;
+      }
+      if (left) {
+        pet.data["companion"] = false;
+        pet.stance = "neutral";
+        this.party = this.party.filter((id) => id !== pet.id);
+        this.log(`${pet.name} has had enough. It leaves.`, "bad");
+      }
+    }
+  }
+
   private noteArrival(): void {
     if (this.place.kind !== "overworld") return;
     const here = this.villageHere;
@@ -985,6 +1017,7 @@ export class Game {
     };
     playerActed(this.turnCtx, result, (actor) => monsterTurn(actor, { ...ai, turn: this.turn }));
     this.awardXp();
+    this.tickCompanions();
     this.refreshFov();
     if (!this.player.alive) {
       this.over = { won: false, reason: "You died." };
@@ -1034,6 +1067,25 @@ export class Game {
        */
       this.noteProgress("bounty", a.def);
       if (def?.boss) this.noteProgress("slay", a.def);
+
+      /*
+       * Companions that were nearby share in the kill.
+       *
+       * Near rather than everywhere, so a pet grows by actually being in the
+       * fight — a wolf left at the village does not level up while you clear a
+       * dungeon. A level gained grows it on the spot.
+       */
+      const worth = def?.xp ?? 0;
+      if (worth > 0) {
+        for (const pet of this.actors) {
+          if (!isCompanion(pet) || !pet.alive) continue;
+          if (distance(pet.pos, a.pos) > 6) continue;
+          if (creditKill(pet, this.turn, worth)) {
+            grow(pet);
+            this.log(`${pet.name} grows stronger. (level ${stateOf(pet, this.turn).level})`, "good");
+          }
+        }
+      }
       const purse = Math.round((def?.xp ?? 0) * 0.5);
       if (purse > 0) {
         this.coin += purse;
@@ -2182,6 +2234,11 @@ export class Game {
     if (rng.next() < this.tameChance(who)) {
       who.stance = "friendly";
       who.data["companion"] = true;
+      who.data["bond"] = BOND_START;
+      who.data["fedAt"] = this.turn;
+      who.data["petLevel"] = 1;
+      who.data["petXp"] = 0;
+      who.speed = who.speed || 100;
       this.party.push(who.id);
       this.log(`${who.name} decides you are worth following.`, "good");
     } else {
@@ -2192,6 +2249,42 @@ export class Game {
         : `${who.name} will not have it.`, "warn");
     }
     this.finishTurn({ tookTurn: true });
+  }
+
+  /**
+   * Feed a companion from your pack.
+   *
+   * Any food item does, and a richer one does more. This is the whole upkeep of
+   * a pet — keep it fed and its bond climbs, neglect it and the bond slips until
+   * it leaves — so it is a real call on the food you would otherwise eat or
+   * sell.
+   */
+  feedCompanion(who: Actor, itemId: string): boolean {
+    if (!isCompanion(who)) return false;
+    const def = this.reg.items.get(itemId);
+    if (!def || (def.slot !== "food" && def.slot !== "material")) {
+      this.log("That is not something it would eat.", "warn");
+      return false;
+    }
+    const at = this.pack.indexOf(itemId);
+    if (at < 0) { this.log(`You are not carrying any ${def.name}.`, "warn"); return false; }
+    if (distance(who.pos, this.player.pos) > 1.5) { this.log("You need to be next to it.", "warn"); return false; }
+
+    this.pack.splice(at, 1);
+    const nourishment = def.slot === "food" ? 1.5 : 0.6;
+    const gained = feed(who, this.turn, nourishment);
+    this.log(`You feed ${who.name}. ${gained && gained > 10 ? "It is glad of it." : "It eats."} (${bondWord(stateOf(who, this.turn).bond)})`, "good");
+    this.finishTurn({ tookTurn: true });
+    return true;
+  }
+
+  /** Can this companion be fed right now — is it a pet, and are you carrying food? */
+  canFeed(who: Actor): boolean {
+    if (!isCompanion(who)) return false;
+    return this.pack.some((id) => {
+      const slot = this.reg.items.get(id)?.slot;
+      return slot === "food" || slot === "material";
+    });
   }
 
   /** Say something to a creature that is not trying to kill you. */
