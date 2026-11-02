@@ -1,0 +1,31 @@
+{
+  "name": "Vampire",
+  "sprite": "mon-vampire",
+  "pools": {
+    "hp": 30,
+    "mana": 25
+  },
+  "armour": 4,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "drain-bite"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 5,
+  "xp": 160,
+  "spells": [
+    "drain"
+  ],
+  "resist": {
+    "cold": 0,
+    "poison": 0
+  }
+}

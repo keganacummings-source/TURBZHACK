@@ -1,0 +1,28 @@
+{
+  "name": "Floating Eye",
+  "sprite": "mon-floating-eye",
+  "pools": {
+    "hp": -30,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 60,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 8,
+  "xp": 80,
+  "spells": [
+    "hex-bolt"
+  ],
+  "resist": {
+    "physical": 0.8
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Coglin",
+  "sprite": "pc-coglin",
+  "blurb": "Half machine, and it holds two weapons because it can.",
+  "difficulty": 3,
+  "pools": {
+    "hp": 20,
+    "stamina": 25,
+    "mana": -15
+  },
+  "stats": {
+    "might": 4,
+    "accuracy": 4
+  },
+  "armour": 3,
+  "resist": {
+    "shock": 1.5,
+    "poison": 0
+  }
+}

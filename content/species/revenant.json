@@ -1,0 +1,19 @@
+{
+  "name": "Revenant",
+  "sprite": "pc-revenant",
+  "blurb": "Came back wrong, and kept the magic.",
+  "difficulty": 3,
+  "pools": {
+    "hp": -10,
+    "mana": 45
+  },
+  "stats": {
+    "focus": 7,
+    "evasion": 3
+  },
+  "resist": {
+    "cold": 0,
+    "poison": 0,
+    "fire": 1.5
+  }
+}

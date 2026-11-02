@@ -109,7 +109,7 @@ test("the same seed and level always roll the same five", () => {
 });
 
 test("taking a spell teaches it; taking an upgrade changes your numbers", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
 
   const before = you.spells.length;
   applyChoice(you, { kind: "spell", id: "firestorm", name: "Firestorm", about: "", detail: "" }, upgrades);
@@ -133,7 +133,7 @@ test("taking a spell teaches it; taking an upgrade changes your numbers", () => 
 
 test("every upgrade in the folder actually does something", () => {
   for (const [id, u] of upgrades) {
-    const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+    const you = spawn(reg, "classes", "conjurer", 2, 2, true);
     const snapshot = JSON.stringify([you.stats, you.pools, you.armour]);
     applyChoice(you, { kind: "upgrade", id, name: u.name, about: "", detail: "" }, upgrades);
     assert.notEqual(JSON.stringify([you.stats, you.pools, you.armour]), snapshot,
@@ -147,7 +147,7 @@ test("every upgrade in the folder actually does something", () => {
 
 test("killing things earns experience and eventually a level", () => {
   const g = new Game(reg, 2026);
-  g.start("ruinmage");
+  g.start("conjurer");
   assert.equal(g.playerLevel, 1);
 
   // Stand something next to the player and punch it to death.
@@ -164,7 +164,7 @@ test("killing things earns experience and eventually a level", () => {
 
 test("a level-up stops the game until you choose, then hands the choice over", () => {
   const g = new Game(reg, 4242);
-  g.start("ruinmage");
+  g.start("conjurer");
 
   // Enough experience for several levels at once.
   g.xp = 0;

@@ -1,0 +1,16 @@
+{
+  "name": "Gnoll",
+  "sprite": "pc-gnoll",
+  "blurb": "Learns everything at once, badly and then well.",
+  "difficulty": 2,
+  "pools": {
+    "hp": 15,
+    "stamina": 20
+  },
+  "stats": {
+    "might": 3,
+    "accuracy": 3,
+    "focus": 1
+  },
+  "armour": 1
+}

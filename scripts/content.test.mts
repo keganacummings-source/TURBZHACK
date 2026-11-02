@@ -48,17 +48,25 @@ test("the generated index matches what is on disk", async () => {
     "content/index.json is stale — run `node tools/index-content.mjs content`");
 });
 
-test("there is one playable class, and it is the Ruinmage", () => {
-  assert.deepEqual([...reg.classes.keys()], ["ruinmage"]);
-  const rm = reg.classes.get("ruinmage")!;
-  assert.ok((rm.spells ?? []).length >= 1, "the Ruinmage starts knowing nothing");
-  assert.ok((rm.abilities ?? []).includes("punch"), "the Ruinmage cannot punch");
+test("there are Crawl's species and backgrounds, and they are separate", () => {
+  assert.ok(reg.species.size >= 15, `only ${reg.species.size} species`);
+  assert.ok(reg.classes.size >= 15, `only ${reg.classes.size} backgrounds`);
+  // The split is the point: a species decides the body, a background decides
+  // the kit. Neither should be doing the other's job.
+  for (const [id, sp] of reg.species) {
+    assert.ok(sp.sprite, `species ${id} has no sprite`);
+    assert.ok(!(sp as { items?: string[] }).items, `species ${id} is carrying items — that is a background's job`);
+  }
+  for (const [id, bg] of reg.classes) {
+    assert.ok((bg.items ?? []).length > 0, `background ${id} starts with nothing at all`);
+    assert.ok((bg.abilities ?? []).includes("punch"), `background ${id} cannot punch`);
+  }
 });
 
 test("the game has a real spellbook and a real bestiary", () => {
   assert.ok(reg.spells.size >= 20, `only ${reg.spells.size} spells`);
   assert.ok(reg.abilities.size >= 12, `only ${reg.abilities.size} abilities`);
-  assert.ok(reg.enemies.size >= 30, `only ${reg.enemies.size} enemies`);
+  assert.ok(reg.enemies.size >= 50, `only ${reg.enemies.size} enemies`);
   assert.ok(reg.upgrades.size >= 12, `only ${reg.upgrades.size} upgrades`);
   assert.ok(reg.statuses.size >= 8, `only ${reg.statuses.size} statuses`);
 });

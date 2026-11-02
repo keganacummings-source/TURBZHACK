@@ -1,0 +1,17 @@
+{
+  "name": "Spriggan",
+  "sprite": "pc-spriggan",
+  "blurb": "Tiny, appallingly fast, and cannot take a hit.",
+  "difficulty": 3,
+  "pools": {
+    "hp": -45,
+    "stamina": -10,
+    "mana": 30
+  },
+  "stats": {
+    "evasion": 14,
+    "focus": 3,
+    "might": -5
+  },
+  "speed": 140
+}

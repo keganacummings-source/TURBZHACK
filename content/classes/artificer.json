@@ -1,0 +1,22 @@
+{
+  "name": "Artificer",
+  "blurb": "Lets the wand do the work.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "wand-of-fire",
+    "club",
+    "leather-armour"
+  ],
+  "pools": {
+    "hp": -5,
+    "mana": 20
+  },
+  "stats": {
+    "focus": 3,
+    "accuracy": 3
+  },
+  "spells": []
+}

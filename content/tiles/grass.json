@@ -3,5 +3,6 @@
   "biomes": [
     "plains",
     "forest"
-  ]
+  ],
+  "sprite": "t-grass"
 }

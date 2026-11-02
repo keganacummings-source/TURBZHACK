@@ -6,5 +6,6 @@
     "highland",
     "badlands",
     "dungeon"
-  ]
+  ],
+  "sprite": "t-ore"
 }

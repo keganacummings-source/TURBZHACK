@@ -1,0 +1,29 @@
+{
+  "name": "Black Mamba",
+  "sprite": "mon-black-mamba",
+  "pools": {
+    "hp": -55,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 130,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "swamp",
+    "desert",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 42,
+  "resist": {
+    "poison": 0
+  }
+}

@@ -70,7 +70,16 @@ export async function loadContent(sources: { base: string; name: string }[] = [{
 /** Every sprite key the loaded content can ask for, so they can be preloaded. */
 export function spriteKeys(reg: Registry): string[] {
   const keys = new Set<string>();
-  for (const map of [reg.tiles, reg.enemies, reg.classes, reg.items]) {
+  /*
+   * Backgrounds are deliberately absent.
+   *
+   * A background is what you trained as, not what you look like: the player is
+   * drawn as their SPECIES, so a Minotaur Berserker is a minotaur. The registry
+   * defaults a missing "sprite" to the id, which would otherwise send this
+   * looking for fighter.png and twenty other files that do not and should not
+   * exist.
+   */
+  for (const map of [reg.tiles, reg.enemies, reg.species, reg.items]) {
     for (const def of map.values()) if (def.sprite) keys.add(def.sprite);
   }
   return [...keys];

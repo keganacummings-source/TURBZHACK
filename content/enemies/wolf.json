@@ -1,12 +1,12 @@
 {
   "name": "Wolf",
-  "sprite": "wolf",
+  "sprite": "mon-wolf",
   "pools": {
-    "hp": -58,
+    "hp": -55,
     "mana": -50
   },
   "armour": 1,
-  "speed": 135,
+  "speed": 140,
   "ai": "melee",
   "sight": 9,
   "abilities": [
@@ -19,8 +19,8 @@
   ],
   "depth": {
     "min": 0,
-    "max": 4
+    "max": 6
   },
   "weight": 20,
-  "xp": 14
+  "xp": 18
 }

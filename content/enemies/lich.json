@@ -1,0 +1,34 @@
+{
+  "name": "Lich",
+  "sprite": "mon-lich",
+  "pools": {
+    "hp": 70,
+    "mana": 25
+  },
+  "armour": 5,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 11,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 10,
+    "max": 12
+  },
+  "weight": 2,
+  "xp": 320,
+  "spells": [
+    "wither",
+    "soul-rend",
+    "drain"
+  ],
+  "resist": {
+    "poison": 0,
+    "cold": 0,
+    "pure": 0.5
+  }
+}

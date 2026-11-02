@@ -1,0 +1,29 @@
+{
+  "name": "Oklob Plant",
+  "sprite": "mon-oklob-plant",
+  "pools": {
+    "hp": 10,
+    "mana": 25
+  },
+  "armour": 5,
+  "speed": 1,
+  "ai": "caster",
+  "sight": 8,
+  "abilities": [],
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 6,
+  "xp": 100,
+  "spells": [
+    "spore-cloud"
+  ],
+  "resist": {
+    "poison": 0
+  }
+}

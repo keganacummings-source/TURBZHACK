@@ -3,5 +3,6 @@
   "biomes": [
     "tundra",
     "glacier"
-  ]
+  ],
+  "sprite": "t-snow"
 }

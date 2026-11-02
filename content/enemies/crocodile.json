@@ -1,0 +1,25 @@
+{
+  "name": "Crocodile",
+  "sprite": "mon-crocodile",
+  "pools": {
+    "hp": 5,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "swamp",
+    "river"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 9,
+  "xp": 62
+}

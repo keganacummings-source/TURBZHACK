@@ -1,0 +1,29 @@
+{
+  "name": "Phantom",
+  "sprite": "mon-phantom",
+  "pools": {
+    "hp": -55,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 56,
+  "resist": {
+    "physical": 0.2,
+    "pure": 1.75
+  }
+}

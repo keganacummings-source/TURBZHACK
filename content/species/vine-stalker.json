@@ -1,0 +1,19 @@
+{
+  "name": "Vine Stalker",
+  "sprite": "pc-vine-stalker",
+  "blurb": "Living wood. Magic sustains it and nothing else does.",
+  "difficulty": 3,
+  "pools": {
+    "hp": -20,
+    "mana": 35
+  },
+  "stats": {
+    "might": 3,
+    "evasion": 4
+  },
+  "armour": 1,
+  "resist": {
+    "poison": 0
+  },
+  "speed": 105
+}

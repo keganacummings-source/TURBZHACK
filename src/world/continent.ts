@@ -226,6 +226,8 @@ export function generateContinent(seed: number, tiles: Map<string, TileDef>, w =
     }
   }
 
+  despeckle(biome, w, h);
+
   // --- 5. the level itself -------------------------------------------------
   const palette: TileKind[] = [];
   const indexOf = new Map<string, number>();
@@ -273,6 +275,58 @@ export function generateContinent(seed: number, tiles: Map<string, TileDef>, w =
 }
 
 /** The biome for a patch of land, from its height above sea, warmth and wet. */
+/**
+ * Rub out single-tile biomes.
+ *
+ * The bands in `biomeFor` are sharp thresholds over three smooth fields, so
+ * wherever two of them cross you get the odd lone cell on the far side of a
+ * line — one tile of Cinderland in the middle of a forest, which on screen is a
+ * square of lava between the trees with no volcano anywhere near it. Each cell
+ * that matches none of its eight neighbours is given whichever biome most of
+ * them have. Regions survive, because every cell inside one agrees with its
+ * neighbours; only the specks go.
+ *
+ * Water is left alone in both directions: a lake should not be filled in by the
+ * land around it, and a one-tile island should not be drowned.
+ */
+function despeckle(biome: string[], w: number, h: number, passes = 4): void {
+  for (let p = 0; p < passes; p++) if (!despeckleOnce(biome, w, h)) return;
+}
+
+/** One sweep. Returns whether it changed anything. */
+function despeckleOnce(biome: string[], w: number, h: number): boolean {
+  const wet = (b: string) => b === "ocean" || b === "shallows" || b === "beach";
+  const out = biome.slice();
+  let changed = false;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const mine = biome[i]!;
+      if (wet(mine)) continue;
+
+      const tally = new Map<string, number>();
+      let same = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const b = biome[(y + dy) * w + (x + dx)]!;
+          if (b === mine) { same++; continue; }
+          if (wet(b)) continue;
+          tally.set(b, (tally.get(b) ?? 0) + 1);
+        }
+      }
+      if (same > 0) continue;                    // it has company; leave it
+      if (!tally.size) continue;                 // a one-tile island; let it be
+
+      let best = mine, bestN = 0;
+      for (const [b, n] of tally) if (n > bestN) { best = b; bestN = n; }
+      if (best !== mine) { out[i] = best; changed = true; }
+    }
+  }
+  biome.splice(0, biome.length, ...out);
+  return changed;
+}
+
 function biomeFor(relief: number, warmth: number, wet: number): string {
   // `relief` is 0..1 from its own noise field, so these are bands of the
   // landscape's roughness rather than metres above the sea.

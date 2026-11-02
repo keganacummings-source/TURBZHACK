@@ -1,0 +1,19 @@
+{
+  "name": "Naga",
+  "sprite": "pc-naga",
+  "blurb": "Slow, armoured, and spits venom.",
+  "difficulty": 2,
+  "pools": {
+    "hp": 35,
+    "mana": 15
+  },
+  "stats": {
+    "might": 3,
+    "evasion": -6
+  },
+  "armour": 4,
+  "resist": {
+    "poison": 0
+  },
+  "speed": 80
+}

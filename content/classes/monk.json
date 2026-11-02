@@ -1,0 +1,22 @@
+{
+  "name": "Monk",
+  "blurb": "No weapon. That is the whole idea.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "robe"
+  ],
+  "pools": {
+    "hp": 10,
+    "stamina": 40,
+    "mana": -10
+  },
+  "stats": {
+    "might": 6,
+    "accuracy": 5,
+    "evasion": 5
+  },
+  "spells": []
+}

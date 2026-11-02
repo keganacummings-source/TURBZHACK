@@ -3,5 +3,6 @@
   "biomes": [
     "highland",
     "dungeon"
-  ]
+  ],
+  "sprite": "t-stone"
 }

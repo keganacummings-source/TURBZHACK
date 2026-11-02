@@ -1,0 +1,31 @@
+{
+  "name": "Hellion",
+  "sprite": "mon-hellion",
+  "pools": {
+    "hp": 45,
+    "mana": 25
+  },
+  "armour": 4,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 9,
+    "max": 12
+  },
+  "weight": 3,
+  "xp": 210,
+  "spells": [
+    "firestorm"
+  ],
+  "resist": {
+    "fire": 0
+  }
+}

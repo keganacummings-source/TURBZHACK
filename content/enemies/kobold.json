@@ -1,6 +1,6 @@
 {
   "name": "Kobold",
-  "sprite": "kobold",
+  "sprite": "mon-kobold",
   "pools": {
     "hp": -68,
     "mana": -50
@@ -18,9 +18,9 @@
     "badlands"
   ],
   "depth": {
-    "min": 1,
-    "max": 7
+    "min": 0,
+    "max": 6
   },
-  "weight": 22,
-  "xp": 14
+  "weight": 24,
+  "xp": 11
 }

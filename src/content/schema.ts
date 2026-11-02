@@ -238,6 +238,36 @@ export type TileDef = ContentBase & {
 };
 
 // ---------------------------------------------------------------------------
+// Species — content/species/*.json
+// ---------------------------------------------------------------------------
+
+/**
+ * What you ARE, as opposed to what you trained as.
+ *
+ * Crawl splits a character into a species and a background, and the split is
+ * worth keeping: the species decides the body — how much it can take, how
+ * fast it moves, what it is immune to — and the background decides what you
+ * walked in carrying. Both contribute to the same totals, which is why they
+ * share a shape.
+ */
+export type SpeciesDef = ContentBase & {
+  /** Added to the 100/100/50 base. */
+  pools?: Partial<Record<"hp" | "stamina" | "mana", number>>;
+  armour?: number;
+  resist?: Partial<Record<DamageKind, number>>;
+  stats?: Partial<Record<"might" | "focus" | "accuracy" | "evasion", number>>;
+  /** 100 is an ordinary pace. */
+  speed?: number;
+  /** Spells and abilities the body itself grants. */
+  spells?: string[];
+  abilities?: string[];
+  /** One line on the species-select screen. */
+  blurb?: string;
+  /** Lower is easier to play. Shown as a hint, nothing more. */
+  difficulty?: number;
+};
+
+// ---------------------------------------------------------------------------
 // Upgrades — content/upgrades/*.json
 // ---------------------------------------------------------------------------
 
@@ -259,6 +289,6 @@ export type UpgradeDef = ContentBase & {
 
 /** Every kind of content file, by folder name. */
 export const CONTENT_KINDS = [
-  "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
+  "species", "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
 ] as const;
 export type ContentKind = (typeof CONTENT_KINDS)[number];

@@ -14,23 +14,29 @@ import { loadRegistry } from "./lib/harness.mts";
 import { Game } from "../src/game.ts";
 
 const reg = loadRegistry();
-const newGame = (cls = "ruinmage", seed = 2026) => {
+const newGame = (cls = "conjurer", seed = 2026) => {
   const g = new Game(reg, seed);
   g.start(cls);
   return g;
 };
 
-test("a run starts you alive, on open ground, with the Ruinmage's stats", () => {
+test("a run starts you alive, and the species and background both count", () => {
   const g = newGame();
   assert.ok(g.player.alive);
   assert.equal(g.level.solid(g.player.pos.x, g.player.pos.y), false, "you started inside a wall");
-  // Base 100/100/50 plus the Ruinmage's file.
-  assert.equal(g.player.pools.hpMax, 90);
-  assert.equal(g.player.pools.staminaMax, 80);
-  assert.equal(g.player.pools.manaMax, 120);
-  assert.deepEqual(g.player.spells, ["spark", "frost-touch"]);
+
+  // Human Conjurer: base 100/100/50, human adds nothing, conjurer -20/-20/+60.
+  assert.equal(g.player.pools.hpMax, 80);
+  assert.equal(g.player.pools.manaMax, 110);
+  assert.deepEqual(g.player.spells, ["spark", "shock-bolt"]);
   assert.equal(g.playerLevel, 1);
-  assert.equal(g.xp, 0);
+
+  // The same background on a different body is a different character.
+  const troll = new Game(reg, 2026);
+  troll.start("conjurer", "troll");
+  assert.ok(troll.player.pools.hpMax > g.player.pools.hpMax, "a troll is not tougher than a human");
+  assert.ok(troll.player.pools.manaMax < g.player.pools.manaMax, "a troll is not worse at magic");
+  assert.equal(troll.player.sprite, "pc-troll", "the troll is not drawn as a troll");
 });
 
 test("the world is populated, and nothing spawns on top of you", () => {
@@ -78,7 +84,7 @@ test("walking costs a turn and walking into a wall does not", () => {
 });
 
 test("a spell you do not know, or cannot pay for, is refused without costing a turn", () => {
-  const g = newGame("ruinmage");          // knows no spells, has 10 mana
+  const g = newGame("conjurer");          // knows no spells, has 10 mana
   const at = g.turn;
   g.cast("firestorm");                   // a real spell, but not one you start with
   assert.equal(g.turn, at, "casting an unknown spell used a turn");
@@ -136,20 +142,20 @@ test("going down and coming back finds the same floor, with the same layout", ()
 });
 
 test("two runs on the same seed are identical, and different seeds are not", () => {
-  const a = newGame("ruinmage", 777);
-  const b = newGame("ruinmage", 777);
+  const a = newGame("conjurer", 777);
+  const b = newGame("conjurer", 777);
   assert.deepEqual(a.player.pos, b.player.pos);
   assert.deepEqual(
     a.actors.map((x) => `${x.def}@${x.pos.x},${x.pos.y}`),
     b.actors.map((x) => `${x.def}@${x.pos.x},${x.pos.y}`),
     "the same seed spawned a different world");
 
-  const c = newGame("ruinmage", 778);
+  const c = newGame("conjurer", 778);
   assert.notDeepEqual(a.player.pos, c.player.pos, "two seeds produced the same start");
 });
 
 test("a hundred turns of play does not throw, leak actors, or lose the player", () => {
-  const g = newGame("ruinmage", 31337);
+  const g = newGame("conjurer", 31337);
   const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]] as const;
   for (let i = 0; i < 100 && !g.over; i++) {
     const d = dirs[i % dirs.length]!;
@@ -164,7 +170,7 @@ test("a hundred turns of play does not throw, leak actors, or lose the player", 
 });
 
 test("fire sets a creature alight and the burning kills it over the following turns", () => {
-  const g = newGame("ruinmage", 4242);
+  const g = newGame("conjurer", 4242);
   // Put a rat next to the player and make sure the witch can afford the spell.
   const rat = g.actors.find((a) => a.def === "rat") ?? g.actors.find((a) => !a.isPlayer)!;
   rat.pos = { x: g.player.pos.x + 2, y: g.player.pos.y };
@@ -215,4 +221,19 @@ test("the log counts repeats instead of filling up with them", () => {
   assert.ok(added <= 2, `twelve identical refusals added ${added} lines to the log`);
   const last = g.messages.at(-1)!;
   assert.ok((last.count ?? 1) > 5, `the repeat was not counted (count ${last.count})`);
+});
+
+test("no pairing of species and background can make a negative pool", () => {
+  // The two sets of modifiers stack, so the worst caster in the game paired
+  // with the worst casting background used to land on "Mana -5".
+  for (const species of reg.species.keys()) {
+    for (const bg of reg.classes.keys()) {
+      const g = new Game(reg, 1);
+      g.start(bg, species);
+      const { hpMax, staminaMax, manaMax } = g.player.pools;
+      assert.ok(hpMax >= 1, `${species} ${bg} has ${hpMax} health`);
+      assert.ok(staminaMax >= 0, `${species} ${bg} has ${staminaMax} stamina`);
+      assert.ok(manaMax >= 0, `${species} ${bg} has ${manaMax} mana`);
+    }
+  }
 });

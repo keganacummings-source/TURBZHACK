@@ -1,0 +1,26 @@
+{
+  "name": "Delver",
+  "blurb": "Woke up already deep, and kept going.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "dagger",
+    "leather-armour",
+    "potion-of-mending",
+    "scroll-of-warding"
+  ],
+  "pools": {
+    "hp": 5,
+    "stamina": 15,
+    "mana": 15
+  },
+  "stats": {
+    "evasion": 5,
+    "accuracy": 2
+  },
+  "spells": [
+    "blink"
+  ]
+}

@@ -38,7 +38,7 @@ test("punch does 5 and costs no stamina; kick does 10 and costs 25", () => {
 });
 
 test("a punch costs nothing and can be thrown forever", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 3, 2);
   const { ctx } = makeGame(reg, [you, rat]);
   you.stats.accuracy = 100;    // this test is about cost, not about hitting
@@ -48,8 +48,8 @@ test("a punch costs nothing and can be thrown forever", () => {
 });
 
 test("kick empties you in four, and the fifth is refused without passing the turn", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
-  const dummy = spawn(reg, "enemies", "iron-sentinel", 3, 2);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
+  const dummy = spawn(reg, "enemies", "earth-elemental", 3, 2);
   const { ctx } = makeGame(reg, [you, dummy]);
   you.pools.stamina = 100;
 
@@ -65,7 +65,7 @@ test("kick empties you in four, and the fifth is refused without passing the tur
 });
 
 test("everyone gets 25 stamina back at the end of a turn", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   you.pools.stamina = 0;
   you.endTurnRecovery();
   assert.equal(you.pools.stamina, STAMINA_PER_TURN);
@@ -76,7 +76,7 @@ test("everyone gets 25 stamina back at the end of a turn", () => {
 });
 
 test("health comes back only after ten turns without being hurt", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   you.hurt(50);
   const wounded = you.pools.hp;
 
@@ -99,8 +99,8 @@ test("fire burns for a quarter of the hit, every turn, through armour", () => {
   assert.equal(burning.tick?.percent, 0.25);
   assert.equal(burning.tick?.of, "sourceDamage");
 
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
-  const golem = spawn(reg, "enemies", "iron-sentinel", 4, 2);   // heavy armour
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
+  const golem = spawn(reg, "enemies", "earth-elemental", 4, 2);   // heavy armour
   const { ctx, messages } = makeGame(reg, [you, golem]);
 
   const res = castSpell(ctx, you, reg.spells.get("ember-bolt")!, golem);
@@ -135,7 +135,7 @@ test("freeze stops a creature acting, and gives it an even chance to break out",
   assert.equal(frozen.breakChance, 0.5);
   assert.equal(frozen.preventsAction, true);
 
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 5, 2);
   const { ctx } = makeGame(reg, [you, rat]);
 
@@ -161,7 +161,7 @@ test("freeze stops a creature acting, and gives it an even chance to break out",
 });
 
 test("a spell with no mana behind it is refused and costs no turn", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);   // 10 mana
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);   // 10 mana
   const rat = spawn(reg, "enemies", "rat", 4, 2);
   const { ctx } = makeGame(reg, [you, rat]);
   you.pools.mana = 0;
@@ -171,7 +171,7 @@ test("a spell with no mana behind it is refused and costs no turn", () => {
 });
 
 test("moving is one turn, and walking into a wall is not", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const { ctx } = makeGame(reg, [you]);
 
   const stepped = moveOrAttack(ctx, you, 1, 0, undefined);
@@ -185,9 +185,9 @@ test("moving is one turn, and walking into a wall is not", () => {
 });
 
 test("walking into a hostile creature attacks it; a neutral one is not attacked by accident", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 3, 2);
-  const deer = spawn(reg, "enemies", "snow-fowl", 2, 3);
+  const deer = spawn(reg, "enemies", "hog", 2, 3);
   const { ctx } = makeGame(reg, [you, rat, deer]);
 
   you.stats.accuracy = 100;    // this test is about who you attack, not whether you connect
@@ -202,7 +202,7 @@ test("walking into a hostile creature attacks it; a neutral one is not attacked 
 });
 
 test("the world only moves when you do", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 10, 6);
   const { ctx } = makeGame(reg, [you, rat]);
   you.energy = 100;
@@ -221,9 +221,9 @@ test("the world only moves when you do", () => {
 });
 
 test("a faster creature gets more turns than a slower one", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const hound = spawn(reg, "enemies", "bat", 8, 2);   // speed 140
-  const golem = spawn(reg, "enemies", "iron-sentinel", 12, 2);  // speed 60
+  const golem = spawn(reg, "enemies", "earth-elemental", 12, 2);  // speed 60
   const { ctx } = makeGame(reg, [you, hound, golem]);
   you.energy = 100;
 
@@ -300,7 +300,7 @@ test("the log addresses you in the second person and monsters in the third", asy
   // "You punches Wolf." is what one template for both looks like, so content
   // writes the verb with an {s}/{es} token and this fills it in per speaker.
   const { say } = await import("../src/engine/actions.ts");
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const wolf = spawn(reg, "enemies", "wolf", 3, 2);
 
   assert.equal(say("{caster} punch{es} {target}.", you, wolf), "You punch Wolf.");
@@ -333,7 +333,7 @@ test("every say line in the content folder is written for both speakers", () => 
 });
 
 test("damage messages name you as 'you', not as your name", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const wolf = spawn(reg, "enemies", "wolf", 3, 2);
   const { ctx } = makeGame(reg, [you, wolf]);
   wolf.stats.accuracy = 100;

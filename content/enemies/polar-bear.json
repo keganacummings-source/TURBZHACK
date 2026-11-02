@@ -1,0 +1,28 @@
+{
+  "name": "Polar Bear",
+  "sprite": "mon-polar-bear",
+  "pools": {
+    "hp": 25,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "tundra",
+    "glacier"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 8,
+  "xp": 70,
+  "resist": {
+    "cold": 0
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Centaur",
+  "sprite": "mon-centaur",
+  "pools": {
+    "hp": 0,
+    "mana": 25
+  },
+  "armour": 3,
+  "speed": 140,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "plains",
+    "forest",
+    "steppe"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 10,
+  "xp": 66,
+  "spells": [
+    "arrow"
+  ]
+}

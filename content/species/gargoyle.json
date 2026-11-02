@@ -1,0 +1,20 @@
+{
+  "name": "Gargoyle",
+  "sprite": "pc-gargoyle",
+  "blurb": "Stone. Poison does nothing; neither does most of a sword.",
+  "difficulty": 2,
+  "pools": {
+    "hp": 10,
+    "mana": -10
+  },
+  "stats": {
+    "evasion": -4
+  },
+  "armour": 6,
+  "resist": {
+    "poison": 0,
+    "physical": 0.75,
+    "shock": 0.5
+  },
+  "speed": 90
+}

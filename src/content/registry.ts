@@ -23,7 +23,7 @@
 import {
   CONTENT_KINDS,
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
-  type EnemyDef, type ItemDef, type SpellDef, type TileDef, type UpgradeDef,
+  type EnemyDef, type ItemDef, type SpeciesDef, type SpellDef, type TileDef, type UpgradeDef,
 } from "./schema.ts";
 import type { StatusDef } from "../engine/status.ts";
 
@@ -50,6 +50,7 @@ export type ContentSource = {
 };
 
 export class Registry {
+  readonly species = new Map<string, SpeciesDef>();
   readonly classes = new Map<string, ClassDef>();
   readonly enemies = new Map<string, EnemyDef>();
   readonly spells = new Map<string, SpellDef>();
@@ -66,6 +67,7 @@ export class Registry {
   /** The map for a kind, so loading can be written once rather than eight times. */
   private mapFor(kind: ContentKind): Map<string, Record<string, unknown>> {
     switch (kind) {
+      case "species": return this.species as never;
       case "classes": return this.classes as never;
       case "enemies": return this.enemies as never;
       case "spells": return this.spells as never;
@@ -152,6 +154,10 @@ export class Registry {
       });
     };
 
+    for (const [id, sp] of this.species) {
+      for (const s of sp.spells ?? []) ref(`species:${id}`, "spells", s, `"spells"`);
+      for (const a of sp.abilities ?? []) ref(`species:${id}`, "abilities", a, `"abilities"`);
+    }
     for (const [id, c] of this.classes) {
       for (const s of c.spells ?? []) ref(`classes:${id}`, "spells", s, `"spells"`);
       for (const a of c.abilities ?? []) ref(`classes:${id}`, "abilities", a, `"abilities"`);
@@ -251,6 +257,17 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       damageKind("kind");
       strList("applies");
       if (def.damage === undefined) out.push(`"damage" is required — write 0 for an ability that does none`);
+      break;
+
+    case "species":
+      num("armour");
+      num("speed", { min: 1 });
+      num("difficulty", { min: 0 });
+      strList("spells");
+      strList("abilities");
+      checkPools(def, out);
+      checkResist(def, out);
+      checkStats(def, out);
       break;
 
     case "classes":

@@ -1,8 +1,8 @@
 {
-  "name": "Grey Rat",
-  "sprite": "rat",
+  "name": "Rat",
+  "sprite": "mon-rat",
   "pools": {
-    "hp": -80,
+    "hp": -82,
     "mana": -50
   },
   "armour": 0,
@@ -22,5 +22,5 @@
     "max": 3
   },
   "weight": 30,
-  "xp": 5
+  "xp": 4
 }

@@ -257,3 +257,56 @@ body.designer-open { overflow: hidden; }
 .webfont .bar-num { font-size: 15px; }
 .webfont pre,
 .webfont .pack-table button { font-size: 15px; }
+
+/* --- character creation -------------------------------------------------- */
+.creation {
+  display: grid;
+  grid-template-columns: 260px 240px minmax(300px, 420px);
+  gap: 18px;
+  align-items: start;
+  max-width: 1000px;
+}
+.creation h2 { margin-bottom: 8px; }
+.creation-col { min-width: 0; }
+
+/* Both lists scroll inside themselves so the screen never grows a scrollbar of
+   its own and the character sheet stays put while you shop around. */
+.rows {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 58vh; overflow-y: auto; padding-right: 6px;
+}
+.row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px; width: 100%; text-align: left; cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 3px;
+  color: var(--bone); font: inherit;
+}
+.row:hover { background: var(--panel-2); border-color: var(--line); }
+.row.on { background: var(--panel-2); border-color: var(--kyo); color: var(--kyo); }
+.row img { image-rendering: pixelated; flex: 0 0 auto; }
+.row-name { flex: 1 1 auto; font-size: 12px; }
+.row-sub { font-size: 10px; color: var(--kyo); letter-spacing: .12em; opacity: .8; }
+.webfont .row-name { font-size: 17px; }
+.webfont .row-sub { font-size: 14px; }
+
+.creation-sheet {
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 14px 16px; background: var(--panel);
+  position: sticky; top: 0;
+}
+.creation-sheet h2 { color: var(--kyo); }
+.creation-sheet p { font-size: 12px; margin: 0 0 6px; }
+.webfont .creation-sheet p { font-size: 17px; }
+.sheet-art { margin: 2px 0 10px; }
+.sheet-art img { width: 48px; height: 48px; image-rendering: pixelated; }
+table.sheet { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
+.webfont table.sheet { font-size: 17px; }
+table.sheet td { padding: 3px 0; vertical-align: top; }
+table.sheet td:first-child { color: var(--dim); width: 76px; }
+.begin {
+  width: 100%; padding: 8px; cursor: pointer;
+  background: var(--kyo); color: var(--ink); border: none; border-radius: 3px;
+  font: inherit; font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+}
+.begin:hover { background: var(--bone); }
+.webfont .begin { font-size: 18px; }

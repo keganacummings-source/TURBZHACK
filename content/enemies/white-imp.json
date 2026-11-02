@@ -1,0 +1,33 @@
+{
+  "name": "White Imp",
+  "sprite": "mon-white-imp",
+  "pools": {
+    "hp": -62,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 125,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "tundra",
+    "glacier",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 13,
+  "xp": 38,
+  "spells": [
+    "frost-bolt"
+  ],
+  "resist": {
+    "cold": 0,
+    "fire": 1.5
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Acid Blob",
+  "sprite": "mon-acid-blob",
+  "pools": {
+    "hp": 15,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 65,
+  "ai": "melee",
+  "sight": 4,
+  "abilities": [
+    "engulf"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 120,
+  "resist": {
+    "poison": 0,
+    "physical": 0.6
+  }
+}

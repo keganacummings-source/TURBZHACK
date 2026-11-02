@@ -3,5 +3,6 @@
   "solid": true,
   "biomes": [
     "volcanic"
-  ]
+  ],
+  "sprite": "t-lava"
 }

@@ -1,0 +1,25 @@
+{
+  "name": "Fighter",
+  "blurb": "Armour, a shield, and no questions.",
+  "abilities": [
+    "punch",
+    "kick",
+    "staff-strike"
+  ],
+  "items": [
+    "short-sword",
+    "ring-mail",
+    "shield",
+    "potion-of-mending"
+  ],
+  "pools": {
+    "hp": 20,
+    "stamina": 20,
+    "mana": -20
+  },
+  "stats": {
+    "might": 3,
+    "accuracy": 3
+  },
+  "spells": []
+}

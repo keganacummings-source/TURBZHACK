@@ -12,5 +12,6 @@
     "swamp",
     "volcanic",
     "void"
-  ]
+  ],
+  "sprite": "t-dungeon-door"
 }

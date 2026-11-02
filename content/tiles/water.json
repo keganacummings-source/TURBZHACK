@@ -4,5 +4,6 @@
   "biomes": [
     "river",
     "ocean"
-  ]
+  ],
+  "sprite": "t-water"
 }

@@ -126,37 +126,99 @@ export async function boot(): Promise<void> {
 
   // --- screens ------------------------------------------------------------
 
+  /** Chosen on the way in. */
+  let pickedSpecies = "human";
+  let pickedBg = "fighter";
+
+  /**
+   * Character creation: species on the left, background in the middle, and
+   * what the two of them add up to on the right.
+   *
+   * Both lists are compact rows rather than cards, because with 22 species and
+   * 20 backgrounds anything taller turns the screen into a scroll. The
+   * interesting part is the COMBINATION — a Troll Conjurer and a Deep Elf
+   * Conjurer are different games — so the right-hand panel always shows the
+   * pair you currently have selected, and nothing commits until you press
+   * Begin.
+   */
   function renderClassSelect(reg: Registry): void {
-    const cards = [...reg.classes.values()].map((c) => `
-      <button class="card" data-class="${c.id}">
-        <h3>${escapeHtml(c.name)}</h3>
-        <p class="dim">${escapeHtml(c.blurb ?? c.about ?? "")}</p>
-        <ul>
-          <li>HP ${100 + (c.pools?.hp ?? 0)} · SP ${100 + (c.pools?.stamina ?? 0)} · MP ${50 + (c.pools?.mana ?? 0)}</li>
-          <li>${(c.spells ?? []).length ? `Starts with: ${(c.spells ?? []).map((s) => reg.spells.get(s)?.name ?? s).join(", ")}` : "No spells"}</li>
-          <li>Hit ${(c.stats?.accuracy ?? 85)}% · dodge ${(c.stats?.evasion ?? 0)}% · armour ${c.armour ?? 0}</li>
-          <li class="dim">Everything else is learned, five choices at a time.</li>
-        </ul>
+    const dots = (n: number) => "\u25cf".repeat(Math.max(1, Math.min(5, n)));
+    const sprite = (id: string, src: string) =>
+      `<img src="assets/tiles16/${src}.png" alt="" width="24" height="24" title="${escapeHtml(id)}">`;
+
+    const byName = <T extends { name?: string; id?: string }>(a: T, b: T) =>
+      (a.name ?? a.id ?? "").localeCompare(b.name ?? b.id ?? "");
+
+    const speciesRows = [...reg.species.values()].sort(byName).map((sp) => `
+      <button class="row ${sp.id === pickedSpecies ? "on" : ""}" data-species="${sp.id}">
+        ${sprite(sp.id!, sp.sprite ?? `pc-${sp.id}`)}
+        <span class="row-name">${escapeHtml(sp.name ?? sp.id!)}</span>
+        <span class="row-sub" title="difficulty">${dots(sp.difficulty ?? 1)}</span>
       </button>`).join("");
-    $("class-cards").innerHTML = cards;
-    for (const el of document.querySelectorAll<HTMLElement>("[data-class]")) {
-      el.onclick = () => {
-        const seedInput = ($("seed") as HTMLInputElement).value.trim();
-        game = new Game(reg, seedInput || Date.now());
-        game.start(el.dataset.class!);
-        /*
-         * The run, on the window, on purpose.
-         *
-         * This is a game whose whole point is that you extend it, so being able
-         * to open the console and read — or poke — the live state is a feature
-         * rather than a leak. `window.turbz.render()` redraws after you change
-         * something by hand.
-         */
-        (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
-        setScreen("play");
-        resize();
-      };
+
+    const bgRows = [...reg.classes.values()].sort(byName).map((c) => `
+      <button class="row ${c.id === pickedBg ? "on" : ""}" data-class="${c.id}">
+        <span class="row-name">${escapeHtml(c.name ?? c.id!)}</span>
+        <span class="row-sub">${(c.spells ?? []).length ? "magic" : "arms"}</span>
+      </button>`).join("");
+
+    const sp = reg.species.get(pickedSpecies);
+    const bg = reg.classes.get(pickedBg);
+    // Mirrors the floor in Game.makeCharacter: two sets of penalties stack, and
+    // a negative pool on the sheet is a lie about what you are about to play.
+    const pool = (base: number, k: "hp" | "stamina" | "mana") =>
+      Math.max(k === "hp" ? 1 : 0, base + (sp?.pools?.[k] ?? 0) + (bg?.pools?.[k] ?? 0));
+    const named = (ids: string[], from: Map<string, { name?: string }>) =>
+      ids.map((i) => escapeHtml(from.get(i)?.name ?? i)).join(", ") || "\u2014";
+
+    $("class-cards").innerHTML = `
+      <div class="creation">
+        <div class="creation-col">
+          <h2>Species</h2>
+          <div class="rows">${speciesRows}</div>
+        </div>
+        <div class="creation-col">
+          <h2>Background</h2>
+          <div class="rows">${bgRows}</div>
+        </div>
+        <div class="creation-col creation-sheet">
+          <h2>${escapeHtml(sp?.name ?? "")} ${escapeHtml(bg?.name ?? "")}</h2>
+          <div class="sheet-art">${sprite(pickedSpecies, sp?.sprite ?? `pc-${pickedSpecies}`)}</div>
+          <p>${escapeHtml(sp?.blurb ?? sp?.about ?? "")}</p>
+          <p class="dim">${escapeHtml(bg?.blurb ?? bg?.about ?? "")}</p>
+          <table class="sheet">
+            <tr><td>Health</td><td>${pool(100, "hp")}</td></tr>
+            <tr><td>Stamina</td><td>${pool(100, "stamina")}</td></tr>
+            <tr><td>Mana</td><td>${pool(50, "mana")}</td></tr>
+            <tr><td>Spells</td><td>${named([...(sp?.spells ?? []), ...(bg?.spells ?? [])], reg.spells)}</td></tr>
+            <tr><td>Kit</td><td>${named(bg?.items ?? [], reg.items)}</td></tr>
+          </table>
+          <button class="begin" id="begin">Begin</button>
+        </div>
+      </div>`;
+
+    for (const el of document.querySelectorAll<HTMLElement>("[data-species]")) {
+      el.onclick = () => { pickedSpecies = el.dataset.species!; renderClassSelect(reg); };
     }
+    for (const el of document.querySelectorAll<HTMLElement>("[data-class]")) {
+      el.onclick = () => { pickedBg = el.dataset.class!; renderClassSelect(reg); };
+    }
+    $("begin").onclick = () => {
+      const seedInput = ($("seed") as HTMLInputElement).value.trim();
+      game = new Game(reg, seedInput || Date.now());
+      game.start(pickedBg, pickedSpecies);
+      /*
+       * The run, on the window, on purpose.
+       *
+       * This is a game whose whole point is that you extend it, so being able
+       * to open the console and read — or poke — the live state is a feature
+       * rather than a leak. `window.turbz.render()` redraws after you change
+       * something by hand.
+       */
+      (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
+      setScreen("play");
+      resize();
+    };
   }
 
   function renderOverlay(html: string): void {

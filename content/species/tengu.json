@@ -1,0 +1,16 @@
+{
+  "name": "Tengu",
+  "sprite": "pc-tengu",
+  "blurb": "Birds that learned to read. Fragile and furious.",
+  "difficulty": 3,
+  "pools": {
+    "hp": -15,
+    "mana": 25
+  },
+  "stats": {
+    "focus": 4,
+    "evasion": 6,
+    "accuracy": 2
+  },
+  "speed": 110
+}

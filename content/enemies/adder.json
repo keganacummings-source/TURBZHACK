@@ -1,0 +1,29 @@
+{
+  "name": "Adder",
+  "sprite": "mon-adder",
+  "pools": {
+    "hp": -70,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "swamp",
+    "plains",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 5
+  },
+  "weight": 20,
+  "xp": 12,
+  "resist": {
+    "poison": 0
+  }
+}

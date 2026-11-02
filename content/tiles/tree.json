@@ -5,5 +5,6 @@
   "biomes": [
     "forest",
     "plains"
-  ]
+  ],
+  "sprite": "t-tree"
 }

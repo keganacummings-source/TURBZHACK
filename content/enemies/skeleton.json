@@ -1,12 +1,12 @@
 {
   "name": "Skeleton",
-  "sprite": "skeleton",
+  "sprite": "mon-skeleton",
   "pools": {
     "hp": -55,
     "mana": -50
   },
-  "armour": 3,
-  "speed": 95,
+  "armour": 4,
+  "speed": 100,
   "ai": "melee",
   "sight": 7,
   "abilities": [
@@ -17,12 +17,13 @@
   ],
   "depth": {
     "min": 2,
-    "max": 9
+    "max": 10
   },
   "weight": 20,
-  "xp": 26,
+  "xp": 30,
   "resist": {
     "poison": 0,
-    "physical": 0.8
+    "cold": 0,
+    "physical": 0.75
   }
 }

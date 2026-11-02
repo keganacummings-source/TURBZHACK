@@ -1,8 +1,8 @@
 {
   "name": "Bat",
-  "sprite": "bat",
+  "sprite": "mon-bat",
   "pools": {
-    "hp": -82,
+    "hp": -85,
     "mana": -50
   },
   "armour": 0,
@@ -18,9 +18,9 @@
     "badlands"
   ],
   "depth": {
-    "min": 1,
-    "max": 7
+    "min": 0,
+    "max": 6
   },
-  "weight": 22,
-  "xp": 10
+  "weight": 24,
+  "xp": 7
 }

@@ -66,7 +66,7 @@ export function generateDungeon(
   };
 
   // Deeper floors use rougher stone; the first few are worked and wooden.
-  const floorId = depth <= 2 ? "wood-floor" : "stone";
+  const floorId = depth <= 2 ? "flagstone" : "stone";
   const wallId = depth <= 2 ? "wall-wood" : "wall-stone";
   const FLOOR = kind(floorId);
   const WALL = kind(wallId);

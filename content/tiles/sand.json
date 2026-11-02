@@ -3,5 +3,6 @@
   "biomes": [
     "desert",
     "beach"
-  ]
+  ],
+  "sprite": "t-sand"
 }

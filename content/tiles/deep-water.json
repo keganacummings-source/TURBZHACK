@@ -3,5 +3,6 @@
   "solid": true,
   "biomes": [
     "ocean"
-  ]
+  ],
+  "sprite": "t-deep-water"
 }

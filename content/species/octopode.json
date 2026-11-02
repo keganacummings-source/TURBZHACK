@@ -1,0 +1,17 @@
+{
+  "name": "Octopode",
+  "sprite": "pc-octopode",
+  "blurb": "Eight limbs, no bones, and rings on all of them.",
+  "difficulty": 3,
+  "pools": {
+    "hp": -10,
+    "mana": 20
+  },
+  "stats": {
+    "evasion": 8,
+    "focus": 2
+  },
+  "resist": {
+    "physical": 0.85
+  }
+}

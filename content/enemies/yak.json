@@ -1,0 +1,27 @@
+{
+  "name": "Yak",
+  "sprite": "mon-yak",
+  "pools": {
+    "hp": -20,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 105,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "plains",
+    "tundra",
+    "steppe"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 7
+  },
+  "weight": 14,
+  "xp": 30,
+  "stance": "neutral"
+}

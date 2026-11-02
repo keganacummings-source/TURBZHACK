@@ -4,5 +4,6 @@
   "opaque": true,
   "biomes": [
     "badlands"
-  ]
+  ],
+  "sprite": "t-wall-clay"
 }

@@ -22,7 +22,7 @@ import { isMain } from "./is-main.mjs";
  * upgrade folder silently never loaded in the browser.
  */
 const KINDS = [
-  "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
+  "species", "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
 ];
 
 export function buildIndex(dir) {

@@ -1,0 +1,34 @@
+{
+  "name": "Ice Beast",
+  "sprite": "mon-ice-beast",
+  "pools": {
+    "hp": -25,
+    "mana": 25
+  },
+  "armour": 3,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 8,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "tundra",
+    "glacier",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 9,
+  "xp": 85,
+  "spells": [
+    "frost-bolt",
+    "cone-of-cold"
+  ],
+  "resist": {
+    "cold": 0,
+    "fire": 2
+  }
+}

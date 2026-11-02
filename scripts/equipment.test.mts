@@ -46,7 +46,7 @@ test("a weapon is only a weapon in the weapon hand", () => {
 test("wearing and removing leaves no trace", () => {
   // The bug this guards against: stats that creep upward every time gear goes
   // on and off, because the totals were added rather than recomputed.
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const before = JSON.stringify([you.stats, you.armour, you.resist]);
 
   const pack = ["plate-armour", "shield", "ring-of-might"];
@@ -64,7 +64,7 @@ test("wearing and removing leaves no trace", () => {
 });
 
 test("equipping twenty times in a row does not inflate anything", () => {
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   const pack = ["plate-armour"];
   const worn = {};
 
@@ -127,7 +127,7 @@ test("resistances from gear multiply rather than replace", () => {
   assert.ok(load.resist.fire! < 1, "a ring of fire gave no fire resistance");
 
   // And they compound with the wearer's own.
-  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const you = spawn(reg, "classes", "conjurer", 2, 2, true);
   you.baseResist = { fire: 0.5 };
   applyLoadout(you, load);
   assert.ok(you.resist.fire! < 0.5, "gear resistance did not compound with the wearer's own");
@@ -146,17 +146,16 @@ test("every item describes itself as something", () => {
 
 test("you start wearing your class's kit, with the rest in the pack", () => {
   const g = new Game(reg, 2026);
-  g.start("ruinmage");
-  assert.equal(g.worn.body, "robe", "the Ruinmage did not put her robe on");
-  assert.equal(g.worn.weapon, "ruin-staff", "the Ruinmage is not holding her staff");
-  assert.ok(g.pack.includes("potion-of-mending"), "the potion is not in the pack");
-  // And the staff's focus bonus is actually on her.
+  g.start("conjurer");
+  assert.equal(g.worn.body, "robe", "the Conjurer did not put a robe on");
+  assert.equal(g.worn.weapon, "ruin-staff", "the Conjurer is not holding a staff");
+  // And the staff's focus bonus is actually on them.
   assert.ok(g.player.stats.focus > g.player.baseStats.focus, "the staff gave no focus");
 });
 
 test("what you are holding is what you swing", () => {
   const g = new Game(reg, 2026);
-  g.start("ruinmage");
+  g.start("conjurer");
   const staff = g.weaponAbility;
   assert.equal(staff.name, reg.items.get("ruin-staff")!.name);
   assert.equal(staff.damage, reg.items.get("ruin-staff")!.damage);
@@ -169,7 +168,7 @@ test("what you are holding is what you swing", () => {
 
 test("the world has loot in it, and you can pick it up", () => {
   const g = new Game(reg, 4242);
-  g.start("ruinmage");
+  g.start("conjurer");
 
   // Find some.
   let found: { x: number; y: number } | null = null;
@@ -190,7 +189,7 @@ test("the world has loot in it, and you can pick it up", () => {
 
 test("picking up nothing costs no turn", () => {
   const g = new Game(reg, 7);
-  g.start("ruinmage");
+  g.start("conjurer");
   // Somewhere with nothing on it.
   for (let y = 0; y < g.level.h; y++) {
     for (let x = 0; x < g.level.w; x++) {
@@ -205,7 +204,9 @@ test("picking up nothing costs no turn", () => {
 
 test("dropping something leaves it where you stand", () => {
   const g = new Game(reg, 99);
-  g.start("ruinmage");
+  g.start("conjurer");
+  // Drop whatever this background happens to be carrying.
+  g.pack.push("potion-of-mending");
   g.drop("potion-of-mending");
   assert.ok(!g.pack.includes("potion-of-mending"), "it is still in the pack");
   assert.deepEqual(g.lootAt(g.player.pos.x, g.player.pos.y), ["potion-of-mending"]);
@@ -213,9 +214,10 @@ test("dropping something leaves it where you stand", () => {
 
 test("using a potion spends it and heals you", () => {
   const g = new Game(reg, 2026);
-  g.start("ruinmage");
+  g.start("conjurer");
   g.player.pools.hp = 10;
   g.player.pools.mana = 0;        // an item's spell is free; the charge is the cost
+  g.pack.push("potion-of-mending");
 
   g.use("potion-of-mending");
   assert.ok(g.player.pools.hp > 10, "the potion of mending did not heal");

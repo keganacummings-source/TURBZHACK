@@ -4,5 +4,6 @@
     "plains",
     "hills",
     "dungeon"
-  ]
+  ],
+  "sprite": "t-dirt"
 }

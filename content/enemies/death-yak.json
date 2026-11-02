@@ -1,0 +1,26 @@
+{
+  "name": "Death Yak",
+  "sprite": "mon-death-yak",
+  "pools": {
+    "hp": 55,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "tundra",
+    "steppe",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 6,
+  "xp": 135
+}

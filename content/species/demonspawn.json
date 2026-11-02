@@ -1,0 +1,19 @@
+{
+  "name": "Demonspawn",
+  "sprite": "pc-demonspawn",
+  "blurb": "Something got in. It is still getting in.",
+  "difficulty": 3,
+  "pools": {
+    "hp": 15,
+    "mana": 25
+  },
+  "stats": {
+    "focus": 4,
+    "might": 2
+  },
+  "armour": 1,
+  "resist": {
+    "fire": 0.6,
+    "pure": 0.7
+  }
+}

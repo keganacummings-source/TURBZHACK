@@ -3,5 +3,6 @@
   "biomes": [
     "savanna",
     "steppe"
-  ]
+  ],
+  "sprite": "t-grass-dry"
 }

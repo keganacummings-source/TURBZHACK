@@ -1,0 +1,31 @@
+{
+  "name": "Basilisk",
+  "sprite": "mon-basilisk",
+  "pools": {
+    "hp": 10,
+    "mana": 25
+  },
+  "armour": 4,
+  "speed": 95,
+  "ai": "caster",
+  "sight": 8,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "dungeon",
+    "badlands"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 110,
+  "spells": [
+    "hex-bolt"
+  ],
+  "resist": {
+    "poison": 0
+  }
+}

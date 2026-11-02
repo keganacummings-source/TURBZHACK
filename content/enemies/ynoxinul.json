@@ -1,0 +1,31 @@
+{
+  "name": "Ynoxinul",
+  "sprite": "mon-ynoxinul",
+  "pools": {
+    "hp": 20,
+    "mana": 25
+  },
+  "armour": 4,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 6,
+  "xp": 140,
+  "spells": [
+    "shock-bolt"
+  ],
+  "resist": {
+    "shock": 0
+  }
+}

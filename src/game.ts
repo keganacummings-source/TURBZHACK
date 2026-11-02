@@ -15,7 +15,7 @@ import { ENERGY_PER_ACTION, playerActed, type TurnContext } from "./engine/turns
 import type { StatusDef } from "./engine/status.ts";
 import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
-import type { AbilityDef, ClassDef, EnemyDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
+import type { AbilityDef, ClassDef, EnemyDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
 import { applyChoice, levelForXp, progressOf, rollChoices, PER_LEVEL, type Choice } from "./engine/progress.ts";
 import {
   applyLoadout, equip, loadoutOf, unequip, SLOTS, type Slot, type Worn,
@@ -124,12 +124,28 @@ export class Game {
   // Starting
   // -------------------------------------------------------------------------
 
-  /** Begin a run as one of the classes. */
-  start(classId: string): void {
-    const def = this.reg.classes.get(classId);
-    if (!def) throw new Error(`no class "${classId}" in content/classes/`);
+  /** What you are, and what you trained as. */
+  speciesId = "human";
+  classId = "fighter";
 
-    this.player = this.makeActor(classId, def, this.continent.start, true);
+  /**
+   * Begin a run.
+   *
+   * A character is a SPECIES and a BACKGROUND, the way Crawl does it, and the
+   * two contribute to the same totals: the species decides the body and the
+   * background decides what you walked in carrying. Either may be omitted and
+   * a sensible one is used, so a caller that only cares about one of them does
+   * not have to know about the other.
+   */
+  start(classId: string, speciesId = "human"): void {
+    const def = this.reg.classes.get(classId);
+    if (!def) throw new Error(`no background "${classId}" in content/classes/`);
+    const species = this.reg.species.get(speciesId);
+    if (!species) throw new Error(`no species "${speciesId}" in content/species/`);
+    this.classId = classId;
+    this.speciesId = speciesId;
+
+    this.player = this.makeCharacter(species, def, this.continent.start);
     /*
      * It is your turn when the game begins.
      *
@@ -142,7 +158,7 @@ export class Game {
 
     // The starting kit goes into the pack and the wearable parts go on, so
     // that what you begin with is the same kind of thing as what you find.
-    this.pack = [...((def as ClassDef).items ?? [])];
+    this.pack = [...(def.items ?? [])];
     for (const id of [...this.pack]) {
       const item = this.reg.items.get(id);
       if (item?.slot && !["potion", "scroll", "misc"].includes(item.slot)) {
@@ -157,8 +173,68 @@ export class Game {
     this.refreshFov();
 
     this.log(`You wake in ${this.continent.level.name}. Seed ${this.seedWord}.`, "good");
-    this.log(`${def.name}: ${def.about ?? ""}`, "plain");
+    this.log(`${species.name} ${def.name}. ${def.blurb ?? ""}`, "plain");
     this.log("Move with the arrow keys or hjklyubn. Walk into something to hit it. ? for help.", "plain");
+  }
+
+  /**
+   * Build the player from a species and a background.
+   *
+   * The two stack: pools, stats, armour and resistances all add (resistances
+   * multiply), and the spell and ability lists are merged. That is what makes
+   * a Minotaur Conjurer different from a Deep Elf one in more than flavour.
+   */
+  private makeCharacter(species: SpeciesDef, bg: ClassDef, pos: Pos): Actor {
+    /*
+     * Floors, because the two sets of modifiers stack.
+     *
+     * A Minotaur is bad at magic and a Fighter is bad at magic, and together
+     * they took the mana pool below zero, which showed up on the character
+     * sheet as "Mana -5" and would have made every spell permanently
+     * uncastable in a way no message explained. Nought is the honest answer:
+     * that character does not cast.
+     */
+    const floor = (n: number) => Math.max(0, n);
+    const hpMax = Math.max(1, 100 + (species.pools?.hp ?? 0) + (bg.pools?.hp ?? 0));
+    const staminaMax = floor(100 + (species.pools?.stamina ?? 0) + (bg.pools?.stamina ?? 0));
+    const manaMax = floor(50 + (species.pools?.mana ?? 0) + (bg.pools?.mana ?? 0));
+
+    const stats: Record<string, number> = {};
+    for (const key of ["might", "focus", "accuracy", "evasion"] as const) {
+      const from = (species.stats?.[key] ?? 0) + (bg.stats?.[key] ?? 0);
+      if (from) stats[key] = (key === "accuracy" ? 85 : 0) + from;
+    }
+
+    // Resistances multiply, so a Gargoyle Fighter is not simply the tougher of
+    // the two — it is both.
+    const resist: Record<string, number> = {};
+    for (const src of [species.resist, bg.resist]) {
+      for (const [kind, mult] of Object.entries(src ?? {})) {
+        if (typeof mult !== "number") continue;
+        resist[kind] = (resist[kind] ?? 1) * mult;
+      }
+    }
+
+    const a = new Actor({
+      id: `a${this.nextId++}`,
+      def: this.classId,
+      name: "You",
+      pos,
+      pools: { hp: hpMax, hpMax, stamina: staminaMax, staminaMax, mana: manaMax, manaMax },
+      stance: "friendly",
+      sprite: species.sprite ?? `pc-${species.id}`,
+      isPlayer: true,
+      spells: [...new Set([...(species.spells ?? []), ...(bg.spells ?? [])])],
+      armour: (species.armour ?? 0) + (bg.armour ?? 0),
+      resist,
+      stats,
+    });
+    a.speed = species.speed ?? 100;
+    a.baseStats = { ...a.stats };
+    a.baseArmour = a.armour;
+    a.baseResist = { ...a.resist };
+    a.clampPools();
+    return a;
   }
 
   /** Build an actor from a class or enemy definition. */

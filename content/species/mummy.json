@@ -1,0 +1,22 @@
+{
+  "name": "Mummy",
+  "sprite": "pc-mummy",
+  "blurb": "Dead, dry, and in no hurry. Fire is the problem.",
+  "difficulty": 3,
+  "pools": {
+    "hp": 20,
+    "mana": 20
+  },
+  "stats": {
+    "focus": 3,
+    "evasion": -3
+  },
+  "armour": 2,
+  "resist": {
+    "poison": 0,
+    "cold": 0.5,
+    "fire": 1.75,
+    "pure": 0.5
+  },
+  "speed": 95
+}

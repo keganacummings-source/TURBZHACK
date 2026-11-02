@@ -1,0 +1,23 @@
+{
+  "name": "Gladiator",
+  "blurb": "Fast, light, and trained to be looked at.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "spear",
+    "leather-armour",
+    "buckler"
+  ],
+  "pools": {
+    "hp": 10,
+    "stamina": 30,
+    "mana": -15
+  },
+  "stats": {
+    "accuracy": 6,
+    "evasion": 4
+  },
+  "spells": []
+}

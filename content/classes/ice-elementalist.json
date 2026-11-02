@@ -1,0 +1,24 @@
+{
+  "name": "Ice Elementalist",
+  "blurb": "Slows the world down, then breaks it.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ruin-staff",
+    "robe"
+  ],
+  "pools": {
+    "hp": -15,
+    "stamina": -20,
+    "mana": 55
+  },
+  "stats": {
+    "focus": 5
+  },
+  "spells": [
+    "frost-touch",
+    "frost-bolt"
+  ]
+}

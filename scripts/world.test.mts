@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { loadRegistry } from "./lib/harness.mts";
-import { generateContinent, BIOME_BY_ID } from "../src/world/continent.ts";
+import { generateContinent, BIOME_BY_ID, CONTINENT_W, CONTINENT_H } from "../src/world/continent.ts";
 import { generateDungeon, centreOf } from "../src/world/dungeon.ts";
 import type { Level } from "../src/engine/grid.ts";
 import type { TileDef } from "../src/content/schema.ts";
@@ -176,4 +176,33 @@ test("every tile the world paints with is a real content file", () => {
       assert.ok(tiles.has(kind.id), `a dungeon used "${kind.id}", which has no file in content/tiles/`);
     }
   }
+});
+
+test("no biome is a single tile marooned in another one", () => {
+  // A lone square of Cinderland inside a forest reads as a texture bug rather
+  // than terrain, because there is no volcano anywhere near it.
+  const c = generateContinent(20260, tiles);
+  const { biome } = c;
+  const W = CONTINENT_W, H = CONTINENT_H;
+  const wet = (b: string) => b === "ocean" || b === "shallows" || b === "beach";
+  let marooned = 0;
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const mine = biome[y * W + x]!;
+      if (wet(mine)) continue;
+      let same = 0, dryNeighbours = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const b = biome[(y + dy) * W + (x + dx)]!;
+          if (b === mine) same++;
+          else if (!wet(b)) dryNeighbours++;
+        }
+      }
+      // A single-tile island is real terrain, not a speck, and drowning it
+      // would be worse than leaving it.
+      if (!same && dryNeighbours) marooned++;
+    }
+  }
+  assert.equal(marooned, 0, `${marooned} tiles are a biome all on their own`);
 });

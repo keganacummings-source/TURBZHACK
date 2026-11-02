@@ -1,0 +1,24 @@
+{
+  "name": "Warper",
+  "blurb": "Never quite where the blow lands.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "dagger",
+    "leather-armour",
+    "scroll-of-warding"
+  ],
+  "pools": {
+    "hp": -10,
+    "mana": 40
+  },
+  "stats": {
+    "focus": 3,
+    "evasion": 8
+  },
+  "spells": [
+    "blink"
+  ]
+}

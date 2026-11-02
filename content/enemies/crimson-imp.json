@@ -1,0 +1,32 @@
+{
+  "name": "Crimson Imp",
+  "sprite": "mon-crimson-imp",
+  "pools": {
+    "hp": -62,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 125,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 13,
+  "xp": 38,
+  "spells": [
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0,
+    "cold": 1.5
+  }
+}

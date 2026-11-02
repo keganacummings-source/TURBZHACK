@@ -1,0 +1,28 @@
+{
+  "name": "Jelly",
+  "sprite": "mon-jelly",
+  "pools": {
+    "hp": -30,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 4,
+  "abilities": [
+    "engulf"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 48,
+  "resist": {
+    "poison": 0,
+    "physical": 0.6
+  }
+}

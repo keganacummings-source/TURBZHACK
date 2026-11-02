@@ -1,8 +1,8 @@
 {
   "name": "Goblin",
-  "sprite": "goblin",
+  "sprite": "mon-goblin",
   "pools": {
-    "hp": -60,
+    "hp": -62,
     "mana": -50
   },
   "armour": 1,
@@ -18,9 +18,9 @@
     "dungeon"
   ],
   "depth": {
-    "min": 1,
+    "min": 0,
     "max": 6
   },
-  "weight": 25,
+  "weight": 26,
   "xp": 12
 }

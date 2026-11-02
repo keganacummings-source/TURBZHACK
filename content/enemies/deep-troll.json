@@ -1,0 +1,25 @@
+{
+  "name": "Deep Troll",
+  "sprite": "mon-deep-troll",
+  "pools": {
+    "hp": 85,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 105,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave",
+    "slam"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 8,
+    "max": 12
+  },
+  "weight": 4,
+  "xp": 200
+}

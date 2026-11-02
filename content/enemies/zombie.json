@@ -1,0 +1,29 @@
+{
+  "name": "Zombie",
+  "sprite": "mon-zombie",
+  "pools": {
+    "hp": -45,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 75,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 9
+  },
+  "weight": 22,
+  "xp": 24,
+  "resist": {
+    "poison": 0,
+    "cold": 0,
+    "physical": 0.8
+  }
+}

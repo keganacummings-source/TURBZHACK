@@ -1,0 +1,21 @@
+{
+  "name": "Oni",
+  "sprite": "pc-oni",
+  "blurb": "A drunk giant with a club and a short memory.",
+  "difficulty": 2,
+  "pools": {
+    "hp": 45,
+    "stamina": 30,
+    "mana": -25
+  },
+  "stats": {
+    "might": 8,
+    "accuracy": -3,
+    "evasion": -5
+  },
+  "armour": 2,
+  "resist": {
+    "fire": 0.6
+  },
+  "speed": 95
+}

@@ -1,0 +1,28 @@
+{
+  "name": "River Rat",
+  "sprite": "mon-river-rat",
+  "pools": {
+    "hp": -70,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 5
+  },
+  "weight": 20,
+  "xp": 9,
+  "resist": {
+    "poison": 0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Troll",
+  "sprite": "pc-troll",
+  "blurb": "Enormous, regenerating, and stupid about magic.",
+  "difficulty": 2,
+  "pools": {
+    "hp": 60,
+    "stamina": 40,
+    "mana": -40
+  },
+  "stats": {
+    "might": 9,
+    "accuracy": -4,
+    "focus": -6,
+    "evasion": -6
+  },
+  "armour": 3
+}

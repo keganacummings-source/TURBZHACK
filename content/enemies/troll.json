@@ -1,0 +1,26 @@
+{
+  "name": "Troll",
+  "sprite": "mon-troll",
+  "pools": {
+    "hp": 60,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 105,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "swamp",
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 145
+}

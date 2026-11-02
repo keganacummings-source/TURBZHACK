@@ -1,12 +1,12 @@
 {
   "name": "Orc",
-  "sprite": "orc",
+  "sprite": "mon-orc",
   "pools": {
-    "hp": -20,
+    "hp": -30,
     "mana": -50
   },
   "armour": 3,
-  "speed": 95,
+  "speed": 100,
   "ai": "melee",
   "sight": 8,
   "abilities": [
@@ -18,9 +18,9 @@
     "dungeon"
   ],
   "depth": {
-    "min": 3,
-    "max": 10
+    "min": 2,
+    "max": 9
   },
-  "weight": 16,
-  "xp": 38
+  "weight": 20,
+  "xp": 36
 }

@@ -1,0 +1,32 @@
+{
+  "name": "Shadow",
+  "sprite": "mon-shadow",
+  "pools": {
+    "hp": -35,
+    "mana": 25
+  },
+  "armour": 0,
+  "speed": 120,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 115,
+  "spells": [
+    "drain"
+  ],
+  "resist": {
+    "physical": 0.15,
+    "cold": 0
+  }
+}

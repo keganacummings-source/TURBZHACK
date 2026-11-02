@@ -1,0 +1,23 @@
+{
+  "name": "Hunter",
+  "blurb": "Kills things before they arrive.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "crossbow",
+    "leather-armour",
+    "cap"
+  ],
+  "pools": {
+    "stamina": 20,
+    "mana": -10
+  },
+  "stats": {
+    "accuracy": 7
+  },
+  "spells": [
+    "arrow"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Fire Elementalist",
+  "blurb": "Everything burns, given enough attention.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ember-staff",
+    "robe"
+  ],
+  "pools": {
+    "hp": -20,
+    "stamina": -20,
+    "mana": 55
+  },
+  "stats": {
+    "focus": 5
+  },
+  "spells": [
+    "spark",
+    "ember-bolt"
+  ]
+}

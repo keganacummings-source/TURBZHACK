@@ -1,0 +1,25 @@
+{
+  "name": "Enchanter",
+  "blurb": "Wins fights that never start.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "dagger",
+    "robe"
+  ],
+  "pools": {
+    "hp": -15,
+    "stamina": -10,
+    "mana": 50
+  },
+  "stats": {
+    "focus": 4,
+    "evasion": 6
+  },
+  "spells": [
+    "hex-bolt",
+    "web"
+  ]
+}
