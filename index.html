@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TURBZHACK</title>
+<link rel="stylesheet" href="src/ui/style.css">
+</head>
+<body>
+  <div id="class-select" class="screen">
+    <h1>TURBZHACK</h1>
+    <p class="dim">A continent, the things under it, and one turn at a time.</p>
+    <label class="seed-row">Seed <input id="seed" placeholder="leave blank for a new world" spellcheck="false"></label>
+    <div id="class-cards" class="cards"></div>
+    <p class="dim">Every class, enemy, spell and tile in this game is a file in <code>content/</code>. Add one and it is in the game.</p>
+  </div>
+
+  <main id="app">
+    <div id="stage"><canvas id="screen"></canvas></div>
+    <aside id="side">
+      <div id="hud"></div>
+      <div id="log"></div>
+    </aside>
+  </main>
+
+  <div id="overlay" class="hidden">
+    <div class="overlay-panel">
+      <button id="close-overlay" class="overlay-close">Close</button>
+      <div id="overlay-body"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { boot } from "./dist/src/ui/app.js";
+    boot().catch((err) => {
+      document.body.innerHTML =
+        '<pre style="padding:24px;color:#ffb4a8;font:14px ui-monospace,monospace">' +
+        'TURBZHACK failed to start:\n\n' + String(err && err.stack || err) +
+        '\n\nIf you are opening this file directly, run `npm run serve` instead — ' +
+        'the browser blocks loading content/ from file:// URLs.</pre>';
+    });
+  </script>
+</body>
+</html>

@@ -115,40 +115,56 @@ export function computeFov(level: Level, from: Pos, radius: number): void {
   ];
 
   for (const [xx, xy, yx, yy] of octants) {
-    scan(1, 1, 0);
+    cast(1, 1, 0);
 
-    function scan(row: number, startSlope: number, endSlope: number): void {
-      if (startSlope < endSlope || row > radius) return;
-      let blocked = false;
-      let nextStart = startSlope;
+    /**
+     * One octant, row by row, narrowing the visible wedge as walls are met.
+     *
+     * `start` and `end` are the slopes bounding the wedge still being lit. A
+     * wall splits the wedge: everything to one side of it recurses into a
+     * narrower scan, and the scan continues past it with a new left edge.
+     *
+     * The row is walked from dx = -j to 0 with dy = -j fixed, which is the part
+     * the first version of this got wrong — it moved both at once, so each row
+     * tested a single diagonal tile instead of the whole row, and the result
+     * was a sparse star rather than a lit disc.
+     */
+    function cast(row: number, start: number, end: number): void {
+      if (start < end) return;
+      let nextStart = start;
 
-      for (let dy = -row; dy <= 0; dy++) {
-        const dx = -row;
-        const ox = dy;         // scan along the row
-        const cx = from.x + ox * xx + dy * xy;
-        const cy = from.y + ox * yx + dy * yy;
-        void dx;
+      for (let j = row; j <= radius; j++) {
+        const dy = -j;
+        let blocked = false;
 
-        const lSlope = (ox - 0.5) / (dy + 0.5);
-        const rSlope = (ox + 0.5) / (dy - 0.5);
-        if (startSlope < rSlope) continue;
-        if (endSlope > lSlope) break;
+        for (let dx = -j; dx <= 0; dx++) {
+          const cx = from.x + dx * xx + dy * xy;
+          const cy = from.y + dx * yx + dy * yy;
 
-        // Round radius, not a square one.
-        if (ox * ox + dy * dy <= radius * radius) mark(cx, cy);
+          // The slopes of this tile's left and right edges.
+          const lSlope = (dx - 0.5) / (dy + 0.5);
+          const rSlope = (dx + 0.5) / (dy - 0.5);
 
-        const wall = level.opaque(cx, cy);
-        if (blocked) {
-          if (wall) { nextStart = rSlope; continue; }
-          blocked = false;
-          startSlope = nextStart;
-        } else if (wall && row < radius) {
-          blocked = true;
-          scan(row + 1, startSlope, lSlope);
-          nextStart = rSlope;
+          if (start < rSlope) continue;      // not reached this tile yet
+          if (end > lSlope) break;           // past the far edge of the wedge
+
+          // A round radius, not a square one.
+          if (dx * dx + dy * dy <= radius * radius) mark(cx, cy);
+
+          const wall = level.opaque(cx, cy);
+          if (blocked) {
+            if (wall) { nextStart = rSlope; continue; }
+            blocked = false;
+            start = nextStart;
+          } else if (wall && j < radius) {
+            // Light the wedge to the left of this wall, then carry on to its right.
+            blocked = true;
+            cast(j + 1, start, lSlope);
+            nextStart = rSlope;
+          }
         }
+        if (blocked) break;                  // the row ended on a wall
       }
-      if (!blocked) scan(row + 1, startSlope, endSlope);
     }
   }
 }

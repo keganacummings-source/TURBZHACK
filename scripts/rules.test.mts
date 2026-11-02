@@ -244,3 +244,56 @@ test("a faster creature gets more turns than a slower one", () => {
   assert.ok(fast > slow, `the speed-140 hound acted ${fast} times, the speed-60 golem ${slow}`);
   assert.ok(fast >= 20 && slow <= 16, `fast ${fast}, slow ${slow} — energy is not accumulating as expected`);
 });
+
+// ---------------------------------------------------------------------------
+// Seeing
+// ---------------------------------------------------------------------------
+
+test("field of view is a disc, not a star", async () => {
+  // The first implementation walked each row diagonally instead of across it,
+  // so every row tested one tile and the lit area came out as a sparse star.
+  // In an empty room, a radius-6 view should light essentially the whole disc.
+  const { testLevel } = await import("./lib/harness.mts");
+  const { computeFov } = await import("../src/engine/grid.ts");
+  const level = testLevel(31, 31);
+  const from = { x: 15, y: 15 };
+  computeFov(level, from, 6);
+
+  let lit = 0, want = 0;
+  for (let y = 0; y < level.h; y++) {
+    for (let x = 0; x < level.w; x++) {
+      const dx = x - from.x, dy = y - from.y;
+      if (dx * dx + dy * dy > 36) continue;
+      want++;
+      if (level.visible[level.idx(x, y)]) lit++;
+    }
+  }
+  assert.ok(lit / want > 0.95, `only ${lit} of ${want} tiles in an open disc are visible`);
+});
+
+test("you cannot see through a wall, and you can see the wall itself", async () => {
+  const { testLevel } = await import("./lib/harness.mts");
+  const { computeFov } = await import("../src/engine/grid.ts");
+  const level = testLevel(21, 11);
+  // A pillar two tiles east of the viewer.
+  const wallIndex = 1;
+  level.set(12, 5, wallIndex);
+  computeFov(level, { x: 10, y: 5 }, 8);
+
+  assert.ok(level.visible[level.idx(12, 5)], "the wall itself should be visible");
+  assert.ok(!level.visible[level.idx(14, 5)], "you can see straight through a wall");
+  assert.ok(level.visible[level.idx(12, 3)], "the wall blocked something it should not have");
+});
+
+test("what you have seen stays remembered after you look away", async () => {
+  const { testLevel } = await import("./lib/harness.mts");
+  const { computeFov } = await import("../src/engine/grid.ts");
+  const level = testLevel(31, 11);
+  computeFov(level, { x: 5, y: 5 }, 4);
+  const sawHere = level.idx(5, 5);
+  assert.ok(level.known[sawHere]);
+
+  computeFov(level, { x: 25, y: 5 }, 4);
+  assert.ok(level.known[sawHere], "the map forgot a tile you had already seen");
+  assert.ok(!level.visible[sawHere], "a tile you walked away from is still marked visible");
+});

@@ -1,0 +1,92 @@
+# Builds TURBZHACK into a Windows .exe, on every tag and on demand.
+#
+# The game itself is a dependency-free TypeScript + canvas app: `tsc` is the
+# only build step. Tauri wraps that into a native window. All of it happens
+# here rather than on your machine, so a release is: push a tag, wait, download.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Fast, and it runs on every push: if the rules are broken there is no point
+  # spending ten minutes building an installer.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci || npm install
+      - name: Check the content folder and the rules
+        run: npm test
+      - name: Type-check
+        run: npm run typecheck
+      - name: Build the web game
+        run: |
+          npm run build
+          node tools/index-content.mjs content
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turbzhack-web
+          path: |
+            index.html
+            dist/
+            assets/
+            content/
+            src/ui/style.css
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+      - run: npm ci || npm install
+      - name: Build the web game
+        run: |
+          npm run build
+          node tools/index-content.mjs content
+      - name: Build the executable
+        run: |
+          npm install --no-save @tauri-apps/cli@^2
+          npx tauri build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TURBZHACK-windows
+          path: |
+            src-tauri/target/release/*.exe
+            src-tauri/target/release/bundle/**/*.exe
+            src-tauri/target/release/bundle/**/*.msi
+
+  release:
+    needs: windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TURBZHACK-windows
+          path: out
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/**/*
+          generate_release_notes: true

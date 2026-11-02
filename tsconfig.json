@@ -14,7 +14,13 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
-  "include": ["src/**/*.ts", "tools/**/*.ts", "scripts/**/*.mts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }

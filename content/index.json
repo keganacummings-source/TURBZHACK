@@ -1,0 +1,76 @@
+{
+  "classes": [
+    "berserk",
+    "witch"
+  ],
+  "enemies": [
+    "deer",
+    "ember-hound",
+    "frost-imp",
+    "goblin",
+    "rat",
+    "stone-golem",
+    "wanderer",
+    "wisp"
+  ],
+  "spells": [
+    "drain",
+    "fire",
+    "freeze",
+    "frost-bolt",
+    "mend"
+  ],
+  "abilities": [
+    "bite",
+    "kick",
+    "punch",
+    "searing-bite",
+    "slam",
+    "slash"
+  ],
+  "enchantments": [
+    "deep-well",
+    "heavy",
+    "kindling",
+    "warded"
+  ],
+  "statuses": [
+    "burning",
+    "chilled",
+    "frozen"
+  ],
+  "tiles": [
+    "ash",
+    "clay",
+    "deep-water",
+    "dirt",
+    "dungeon-door",
+    "grass",
+    "grass-dry",
+    "ice",
+    "lava",
+    "mushroom",
+    "ore",
+    "sand",
+    "snow",
+    "stairs-down",
+    "stairs-up",
+    "stone",
+    "swamp",
+    "tree",
+    "tree-snow",
+    "voidgrass",
+    "wall-clay",
+    "wall-snow",
+    "wall-stone",
+    "wall-wood",
+    "water",
+    "wood-floor"
+  ],
+  "items": [
+    "draught-of-mending",
+    "ember-brand",
+    "hide-wrap",
+    "worn-robe"
+  ]
+}
