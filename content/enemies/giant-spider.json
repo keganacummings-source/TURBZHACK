@@ -1,0 +1,31 @@
+{
+  "name": "Giant Spider",
+  "sprite": "giant-spider",
+  "pools": {
+    "hp": -35,
+    "mana": 20
+  },
+  "armour": 2,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 10,
+  "xp": 48,
+  "spells": [
+    "web"
+  ],
+  "resist": {
+    "poison": 0
+  }
+}

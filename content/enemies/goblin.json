@@ -1,11 +1,12 @@
 {
   "name": "Goblin",
-  "about": "Carries something sharp and knows roughly what to do with it.",
+  "sprite": "goblin",
   "pools": {
     "hp": -60,
     "mana": -50
   },
   "armour": 1,
+  "speed": 100,
   "ai": "melee",
   "sight": 8,
   "abilities": [
@@ -21,5 +22,5 @@
     "max": 6
   },
   "weight": 25,
-  "xp": 10
+  "xp": 12
 }

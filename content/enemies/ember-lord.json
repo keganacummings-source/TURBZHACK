@@ -1,0 +1,33 @@
+{
+  "name": "Ember Lord",
+  "sprite": "ember-lord",
+  "pools": {
+    "hp": 70,
+    "mana": 20
+  },
+  "armour": 6,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 9,
+    "max": 12
+  },
+  "weight": 3,
+  "xp": 180,
+  "spells": [
+    "flame-lash",
+    "firestorm"
+  ],
+  "resist": {
+    "fire": 0,
+    "cold": 1.75
+  }
+}

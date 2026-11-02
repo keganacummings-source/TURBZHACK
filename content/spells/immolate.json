@@ -1,0 +1,16 @@
+{
+  "name": "Immolate",
+  "about": "Not much of a hit. A very long burn.",
+  "mana": 16,
+  "kind": "fire",
+  "range": 6,
+  "target": "actor",
+  "tier": 4,
+  "say": "{caster} set{s} {target} alight from the inside.",
+  "damage": 6,
+  "applies": [
+    "burning"
+  ],
+  "radius": 9,
+  "cooldown": 2
+}

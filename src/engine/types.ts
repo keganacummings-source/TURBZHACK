@@ -73,6 +73,14 @@ export type Message = {
   turn: number;
   /** Styling only. */
   tone?: "plain" | "good" | "bad" | "magic" | "warn";
+  /**
+   * How many times in a row this line has been printed.
+   *
+   * Repeats are counted rather than appended. Walking into the same tree
+   * twenty times should read as one line and a number, not twenty lines that
+   * push everything you actually wanted to read off the top of the log.
+   */
+  count?: number;
 };
 
 /** What an action did, for the log and for the turn loop. */

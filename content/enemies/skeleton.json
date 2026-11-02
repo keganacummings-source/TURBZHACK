@@ -1,0 +1,28 @@
+{
+  "name": "Skeleton",
+  "sprite": "skeleton",
+  "pools": {
+    "hp": -55,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 20,
+  "xp": 26,
+  "resist": {
+    "poison": 0,
+    "physical": 0.8
+  }
+}

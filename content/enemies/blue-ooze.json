@@ -1,0 +1,29 @@
+{
+  "name": "Blue Ooze",
+  "sprite": "blue-ooze",
+  "pools": {
+    "hp": -40,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 4,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "tundra"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 38,
+  "resist": {
+    "cold": 0,
+    "physical": 0.7
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Iron Constitution",
+  "about": "A great deal more.",
+  "modify": {
+    "hpMax": 40
+  },
+  "weight": 5
+}

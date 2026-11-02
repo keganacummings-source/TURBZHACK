@@ -30,6 +30,24 @@ export const REGEN_DELAY_TURNS = 10;
 /** Health returned per turn once the delay has passed. */
 export const HP_PER_TURN = 2;
 
+/**
+ * The combat stats, and what they start at.
+ *
+ * These are the numbers a level-up can raise, so they live beside the pools
+ * rather than inside any one content file.
+ *
+ *   might    — flat damage added to every ABILITY (punch, kick, a claw)
+ *   focus    — flat damage added to every SPELL
+ *   accuracy — chance to hit, as a percentage, before the target's evasion
+ *   evasion  — subtracted from an attacker's accuracy
+ *
+ * Accuracy starts at 85 rather than 100 because a system where you always hit
+ * has no room to reward raising it, and NetHack's misses are part of its
+ * texture. The floor and ceiling in `hitChance` stop either end running away.
+ */
+export const BASE_STATS = { might: 0, focus: 0, accuracy: 85, evasion: 0 } as const;
+export type CombatStats = { might: number; focus: number; accuracy: number; evasion: number };
+
 export type ActorInit = {
   id: string;
   /** Which content definition this actor is an instance of. */
@@ -49,6 +67,8 @@ export type ActorInit = {
   armour?: number;
   /** Multipliers per damage kind: 0 is immune, 0.5 is halved, 2 is doubled. */
   resist?: Record<string, number>;
+  /** Combat stats, merged over BASE_STATS. */
+  stats?: Partial<CombatStats>;
   /** Anything the definition or a script wants to hang on the actor. */
   data?: Record<string, unknown>;
 };
@@ -66,6 +86,7 @@ export class Actor {
   enchantments: string[];
   armour: number;
   resist: Record<string, number>;
+  stats: CombatStats;
   statuses: ActiveStatus[] = [];
   data: Record<string, unknown>;
 
@@ -96,6 +117,7 @@ export class Actor {
     this.enchantments = init.enchantments ? [...init.enchantments] : [];
     this.armour = init.armour ?? 0;
     this.resist = { ...(init.resist ?? {}) };
+    this.stats = { ...BASE_STATS, ...(init.stats ?? {}) };
     this.data = { ...(init.data ?? {}) };
   }
 

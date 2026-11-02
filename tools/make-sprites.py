@@ -1,19 +1,26 @@
 """
-Draws the 16x16 creature and class sprites.
+Cuts the creature and character sprites out of the TURBZ sheets.
 
-There is no TURBZ source art for the people and the monsters, so these are
-drawn here from a tiny shape language rather than left as coloured squares. They
-are PLACEHOLDERS and they say so — the point of the built-in texture designer is
-that you replace them one at a time without ever touching this file.
+Two sources, and they need completely different treatment:
 
-Each sprite is a handful of rows of characters, which keeps a creature's whole
-design readable in one glance and easy to tweak:
+  creatures_roguelike.png  — already a 16x16 grid. Cut a cell and you are done.
+                             This is the whole bestiary.
 
-    "." transparent     "o" outline (near-black)
-    "a" main colour     "b" shade (darker)      "c" highlight (lighter)
-    "d" accent          "e" eye / detail
+  class_warriors.png       — 32x44 character frames on a magenta chroma key,
+                             laid out as 4 walk frames x 4 facings per class.
+                             The RuinMage lives at (384, 1056).
 
-    python3 tools/make-sprites.py assets/tiles16
+The character needs real work to become a 16x16 tile:
+
+  1. The magenta key becomes transparent. It is keyed, not alpha, so a plain
+     convert leaves a magenta box.
+  2. The frame is cropped to what is actually drawn. The 32x44 cell is mostly
+     empty space above the head, and scaling the whole cell makes a character
+     who occupies a third of their own tile.
+  3. It is fitted into 16x16 by its LONGEST side, so the proportions survive.
+     A 22x38 figure squashed to 16x16 is a different character.
+
+    python3 tools/make-sprites.py <turbz-public/sprites> assets/tiles16
 """
 import os
 import sys
@@ -21,136 +28,149 @@ import sys
 from PIL import Image
 
 SIZE = 16
+MAGENTA = (255, 0, 255)
 
-# A humanoid: head, shoulders, body, legs. Used by both classes and by people.
-HUMANOID = [
-    "................",
-    ".....oooooo.....",
-    "....oaaaaaao....",
-    "....oaeaaeao....",
-    "....oaaaaaao....",
-    ".....obbbbo.....",
-    "...oodddddoo....",
-    "..oadddddddao...",
-    "..oadddddddao...",
-    "..oaoddddddao...",
-    "...oodddddoo....",
-    "....obbbbbo.....",
-    "....ob.o.bo.....",
-    "....ob.o.bo.....",
-    "...ooo.ooo......",
-    "................",
-]
-
-# A low four-legged animal.
-BEAST = [
-    "................",
-    "................",
-    "................",
-    "......oooo......",
-    ".....oaaaao.....",
-    "..oooaeaaeaooo..",
-    ".oaaaaaaaaaaaao.",
-    ".oaaaaaaaaaaaad.",
-    ".obaaaaaaaaaabo.",
-    ".oo.oo....oo.oo.",
-    "..o..o....o..o..",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-]
-
-# Something drifting and vague.
-WISP = [
-    "................",
-    "......oooo......",
-    ".....oaccao.....",
-    "....oacccceo....",
-    "....oaccccao....",
-    "...oaaccccaao...",
-    "...oaaaaaaaao...",
-    "....oaaaaaao....",
-    ".....oaaaao.....",
-    "......oaao......",
-    ".......oo.......",
-    "......o..o......",
-    ".....o....o.....",
-    "................",
-    "................",
-    "................",
-]
-
-# A heavy, blocky thing.
-GOLEM = [
-    "................",
-    "....oooooooo....",
-    "...oabbbbbbao...",
-    "...oaeaaaaeao...",
-    "...oabbbbbbao...",
-    "..ooaaaaaaaaoo..",
-    ".oaaaaaaaaaaaao.",
-    ".oabbbbbbbbbbao.",
-    ".oaaaaaaaaaaaao.",
-    ".oabbbbbbbbbbao.",
-    ".ooaaaaaaaaaoo..",
-    "...oaao..oaao...",
-    "...oaao..oaao...",
-    "..ooaaoo.oaaoo..",
-    "..oaaaao.oaaao..",
-    "................",
-]
-
-# id -> (shape, colours) where colours maps the letters above to RGB.
-SPRITES = {
-    # --- classes ---
-    "witch":       (HUMANOID, {"a": (214, 178, 148), "b": (150, 116, 94), "c": (240, 220, 200),
-                               "d": (92, 58, 132), "e": (60, 40, 30)}),
-    "berserk":     (HUMANOID, {"a": (208, 164, 128), "b": (148, 104, 78), "c": (240, 210, 180),
-                               "d": (150, 58, 44), "e": (50, 30, 24)}),
-    "wanderer":    (HUMANOID, {"a": (200, 172, 148), "b": (140, 116, 96), "c": (235, 215, 195),
-                               "d": (96, 104, 76), "e": (48, 36, 28)}),
-    # --- creatures ---
-    "rat":         (BEAST, {"a": (124, 120, 116), "b": (82, 78, 76), "c": (170, 168, 164),
-                            "d": (190, 150, 150), "e": (220, 70, 60)}),
-    "goblin":      (HUMANOID, {"a": (118, 152, 84), "b": (76, 102, 54), "c": (160, 190, 120),
-                               "d": (92, 72, 52), "e": (230, 200, 60)}),
-    "deer":        (BEAST, {"a": (158, 114, 72), "b": (112, 78, 48), "c": (198, 160, 118),
-                            "d": (228, 214, 196), "e": (40, 28, 20)}),
-    "ember-hound": (BEAST, {"a": (72, 44, 40), "b": (44, 26, 24), "c": (140, 60, 40),
-                            "d": (240, 140, 50), "e": (255, 196, 70)}),
-    "frost-imp":   (HUMANOID, {"a": (138, 182, 210), "b": (90, 128, 158), "c": (196, 226, 244),
-                               "d": (54, 96, 140), "e": (230, 250, 255)}),
-    "stone-golem": (GOLEM, {"a": (132, 128, 120), "b": (96, 92, 86), "c": (176, 172, 164),
-                            "d": (70, 66, 62), "e": (120, 200, 220)}),
-    "wisp":        (WISP, {"a": (118, 96, 168), "b": (70, 56, 104), "c": (186, 166, 230),
-                           "d": (60, 48, 90), "e": (240, 230, 255)}),
+# --- the bestiary, as cells of creatures_roguelike.png --------------------
+# sprite id -> (row, column). Every enemy file's `sprite` must be a key here
+# or it falls back to a flat colour, which scripts/art.test.mts checks for.
+CREATURES = {
+    # beasts
+    "rat": (1, 0),
+    "dire-rat": (1, 1),
+    "boar": (1, 2),
+    "tusker": (1, 3),
+    "wolf": (1, 5),
+    "winter-wolf": (1, 4),
+    # goblinoids
+    "goblin": (2, 0),
+    "goblin-brute": (2, 1),
+    "goblin-archer": (2, 3),
+    "goblin-shaman": (2, 4),
+    "orc": (3, 0),
+    "orc-veteran": (3, 1),
+    "orc-warlord": (3, 2),
+    # crawlers and fliers
+    "spider": (4, 1),
+    "giant-spider": (4, 3),
+    "bat": (4, 4),
+    "blood-bat": (4, 5),
+    # armoured things
+    "sentinel": (5, 0),
+    "iron-sentinel": (5, 1),
+    "ember-knight": (5, 2),
+    "ember-lord": (5, 3),
+    "tide-knight": (5, 4),
+    "frost-elemental": (5, 6),
+    "storm-elemental": (5, 7),
+    # the restless
+    "skeleton": (6, 0),
+    "skeleton-captain": (6, 3),
+    "cultist": (6, 4),
+    "reaper": (6, 5),
+    "ghost": (7, 0),
+    "wraith": (7, 3),
+    "spore-ghost": (7, 2),
+    # oozes and small things
+    "green-ooze": (8, 0),
+    "red-ooze": (8, 1),
+    "blue-ooze": (8, 2),
+    "gold-ooze": (8, 3),
+    "ember-imp": (8, 4),
+    "kobold": (8, 5),
+    "snow-fowl": (8, 6),
+    # people who are not trying to kill you
+    "wanderer": (0, 0),
+    "pilgrim": (0, 1),
+    "hunter": (0, 3),
+    "guard": (0, 6),
 }
 
-OUTLINE = (22, 18, 26)
+# --- the player, from class_warriors.png ----------------------------------
+# Block origin, then the facing row to take. Row 2 is front-on: it has a face,
+# which is the only row that reads as a character at 16 pixels.
+CLASS_BLOCKS = {
+    "ruinmage": {"origin": (384, 1056), "row": 2, "frame": 0},
+}
+CELL_W, CELL_H = 32, 44
 
 
-def draw(shape, colours):
-    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+def dekey(img: Image.Image) -> Image.Image:
+    """Magenta -> transparent. The sheets are chroma-keyed, not alpha."""
+    img = img.convert("RGBA")
     px = img.load()
-    for y, row in enumerate(shape[:SIZE]):
-        for x, ch in enumerate(row[:SIZE]):
-            if ch == ".":
-                continue
-            rgb = OUTLINE if ch == "o" else colours.get(ch)
-            if rgb is None:
-                continue
-            px[x, y] = (*rgb, 255)
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            # A tolerance, because the sheet has a few near-magenta pixels at
+            # the edges where it was scaled at some point.
+            if a == 0 or (r > 230 and g < 40 and b > 230):
+                px[x, y] = (0, 0, 0, 0)
     return img
 
 
-def main(dest: str) -> None:
+def fit16(img: Image.Image) -> Image.Image:
+    """
+    Crop to what is drawn, then fit into 16x16 by the longest side.
+
+    Fitting by the longest side rather than stretching to the box is what keeps
+    a tall robed figure tall. The result is centred horizontally and sat on the
+    bottom edge, so characters stand on their tile instead of floating.
+    """
+    box = img.getbbox()
+    if not box:
+        return Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    art = img.crop(box)
+    scale = min(SIZE / art.width, SIZE / art.height)
+    w = max(1, round(art.width * scale))
+    h = max(1, round(art.height * scale))
+    art = art.resize((w, h), Image.BOX)
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out.alpha_composite(art, ((SIZE - w) // 2, SIZE - h))
+    return out
+
+
+def main(src: str, dest: str) -> None:
+    if not os.path.isdir(src):
+        raise SystemExit(f"source folder not found: {src}")
     os.makedirs(dest, exist_ok=True)
-    for name, (shape, colours) in SPRITES.items():
-        draw(shape, colours).save(os.path.join(dest, f"{name}.png"), optimize=True)
-    print(f"wrote {len(SPRITES)} sprites into {dest}")
+    made, missing = [], []
+
+    # --- the bestiary ----------------------------------------------------
+    sheet_path = os.path.join(src, "creatures_roguelike.png")
+    if os.path.exists(sheet_path):
+        sheet = dekey(Image.open(sheet_path))
+        for name, (row, col) in CREATURES.items():
+            cell = sheet.crop((col * SIZE, row * SIZE, col * SIZE + SIZE, row * SIZE + SIZE))
+            if not cell.getbbox():
+                missing.append(f"{name} (cell {row},{col} is empty)")
+                continue
+            cell.save(os.path.join(dest, f"{name}.png"), optimize=True)
+            made.append(name)
+    else:
+        missing.append("creatures_roguelike.png — the whole bestiary")
+
+    # --- the player ------------------------------------------------------
+    class_path = os.path.join(src, "class_warriors.png")
+    if os.path.exists(class_path):
+        classes = Image.open(class_path)
+        for name, spec in CLASS_BLOCKS.items():
+            ox, oy = spec["origin"]
+            x = ox + spec["frame"] * CELL_W
+            y = oy + spec["row"] * CELL_H
+            frame = dekey(classes.crop((x, y, x + CELL_W, y + CELL_H)))
+            fit16(frame).save(os.path.join(dest, f"{name}.png"), optimize=True)
+            made.append(name)
+    else:
+        missing.append("class_warriors.png — the player")
+
+    print(f"wrote {len(made)} sprites into {dest}")
+    if missing:
+        print("could not make:")
+        for m in missing:
+            print(f"  {m}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "assets/tiles16")
+    if len(sys.argv) < 2:
+        raise SystemExit(__doc__)
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "assets/tiles16")

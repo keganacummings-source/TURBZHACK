@@ -1,0 +1,11 @@
+{
+  "name": "Shock Bolt",
+  "about": "Fast, and it does not care about armour much.",
+  "mana": 8,
+  "kind": "shock",
+  "range": 8,
+  "target": "actor",
+  "tier": 2,
+  "say": "{caster} snap{s} a bolt of lightning at {target}.",
+  "damage": 13
+}

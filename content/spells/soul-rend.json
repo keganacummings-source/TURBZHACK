@@ -1,0 +1,12 @@
+{
+  "name": "Soul Rend",
+  "about": "Nothing resists it well.",
+  "mana": 24,
+  "kind": "pure",
+  "range": 6,
+  "target": "actor",
+  "tier": 5,
+  "say": "{caster} rend{s} at what holds {target} together.",
+  "damage": 28,
+  "cooldown": 2
+}

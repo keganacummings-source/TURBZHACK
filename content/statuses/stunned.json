@@ -1,0 +1,12 @@
+{
+  "name": "Stunned",
+  "about": "Reeling. Short, and it breaks easily.",
+  "turns": 2,
+  "preventsAction": true,
+  "breakChance": 0.35,
+  "messages": {
+    "applied": "{name} reels!",
+    "broke": "{name} shakes it off.",
+    "ended": "{name} recovers."
+  }
+}

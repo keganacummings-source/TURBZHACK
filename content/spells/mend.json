@@ -1,8 +1,12 @@
 {
   "name": "Mend",
-  "mana": 0,
-  "heal": 35,
+  "about": "Closes what is open.",
+  "mana": 12,
+  "kind": "pure",
   "range": 0,
   "target": "self",
-  "say": "{caster} knits back together."
+  "tier": 1,
+  "say": "{caster} knit{s} back together.",
+  "cooldown": 2,
+  "heal": 35
 }

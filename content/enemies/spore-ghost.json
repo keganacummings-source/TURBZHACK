@@ -1,0 +1,31 @@
+{
+  "name": "Spore Shade",
+  "sprite": "spore-ghost",
+  "pools": {
+    "hp": -60,
+    "mana": 20
+  },
+  "armour": 0,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 8,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 10,
+  "xp": 44,
+  "spells": [
+    "spore-cloud"
+  ],
+  "resist": {
+    "poison": 0
+  }
+}

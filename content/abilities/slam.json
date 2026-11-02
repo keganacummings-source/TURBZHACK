@@ -3,7 +3,7 @@
   "damage": 18,
   "kind": "physical",
   "range": 1,
+  "say": "{caster} slam{s} {target}.",
   "stamina": 30,
-  "cooldown": 1,
-  "say": "{caster} slams {target}."
+  "cooldown": 1
 }

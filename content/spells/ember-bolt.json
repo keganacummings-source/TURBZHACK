@@ -1,0 +1,14 @@
+{
+  "name": "Ember Bolt",
+  "about": "Fire that sticks.",
+  "mana": 10,
+  "kind": "fire",
+  "range": 7,
+  "target": "actor",
+  "tier": 2,
+  "say": "{caster} hurl{s} an ember at {target}.",
+  "damage": 14,
+  "applies": [
+    "burning"
+  ]
+}

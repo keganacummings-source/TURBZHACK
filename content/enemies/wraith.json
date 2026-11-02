@@ -1,0 +1,32 @@
+{
+  "name": "Wraith",
+  "sprite": "wraith",
+  "pools": {
+    "hp": -40,
+    "mana": 20
+  },
+  "armour": 0,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 96,
+  "spells": [
+    "wither"
+  ],
+  "resist": {
+    "physical": 0.2,
+    "pure": 1.75
+  }
+}

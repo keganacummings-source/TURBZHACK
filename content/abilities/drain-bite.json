@@ -1,0 +1,7 @@
+{
+  "name": "Drain Bite",
+  "damage": 6,
+  "kind": "pure",
+  "range": 1,
+  "say": "{caster} fasten{s} onto {target}."
+}

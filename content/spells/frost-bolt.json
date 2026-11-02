@@ -1,12 +1,14 @@
 {
   "name": "Frost Bolt",
-  "mana": 8,
-  "damage": 7,
+  "about": "A shard of ice.",
+  "mana": 9,
   "kind": "cold",
   "range": 7,
   "target": "actor",
+  "tier": 1,
+  "say": "{caster} loose{s} a frost bolt at {target}.",
+  "damage": 12,
   "applies": [
     "chilled"
-  ],
-  "say": "{caster} looses a frost bolt at {target}."
+  ]
 }

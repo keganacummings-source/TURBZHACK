@@ -112,7 +112,14 @@ input {
 }
 .overlay-panel {
   background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
-  padding: 20px; max-width: 760px; max-height: 84vh; overflow: auto; position: relative;
+  padding: 20px; max-height: 84vh; overflow: auto; position: relative;
+  /*
+   * A width, not just a max-width. Without one the panel shrinks to its
+   * content, and the level-up's auto-fit grid then has no room to fit more
+   * than a single column — five choices came out as a tall stack that ran off
+   * the bottom of the screen.
+   */
+  width: min(900px, 92vw);
 }
 .overlay-close { position: absolute; top: 12px; right: 12px; }
 button {
@@ -149,3 +156,29 @@ body.designer-open { overflow: hidden; }
   .designer-body { flex-direction: column; }
   #d-grid { max-width: 86vw; max-height: 86vw; }
 }
+
+/* --- the level-up choice ------------------------------------------------ */
+.hud-level { font-size: 12px; }
+.bar-fill.xp { background: #8a7bd6; }
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 10px; }
+.choice {
+  position: relative; text-align: left; padding: 12px 12px 22px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px;
+  color: var(--ink); font: inherit; cursor: pointer;
+}
+.choice:hover { border-color: #6b6184; background: #252130; }
+.choice h3 { margin: 4px 0 6px; font-size: 14px; }
+.choice p { margin: 0 0 4px; font-size: 11px; }
+.choice-detail { color: var(--warn); }
+.choice-key {
+  position: absolute; top: 8px; right: 10px;
+  color: var(--dim); font-size: 11px; border: 1px solid var(--line);
+  border-radius: 3px; padding: 0 5px;
+}
+.choice-kind {
+  position: absolute; left: 12px; bottom: 6px;
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim);
+}
+.choice-spell { border-left: 3px solid var(--magic); }
+.choice-upgrade { border-left: 3px solid var(--sp); }
+.rep { color: var(--dim); font-size: 11px; margin-left: 5px; }

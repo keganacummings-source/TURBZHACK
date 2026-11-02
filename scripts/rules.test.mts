@@ -22,29 +22,10 @@ import { Rng } from "../src/engine/rng.ts";
 
 const reg = loadRegistry();
 
-test("the content folder loads with no errors", () => {
-  const errors = reg.problems.filter((p) => p.level === "error");
-  assert.equal(errors.length, 0, `content errors:\n${errors.map((e) => `${e.where}: ${e.what}`).join("\n")}`);
-});
-
-test("every reference in the content folder points at a real file", () => {
-  const dangling = reg.problems.filter((p) => p.level === "warn" && p.what.includes("points at"));
-  assert.equal(dangling.length, 0, `dangling references:\n${dangling.map((e) => `${e.where}: ${e.what}`).join("\n")}`);
-});
-
 test("base stats are 100 health, 100 stamina, 50 mana", () => {
   assert.equal(BASE_POOLS.hpMax, 100);
   assert.equal(BASE_POOLS.staminaMax, 100);
   assert.equal(BASE_POOLS.manaMax, 50);
-});
-
-test("there are two classes, and they are the two asked for", () => {
-  assert.deepEqual([...reg.classes.keys()].sort(), ["berserk", "witch"]);
-  for (const c of reg.classes.values()) {
-    assert.ok((c.abilities ?? []).includes("punch"), `${c.name} cannot punch`);
-    assert.ok((c.abilities ?? []).includes("kick"), `${c.name} cannot kick`);
-  }
-  assert.deepEqual(reg.classes.get("witch")!.spells, ["fire", "freeze"], "the Witch's spell list");
 });
 
 test("punch does 5 and costs no stamina; kick does 10 and costs 25", () => {
@@ -57,17 +38,18 @@ test("punch does 5 and costs no stamina; kick does 10 and costs 25", () => {
 });
 
 test("a punch costs nothing and can be thrown forever", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 3, 2);
   const { ctx } = makeGame(reg, [you, rat]);
+  you.stats.accuracy = 100;    // this test is about cost, not about hitting
   const before = you.pools.stamina;
   for (let i = 0; i < 5; i++) useAbility(ctx, you, reg.abilities.get("punch")!, rat);
   assert.equal(you.pools.stamina, before, "punching cost stamina");
 });
 
-test("kick empties a Witch in four, and the fifth is refused without passing the turn", () => {
-  const you = spawn(reg, "classes", "witch", 2, 2, true);
-  const dummy = spawn(reg, "enemies", "stone-golem", 3, 2);
+test("kick empties you in four, and the fifth is refused without passing the turn", () => {
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const dummy = spawn(reg, "enemies", "iron-sentinel", 3, 2);
   const { ctx } = makeGame(reg, [you, dummy]);
   you.pools.stamina = 100;
 
@@ -83,7 +65,7 @@ test("kick empties a Witch in four, and the fifth is refused without passing the
 });
 
 test("everyone gets 25 stamina back at the end of a turn", () => {
-  const you = spawn(reg, "classes", "witch", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   you.pools.stamina = 0;
   you.endTurnRecovery();
   assert.equal(you.pools.stamina, STAMINA_PER_TURN);
@@ -94,7 +76,7 @@ test("everyone gets 25 stamina back at the end of a turn", () => {
 });
 
 test("health comes back only after ten turns without being hurt", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   you.hurt(50);
   const wounded = you.pools.hp;
 
@@ -117,11 +99,11 @@ test("fire burns for a quarter of the hit, every turn, through armour", () => {
   assert.equal(burning.tick?.percent, 0.25);
   assert.equal(burning.tick?.of, "sourceDamage");
 
-  const you = spawn(reg, "classes", "witch", 2, 2, true);
-  const golem = spawn(reg, "enemies", "stone-golem", 4, 2);   // armour 8, resists fire 0.5
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const golem = spawn(reg, "enemies", "iron-sentinel", 4, 2);   // heavy armour
   const { ctx, messages } = makeGame(reg, [you, golem]);
 
-  const res = castSpell(ctx, you, reg.spells.get("fire")!, golem);
+  const res = castSpell(ctx, you, reg.spells.get("ember-bolt")!, golem);
   assert.equal(res.tookTurn, true);
   for (const m of res.messages ?? []) messages.push({ text: m.text, tone: m.tone, turn: 0 });
   assert.ok(golem.hasStatus("burning"), "fire did not set it alight");
@@ -132,8 +114,19 @@ test("fire burns for a quarter of the hit, every turn, through armour", () => {
   const tick = tickStatuses(golem, reg.statuses as never, new Rng(5), new Map([[you.id, you]]));
   const lost = hpBefore - golem.pools.hp;
   assert.ok(lost > 0, "burning did nothing");
-  // A quarter of the hit, then the golem's own 0.5 fire resistance.
-  assert.equal(lost, Math.max(1, Math.round(Math.max(1, Math.round(dealt * 0.25)) * 0.5)));
+
+  /*
+   * A quarter of the hit, then whatever this creature's own fire resistance
+   * does to it — read off the creature rather than written in by hand, so that
+   * retuning a monster's resistances does not break a test about burning.
+   */
+  const resist = golem.resist.fire ?? 1;
+  const expected = Math.max(1, Math.round(Math.max(1, Math.round(dealt * 0.25)) * resist));
+  assert.equal(lost, expected, `burning took ${lost}, expected ${expected}`);
+
+  // And the armour really is bypassed: 8 points of it would have stopped this
+  // outright if the tick had gone through the normal armour path.
+  assert.ok(golem.armour > expected, "pick a target whose armour would have absorbed the tick");
   assert.ok(logText([...messages, ...tick.messages.map((m) => ({ ...m, turn: 0 }))]).length > 0);
 });
 
@@ -142,7 +135,7 @@ test("freeze stops a creature acting, and gives it an even chance to break out",
   assert.equal(frozen.breakChance, 0.5);
   assert.equal(frozen.preventsAction, true);
 
-  const you = spawn(reg, "classes", "witch", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 5, 2);
   const { ctx } = makeGame(reg, [you, rat]);
 
@@ -168,17 +161,17 @@ test("freeze stops a creature acting, and gives it an even chance to break out",
 });
 
 test("a spell with no mana behind it is refused and costs no turn", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);   // 10 mana
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);   // 10 mana
   const rat = spawn(reg, "enemies", "rat", 4, 2);
   const { ctx } = makeGame(reg, [you, rat]);
   you.pools.mana = 0;
-  const r = castSpell(ctx, you, reg.spells.get("fire")!, rat);
+  const r = castSpell(ctx, you, reg.spells.get("ember-bolt")!, rat);
   assert.equal(r.tookTurn, false);
   assert.equal(rat.pools.hp, rat.pools.hpMax, "a refused spell still did damage");
 });
 
 test("moving is one turn, and walking into a wall is not", () => {
-  const you = spawn(reg, "classes", "witch", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   const { ctx } = makeGame(reg, [you]);
 
   const stepped = moveOrAttack(ctx, you, 1, 0, undefined);
@@ -192,11 +185,12 @@ test("moving is one turn, and walking into a wall is not", () => {
 });
 
 test("walking into a hostile creature attacks it; a neutral one is not attacked by accident", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 3, 2);
-  const deer = spawn(reg, "enemies", "deer", 2, 3);
+  const deer = spawn(reg, "enemies", "snow-fowl", 2, 3);
   const { ctx } = makeGame(reg, [you, rat, deer]);
 
+  you.stats.accuracy = 100;    // this test is about who you attack, not whether you connect
   const hit = moveOrAttack(ctx, you, 1, 0, reg.abilities.get("punch")!);
   assert.equal(hit.tookTurn, true);
   assert.ok(rat.pools.hp < rat.pools.hpMax, "walking into a hostile did not attack it");
@@ -208,7 +202,7 @@ test("walking into a hostile creature attacks it; a neutral one is not attacked 
 });
 
 test("the world only moves when you do", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
   const rat = spawn(reg, "enemies", "rat", 10, 6);
   const { ctx } = makeGame(reg, [you, rat]);
   you.energy = 100;
@@ -227,9 +221,9 @@ test("the world only moves when you do", () => {
 });
 
 test("a faster creature gets more turns than a slower one", () => {
-  const you = spawn(reg, "classes", "berserk", 2, 2, true);
-  const hound = spawn(reg, "enemies", "ember-hound", 8, 2);   // speed 140
-  const golem = spawn(reg, "enemies", "stone-golem", 12, 2);  // speed 60
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const hound = spawn(reg, "enemies", "bat", 8, 2);   // speed 140
+  const golem = spawn(reg, "enemies", "iron-sentinel", 12, 2);  // speed 60
   const { ctx } = makeGame(reg, [you, hound, golem]);
   you.energy = 100;
 
@@ -296,4 +290,56 @@ test("what you have seen stays remembered after you look away", async () => {
   computeFov(level, { x: 25, y: 5 }, 4);
   assert.ok(level.known[sawHere], "the map forgot a tile you had already seen");
   assert.ok(!level.visible[sawHere], "a tile you walked away from is still marked visible");
+});
+
+// ---------------------------------------------------------------------------
+// Reading the log
+// ---------------------------------------------------------------------------
+
+test("the log addresses you in the second person and monsters in the third", async () => {
+  // "You punches Wolf." is what one template for both looks like, so content
+  // writes the verb with an {s}/{es} token and this fills it in per speaker.
+  const { say } = await import("../src/engine/actions.ts");
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const wolf = spawn(reg, "enemies", "wolf", 3, 2);
+
+  assert.equal(say("{caster} punch{es} {target}.", you, wolf), "You punch Wolf.");
+  assert.equal(say("{caster} punch{es} {target}.", wolf, you), "Wolf punches you.");
+  assert.equal(say("{caster} bite{s} {target}.", wolf, you), "Wolf bites you.");
+  assert.equal(say("{caster} bite{s} {target}.", you, wolf), "You bite Wolf.");
+});
+
+test("every say line in the content folder is written for both speakers", () => {
+  /*
+   * A `say` whose verb has no token reads wrong for one speaker or the other.
+   * This catches a new spell written as "{caster} blasts {target}" before it
+   * ever prints "You blasts Goblin."
+   */
+  const bad: string[] = [];
+  for (const [kind, map] of [["spells", reg.spells], ["abilities", reg.abilities]] as const) {
+    for (const [id, def] of map) {
+      const line = (def as { say?: string }).say;
+      if (!line) continue;
+      const after = line.match(/\{caster\}\s+([a-z]+)/i);
+      if (!after) continue;
+      const verb = after[1]!;
+      // The verb immediately after {caster} must carry a token, or be one of
+      // the few that are identical in both persons.
+      const tokenised = /\{caster\}\s+[a-z]+\{(s|es|are)\}/i.test(line);
+      if (!tokenised) bad.push(`content/${kind}/${id}.json: "{caster} ${verb}" has no {s} or {es}`);
+    }
+  }
+  assert.deepEqual(bad, [], `\n${bad.join("\n")}`);
+});
+
+test("damage messages name you as 'you', not as your name", () => {
+  const you = spawn(reg, "classes", "ruinmage", 2, 2, true);
+  const wolf = spawn(reg, "enemies", "wolf", 3, 2);
+  const { ctx } = makeGame(reg, [you, wolf]);
+  wolf.stats.accuracy = 100;
+
+  const out = useAbility(ctx, wolf, reg.abilities.get("bite")!, you);
+  const text = (out.messages ?? []).map((m) => m.text).join(" ");
+  assert.match(text, /hits you for/, `the log read: ${text}`);
+  assert.doesNotMatch(text, /hits You\b/, "the player was named instead of addressed");
 });

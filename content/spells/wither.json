@@ -1,0 +1,15 @@
+{
+  "name": "Wither",
+  "about": "Rot that keeps rotting.",
+  "mana": 15,
+  "kind": "poison",
+  "range": 6,
+  "target": "actor",
+  "tier": 3,
+  "say": "{caster} wither{s} {target}.",
+  "damage": 10,
+  "applies": [
+    "withered"
+  ],
+  "cooldown": 1
+}

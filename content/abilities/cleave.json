@@ -1,0 +1,8 @@
+{
+  "name": "Cleave",
+  "damage": 14,
+  "kind": "physical",
+  "range": 1,
+  "say": "{caster} cleave{s} at {target}.",
+  "stamina": 20
+}

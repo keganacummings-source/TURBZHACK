@@ -1,0 +1,9 @@
+{
+  "name": "Duellist",
+  "about": "Accurate and quick, but no tougher.",
+  "modify": {
+    "accuracy": 5,
+    "evasion": 5
+  },
+  "weight": 8
+}

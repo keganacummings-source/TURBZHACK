@@ -1,0 +1,26 @@
+{
+  "name": "Goblin Brute",
+  "sprite": "goblin-brute",
+  "pools": {
+    "hp": -25,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "hills",
+    "badlands",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 8
+  },
+  "weight": 14,
+  "xp": 28
+}

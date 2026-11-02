@@ -1,0 +1,26 @@
+{
+  "name": "Dire Rat",
+  "sprite": "dire-rat",
+  "pools": {
+    "hp": -62,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 115,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "forest",
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 6
+  },
+  "weight": 22,
+  "xp": 12
+}

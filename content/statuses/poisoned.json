@@ -1,0 +1,14 @@
+{
+  "name": "Poisoned",
+  "about": "A slow flat bleed that ignores armour.",
+  "turns": 6,
+  "tick": {
+    "kind": "poison",
+    "amount": 4
+  },
+  "messages": {
+    "applied": "{name} is poisoned.",
+    "tick": "the venom",
+    "ended": "The venom in {name} runs out."
+  }
+}

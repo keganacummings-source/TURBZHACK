@@ -8,7 +8,29 @@
  * and a new content file cannot accidentally bypass any of them.
  */
 import type { Actor } from "./actor.ts";
+import type { Rng } from "./rng.ts";
 import type { DamageKind, Message } from "./types.ts";
+
+/**
+ * The chance for one actor to hit another, as a percentage.
+ *
+ * Clamped at both ends on purpose. Without a ceiling, enough accuracy makes
+ * misses impossible and every later point of it is wasted; without a floor, a
+ * high-evasion creature becomes literally unhittable, which reads as a broken
+ * game rather than a hard one.
+ */
+export const HIT_FLOOR = 10;
+export const HIT_CEILING = 95;
+
+export function hitChance(attacker: Actor, target: Actor): number {
+  const raw = attacker.stats.accuracy - target.stats.evasion;
+  return Math.max(HIT_FLOOR, Math.min(HIT_CEILING, raw));
+}
+
+/** Roll it. Spells do not roll — magic lands, and that is what mana buys. */
+export function rollToHit(attacker: Actor, target: Actor, rng: Rng): boolean {
+  return rng.next() * 100 < hitChance(attacker, target);
+}
 
 export type DamageSpec = {
   amount: number;
@@ -68,13 +90,17 @@ export function applyDamage(target: Actor, spec: DamageSpec): DamageOutcome {
 
   const dealt = target.hurt(amount);
   const what = spec.label ?? "it";
+  // "you" mid-sentence, "You" at the start of one: the player is addressed in
+  // the second person and everything else is named.
+  const them = target.isPlayer ? "you" : target.name;
+  const They = target.isPlayer ? "You" : target.name;
 
   if (resist === 0) {
-    messages.push({ text: `${target.name} is unharmed by ${what}.`, tone: "warn" });
+    messages.push({ text: `${They} ${target.isPlayer ? "are" : "is"} unharmed by ${what}.`, tone: "warn" });
   } else if (dealt > 0) {
     const tone = target.isPlayer ? "bad" : "plain";
-    messages.push({ text: `${what} hits ${target.name} for ${dealt}.`, tone });
-    if (resist > 1) messages.push({ text: `${target.name} is vulnerable to it!`, tone: "magic" });
+    messages.push({ text: `${what} hits ${them} for ${dealt}.`, tone });
+    if (resist > 1) messages.push({ text: `${They} ${target.isPlayer ? "are" : "is"} vulnerable to it!`, tone: "magic" });
   }
 
   const killed = !target.alive;

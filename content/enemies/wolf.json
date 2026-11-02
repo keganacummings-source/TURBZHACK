@@ -1,0 +1,26 @@
+{
+  "name": "Wolf",
+  "sprite": "wolf",
+  "pools": {
+    "hp": -58,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 135,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "forest",
+    "taiga",
+    "hills"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 4
+  },
+  "weight": 20,
+  "xp": 14
+}

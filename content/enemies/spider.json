@@ -1,0 +1,29 @@
+{
+  "name": "Cave Spider",
+  "sprite": "spider",
+  "pools": {
+    "hp": -72,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 120,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "forest",
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 6
+  },
+  "weight": 20,
+  "xp": 16,
+  "resist": {
+    "poison": 0
+  }
+}

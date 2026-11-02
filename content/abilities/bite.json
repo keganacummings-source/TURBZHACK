@@ -3,5 +3,5 @@
   "damage": 4,
   "kind": "physical",
   "range": 1,
-  "say": "{caster} bites {target}."
+  "say": "{caster} bite{s} {target}."
 }

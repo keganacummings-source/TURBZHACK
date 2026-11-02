@@ -1,0 +1,8 @@
+{
+  "name": "Long Wind",
+  "about": "More stamina, so more kicks.",
+  "modify": {
+    "staminaMax": 25
+  },
+  "weight": 11
+}

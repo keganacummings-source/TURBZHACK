@@ -51,6 +51,7 @@ Walk onto a dungeon mouth or a staircase to use it.
 |---|---|
 | `z` | Punch — 5 damage, free |
 | `x` | Kick — 10 damage, 25 stamina |
+| `c` | Staff strike — 8 damage, 10 stamina |
 | `1` `2` `3` | Cast a spell |
 | `.` or space | Wait a turn |
 | `m` | Overview map, showing only what you have seen |
@@ -74,13 +75,35 @@ casting with no mana — does not pass the turn to the monsters.
 Every one of those numbers is a test in `scripts/rules.test.mts`, and most of
 them live in a content file you can change.
 
-### The two classes
+### The Ruinmage
 
-**Witch** — 80 HP, 80 stamina, 100 mana. Fire to break things down over time,
-freeze to buy the turns you need. Punches when the mana runs out, and it will.
+One class, and it is the only one. 90 HP, 80 stamina, 120 mana, and a spell
+list of exactly two: **Spark** and **Frost Touch**. Everything else you take
+from the world.
 
-**Berserk** — 140 HP, 200 stamina, 10 mana. Enough stamina to kick every turn
-for eight turns straight. The spell list is decoration.
+### Levelling
+
+Kill things, earn experience, and every level **rolls five options and you take
+one**. Some are spells you do not know yet; some are permanent upgrades to your
+own numbers. Two runs of the same class end up nothing alike, which is the
+point of there only being one.
+
+| stat | what it does |
+|---|---|
+| **might** | added to every ability — punch, kick, staff |
+| **focus** | added to every spell |
+| **accuracy** | your chance to hit, before the target's evasion |
+| **evasion** | subtracted from an attacker's accuracy |
+
+Abilities roll to hit; **spells always land**. That split is why `accuracy` is
+worth taking and why mana is worth spending.
+
+The roll never offers a spell you already know, never repeats itself, and only
+offers spells whose tier you have reached — so a level-2 roll is not full of
+Firestorm, and a level-15 one is not full of Spark. It is also deterministic
+from the seed, so there is nothing to reroll.
+
+Both pools are content files: `content/spells/` and `content/upgrades/`.
 
 ## How it is built
 
@@ -108,13 +131,22 @@ npm test
 
 ### The art
 
-The tiles are your TURBZ New Texture set reduced to 16×16 by box averaging —
+All of it comes from TURBZ.
+
+**Tiles** are the New Texture set reduced to 16×16 by box averaging —
 nearest-neighbour threw away three pixels in four and turned the dithering to
-noise. Re-run it whenever the source art changes:
+noise.
+
+**Creatures** are cut straight out of `creatures_roguelike.png`, which is
+already a 16×16 grid, so they are the original pixels untouched. **The
+Ruinmage** comes off `class_warriors.png`: the magenta key is removed, the
+frame is cropped to what is actually drawn, and it is fitted into 16×16 by its
+longest side so a tall robed figure stays tall.
 
 ```bash
-python3 tools/make-tiles.py ../path-to/MapAssets/NewTex assets/tiles16
+python3 tools/make-tiles.py   ../TURBZ/public/MapAssets/NewTex assets/tiles16
+python3 tools/make-sprites.py ../TURBZ/public/sprites          assets/tiles16
 ```
 
-The creature and class sprites are placeholders drawn by
-`tools/make-sprites.py`. Replace them one at a time with the in-game designer.
+Both are re-runnable, so when you redraw something in TURBZ you re-run them.
+Or draw straight over any of it with the in-game designer on `t`.

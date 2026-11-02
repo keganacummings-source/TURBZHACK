@@ -1,0 +1,16 @@
+{
+  "name": "Thunderclap",
+  "about": "Everything near you, and it stuns.",
+  "mana": 26,
+  "kind": "shock",
+  "range": 2,
+  "target": "burst",
+  "tier": 4,
+  "say": "{caster} clap{s} the air into thunder.",
+  "damage": 20,
+  "applies": [
+    "stunned"
+  ],
+  "radius": 2,
+  "cooldown": 3
+}

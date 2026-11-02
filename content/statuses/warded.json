@@ -1,0 +1,12 @@
+{
+  "name": "Warded",
+  "about": "Hardened air.",
+  "turns": 12,
+  "modify": {
+    "armour": 6
+  },
+  "messages": {
+    "applied": "A ward closes over {name}.",
+    "ended": "{name}'s ward fades."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Gore",
+  "damage": 12,
+  "kind": "physical",
+  "range": 1,
+  "say": "{caster} gore{s} {target}.",
+  "stamina": 15,
+  "cooldown": 1
+}

@@ -3,6 +3,6 @@
   "damage": 8,
   "kind": "physical",
   "range": 1,
-  "stamina": 10,
-  "say": "{caster} slashes {target}."
+  "say": "{caster} slash{es} {target}.",
+  "stamina": 10
 }

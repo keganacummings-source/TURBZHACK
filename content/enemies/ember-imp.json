@@ -1,0 +1,33 @@
+{
+  "name": "Ember Imp",
+  "sprite": "ember-imp",
+  "pools": {
+    "hp": -70,
+    "mana": 20
+  },
+  "armour": 0,
+  "speed": 120,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "badlands",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 12,
+  "xp": 30,
+  "spells": [
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0,
+    "cold": 1.5
+  }
+}

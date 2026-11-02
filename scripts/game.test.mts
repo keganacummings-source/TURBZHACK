@@ -14,27 +14,23 @@ import { loadRegistry } from "./lib/harness.mts";
 import { Game } from "../src/game.ts";
 
 const reg = loadRegistry();
-const newGame = (cls = "witch", seed = 2026) => {
+const newGame = (cls = "ruinmage", seed = 2026) => {
   const g = new Game(reg, seed);
   g.start(cls);
   return g;
 };
 
-test("a run starts you alive, on open ground, with your class's stats", () => {
-  const g = newGame("witch");
+test("a run starts you alive, on open ground, with the Ruinmage's stats", () => {
+  const g = newGame();
   assert.ok(g.player.alive);
   assert.equal(g.level.solid(g.player.pos.x, g.player.pos.y), false, "you started inside a wall");
-  // Witch: base 100/100/50 plus her file's -20/-20/+50.
-  assert.equal(g.player.pools.hpMax, 80);
+  // Base 100/100/50 plus the Ruinmage's file.
+  assert.equal(g.player.pools.hpMax, 90);
   assert.equal(g.player.pools.staminaMax, 80);
-  assert.equal(g.player.pools.manaMax, 100);
-  assert.deepEqual(g.player.spells, ["fire", "freeze"]);
-
-  const b = newGame("berserk");
-  assert.equal(b.player.pools.hpMax, 140);
-  assert.equal(b.player.pools.staminaMax, 200);
-  assert.equal(b.player.pools.manaMax, 10);
-  assert.deepEqual(b.player.spells, []);
+  assert.equal(g.player.pools.manaMax, 120);
+  assert.deepEqual(g.player.spells, ["spark", "frost-touch"]);
+  assert.equal(g.playerLevel, 1);
+  assert.equal(g.xp, 0);
 });
 
 test("the world is populated, and nothing spawns on top of you", () => {
@@ -82,9 +78,9 @@ test("walking costs a turn and walking into a wall does not", () => {
 });
 
 test("a spell you do not know, or cannot pay for, is refused without costing a turn", () => {
-  const g = newGame("berserk");          // knows no spells, has 10 mana
+  const g = newGame("ruinmage");          // knows no spells, has 10 mana
   const at = g.turn;
-  g.cast("fire");
+  g.cast("firestorm");                   // a real spell, but not one you start with
   assert.equal(g.turn, at, "casting an unknown spell used a turn");
   assert.match(g.messages.at(-1)!.text, /do not know/i);
 });
@@ -140,20 +136,20 @@ test("going down and coming back finds the same floor, with the same layout", ()
 });
 
 test("two runs on the same seed are identical, and different seeds are not", () => {
-  const a = newGame("witch", 777);
-  const b = newGame("witch", 777);
+  const a = newGame("ruinmage", 777);
+  const b = newGame("ruinmage", 777);
   assert.deepEqual(a.player.pos, b.player.pos);
   assert.deepEqual(
     a.actors.map((x) => `${x.def}@${x.pos.x},${x.pos.y}`),
     b.actors.map((x) => `${x.def}@${x.pos.x},${x.pos.y}`),
     "the same seed spawned a different world");
 
-  const c = newGame("witch", 778);
+  const c = newGame("ruinmage", 778);
   assert.notDeepEqual(a.player.pos, c.player.pos, "two seeds produced the same start");
 });
 
 test("a hundred turns of play does not throw, leak actors, or lose the player", () => {
-  const g = newGame("berserk", 31337);
+  const g = newGame("ruinmage", 31337);
   const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]] as const;
   for (let i = 0; i < 100 && !g.over; i++) {
     const d = dirs[i % dirs.length]!;
@@ -168,15 +164,16 @@ test("a hundred turns of play does not throw, leak actors, or lose the player", 
 });
 
 test("fire sets a creature alight and the burning kills it over the following turns", () => {
-  const g = newGame("witch", 4242);
+  const g = newGame("ruinmage", 4242);
   // Put a rat next to the player and make sure the witch can afford the spell.
   const rat = g.actors.find((a) => a.def === "rat") ?? g.actors.find((a) => !a.isPlayer)!;
   rat.pos = { x: g.player.pos.x + 2, y: g.player.pos.y };
   rat.stance = "hostile";
   g.player.pools.mana = g.player.pools.manaMax;
+  g.player.spells.push("ember-bolt");
   g.refreshFov();
 
-  g.cast("fire", rat);
+  g.cast("ember-bolt", rat);
   assert.ok(rat.hasStatus("burning") || !rat.alive, "fire neither burned nor killed it");
 
   const hp = rat.pools.hp;
@@ -202,3 +199,20 @@ function neighbourOpen(g: Game, at: { x: number; y: number }): { x: number; y: n
   }
   return null;
 }
+
+test("the log counts repeats instead of filling up with them", () => {
+  // Bumping the same tree twenty times used to be twenty lines, which pushed
+  // the fight you were reading off the top of the log.
+  const g = newGame();
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+  const wall = dirs.find(([dx, dy]) => g.level.solid(g.player.pos.x + dx, g.player.pos.y + dy));
+  if (!wall) { console.log("  (no wall next to the start on this seed)"); return; }
+
+  const before = g.messages.length;
+  for (let i = 0; i < 12; i++) g.move(wall[0], wall[1]);
+
+  const added = g.messages.length - before;
+  assert.ok(added <= 2, `twelve identical refusals added ${added} lines to the log`);
+  const last = g.messages.at(-1)!;
+  assert.ok((last.count ?? 1) > 5, `the repeat was not counted (count ${last.count})`);
+});

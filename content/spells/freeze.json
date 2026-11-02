@@ -1,12 +1,15 @@
 {
   "name": "Freeze",
-  "about": "Locks a creature in place. It gets an even chance to break out every turn, so it buys time rather than winning fights.",
-  "mana": 12,
-  "damage": 6,
+  "about": "Locks a creature in place. Even odds it breaks out each turn.",
+  "mana": 14,
   "kind": "cold",
   "range": 6,
   "target": "actor",
-  "applies": ["frozen"],
-  "cooldown": 1,
-  "say": "{caster} freezes {target} solid."
+  "tier": 3,
+  "say": "{caster} freeze{s} {target} solid.",
+  "damage": 8,
+  "applies": [
+    "frozen"
+  ],
+  "cooldown": 1
 }

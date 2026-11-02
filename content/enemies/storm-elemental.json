@@ -1,0 +1,31 @@
+{
+  "name": "Storm Elemental",
+  "sprite": "storm-elemental",
+  "pools": {
+    "hp": -35,
+    "mana": 20
+  },
+  "armour": 1,
+  "speed": 125,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [],
+  "biomes": [
+    "highland",
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 8,
+  "xp": 78,
+  "spells": [
+    "shock-bolt"
+  ],
+  "resist": {
+    "shock": 0,
+    "physical": 0.6
+  }
+}

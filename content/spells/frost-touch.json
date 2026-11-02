@@ -1,0 +1,14 @@
+{
+  "name": "Frost Touch",
+  "about": "Cold enough to slow a thing down.",
+  "mana": 5,
+  "kind": "cold",
+  "range": 1,
+  "target": "actor",
+  "tier": 1,
+  "say": "{caster} lay{s} a frozen hand on {target}.",
+  "damage": 7,
+  "applies": [
+    "chilled"
+  ]
+}

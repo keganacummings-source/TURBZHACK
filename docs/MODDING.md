@@ -220,3 +220,55 @@ const reg = await loadContent([
 ```
 
 It stays in your folder and stays out of the game.
+
+---
+
+## Your first upgrade
+
+Level-ups offer spells *and* permanent stat upgrades, and both come out of
+content files. `content/upgrades/keen-eye.json`:
+
+```json
+{
+  "name": "Keen Eye",
+  "about": "You see the opening before it opens.",
+  "modify": { "accuracy": 8, "evasion": 2 },
+  "weight": 9
+}
+```
+
+`modify` can raise any of `might`, `focus`, `accuracy`, `evasion`, `armour`,
+`hpMax`, `staminaMax`, `manaMax`. Values are **added**, so negatives make a
+trade — `{"focus": 7, "hpMax": -15}` is a real option in the base game.
+
+`weight` is relative commonness in the roll; 10 is the default.
+
+## Spell tiers
+
+A spell's `tier` (1–5) decides how early it can be offered. Tier 1 shows up
+from level 1, and each further tier unlocks every three levels, so:
+
+| tier | first offered around |
+|---|---|
+| 1 | level 1 |
+| 2 | level 4 |
+| 3 | level 7 |
+| 4 | level 10 |
+| 5 | level 13 |
+
+Leave it out and it defaults to 1. A spell with a tier above 5 can never be
+offered at all, which `npm test` will tell you about.
+
+## Writing a `say` line
+
+The player is called "You" and everything else is named, so one template has to
+serve both persons. Put the verb's ending in a token:
+
+```json
+"say": "{caster} punch{es} {target}."
+```
+
+gives *"You punch Wolf."* and *"Goblin punches you."* Use `{s}` for verbs that
+take a plain s — `bite{s}`, `hurl{s}` — and `{es}` for the rest. There is a
+test that every `say` in the content folder has one, because without it you get
+"You punches Goblin."

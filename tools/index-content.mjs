@@ -12,7 +12,18 @@ import { readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { isMain } from "./is-main.mjs";
 
-const KINDS = ["classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items"];
+/*
+ * Must match CONTENT_KINDS in src/content/schema.ts.
+ *
+ * It is duplicated because this is a plain .mjs build script and that is a .ts
+ * module, and a build tool that needs compiling to run is a build tool that
+ * cannot run before the build. scripts/content.test.mts asserts the two lists
+ * are identical — adding "upgrades" to one and not the other meant the whole
+ * upgrade folder silently never loaded in the browser.
+ */
+const KINDS = [
+  "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
+];
 
 export function buildIndex(dir) {
   const index = {};

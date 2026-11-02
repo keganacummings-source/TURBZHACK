@@ -1,0 +1,29 @@
+{
+  "name": "Iron Sentinel",
+  "sprite": "iron-sentinel",
+  "pools": {
+    "hp": 50,
+    "mana": -50
+  },
+  "armour": 9,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "slam"
+  ],
+  "biomes": [
+    "dungeon",
+    "highland"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 5,
+  "xp": 110,
+  "resist": {
+    "physical": 0.5,
+    "shock": 1.5
+  }
+}

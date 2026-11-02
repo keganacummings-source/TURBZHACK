@@ -1,0 +1,8 @@
+{
+  "name": "Strong Arm",
+  "about": "Your fists and your staff land heavier.",
+  "modify": {
+    "might": 3
+  },
+  "weight": 12
+}

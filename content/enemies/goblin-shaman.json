@@ -1,0 +1,30 @@
+{
+  "name": "Goblin Shaman",
+  "sprite": "goblin-shaman",
+  "pools": {
+    "hp": -62,
+    "mana": 20
+  },
+  "armour": 0,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "swamp",
+    "forest",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 9
+  },
+  "weight": 10,
+  "xp": 34,
+  "spells": [
+    "hex-bolt",
+    "mend"
+  ]
+}

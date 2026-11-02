@@ -1,0 +1,14 @@
+{
+  "name": "Hex Bolt",
+  "about": "A curse with a point on it.",
+  "mana": 9,
+  "kind": "pure",
+  "range": 7,
+  "target": "actor",
+  "tier": 2,
+  "say": "{caster} throw{s} a hex at {target}.",
+  "damage": 11,
+  "applies": [
+    "cursed"
+  ]
+}

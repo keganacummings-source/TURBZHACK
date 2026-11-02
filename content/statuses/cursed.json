@@ -1,0 +1,12 @@
+{
+  "name": "Cursed",
+  "about": "Everything lands harder.",
+  "turns": 6,
+  "modify": {
+    "armour": -4
+  },
+  "messages": {
+    "applied": "{name} is cursed.",
+    "ended": "The curse on {name} lifts."
+  }
+}

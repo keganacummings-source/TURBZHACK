@@ -3,8 +3,8 @@
   "damage": 7,
   "kind": "fire",
   "range": 1,
+  "say": "{caster} burn{s} {target}.",
   "applies": [
     "burning"
-  ],
-  "say": "{caster} sinks burning teeth into {target}."
+  ]
 }

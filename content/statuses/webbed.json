@@ -1,0 +1,12 @@
+{
+  "name": "Webbed",
+  "about": "Held fast, but not blind.",
+  "turns": 4,
+  "preventsAction": true,
+  "breakChance": 0.4,
+  "messages": {
+    "applied": "{name} is caught in webbing!",
+    "broke": "{name} tears free.",
+    "ended": "The web falls away from {name}."
+  }
+}

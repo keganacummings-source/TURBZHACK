@@ -15,7 +15,7 @@ import { BIOME_BY_ID } from "../world/continent.ts";
 import { openDesigner } from "./designer.ts";
 import type { Registry } from "../content/registry.ts";
 
-type Screen = "class-select" | "play" | "map" | "help" | "problems" | "dead";
+type Screen = "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup";
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -47,7 +47,12 @@ export async function boot(): Promise<void> {
     screen = next;
     for (const id of ["class-select", "overlay"]) $(id).classList.add("hidden");
     if (next === "class-select") $("class-select").classList.remove("hidden");
-    if (next === "map" || next === "help" || next === "problems" || next === "dead") {
+    // There is no closing a level-up: the choice has to be made.
+    $("close-overlay").classList.toggle("hidden", next === "levelup");
+    // Every screen that is drawn INTO the overlay has to be listed here, or the
+    // markup is built and then left hidden — which looks exactly like the game
+    // having frozen, because for the level-up it also stops taking input.
+    if (next === "map" || next === "help" || next === "problems" || next === "dead" || next === "levelup") {
       $("overlay").classList.remove("hidden");
     }
     render();
@@ -58,6 +63,7 @@ export async function boot(): Promise<void> {
     if (screen === "map") { drawOverview(ctx, game, (id) => BIOME_BY_ID.get(id)?.colour ?? "#555"); renderOverlay(mapHtml()); return; }
     if (screen === "help") { renderOverlay(helpHtml()); }
     if (screen === "problems") { renderOverlay(problemsHtml(reg)); return; }
+    if (screen === "levelup") { renderOverlay(levelUpHtml()); }
     if (screen === "dead") { renderOverlay(deadHtml()); }
 
     draw(ctx, game, atlas, viewFor(game, canvas, scale));
@@ -86,8 +92,13 @@ export async function boot(): Promise<void> {
       return `<span class="slot ${can ? "" : "slot-off"}">${i + 1} ${s?.name ?? id} <em>${s?.mana ?? "?"}m</em></span>`;
     }).join("");
 
+    const prog = game.progress;
     $("hud").innerHTML = `
       <div class="hud-row hud-where">${game.whereAmI}</div>
+      <div class="hud-row hud-level">Level ${prog.level}
+        <span class="dim">· might ${p.stats.might} · focus ${p.stats.focus} · hit ${p.stats.accuracy}% · dodge ${p.stats.evasion}% · armour ${p.armour}</span>
+      </div>
+      ${bar("XP", prog.into, prog.need, "xp")}
       ${bar("HP", p.pools.hp, p.pools.hpMax, "hp")}
       ${bar("SP", p.pools.stamina, p.pools.staminaMax, "sp")}
       ${bar("MP", p.pools.mana, p.pools.manaMax, "mp")}
@@ -104,7 +115,8 @@ export async function boot(): Promise<void> {
     if (!game) return;
     const lines = game.messages.slice(-80);
     $("log").innerHTML = lines
-      .map((m) => `<div class="line tone-${m.tone ?? "plain"}">${escapeHtml(m.text)}</div>`)
+      .map((m) => `<div class="line tone-${m.tone ?? "plain"}">${escapeHtml(m.text)}${
+        (m.count ?? 1) > 1 ? `<span class="rep">&times;${m.count}</span>` : ""}</div>`)
       .join("");
     $("log").scrollTop = $("log").scrollHeight;
   }
@@ -118,8 +130,9 @@ export async function boot(): Promise<void> {
         <p class="dim">${escapeHtml(c.blurb ?? c.about ?? "")}</p>
         <ul>
           <li>HP ${100 + (c.pools?.hp ?? 0)} · SP ${100 + (c.pools?.stamina ?? 0)} · MP ${50 + (c.pools?.mana ?? 0)}</li>
-          <li>${(c.spells ?? []).length ? `Spells: ${(c.spells ?? []).map((s) => reg.spells.get(s)?.name ?? s).join(", ")}` : "No spells"}</li>
-          <li>Armour ${c.armour ?? 0}</li>
+          <li>${(c.spells ?? []).length ? `Starts with: ${(c.spells ?? []).map((s) => reg.spells.get(s)?.name ?? s).join(", ")}` : "No spells"}</li>
+          <li>Hit ${(c.stats?.accuracy ?? 85)}% · dodge ${(c.stats?.evasion ?? 0)}% · armour ${c.armour ?? 0}</li>
+          <li class="dim">Everything else is learned, five choices at a time.</li>
         </ul>
       </button>`).join("");
     $("class-cards").innerHTML = cards;
@@ -128,6 +141,15 @@ export async function boot(): Promise<void> {
         const seedInput = ($("seed") as HTMLInputElement).value.trim();
         game = new Game(reg, seedInput || Date.now());
         game.start(el.dataset.class!);
+        /*
+         * The run, on the window, on purpose.
+         *
+         * This is a game whose whole point is that you extend it, so being able
+         * to open the console and read — or poke — the live state is a feature
+         * rather than a leak. `window.turbz.render()` redraws after you change
+         * something by hand.
+         */
+        (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
         setScreen("play");
         resize();
       };
@@ -150,6 +172,28 @@ export async function boot(): Promise<void> {
   const mapHtml = () => `<h2>${escapeHtml(game?.whereAmI ?? "")}</h2>
     <p class="dim">Only what you have seen. Red marks a dungeon you have found. Esc closes.</p>`;
 
+  /**
+   * The five.
+   *
+   * Shown as cards with a number key each, because at a level-up the player
+   * wants to compare them at a glance, not read a list.
+   */
+  const levelUpHtml = () => {
+    const choices = game?.pendingChoices ?? [];
+    return `<h2>Level ${game?.progress.level}</h2>
+      <p class="dim">Take one. Press its number, or click it.</p>
+      <div class="choices">
+        ${choices.map((c, i) => `
+          <button class="choice choice-${c.kind}" data-choice="${i}">
+            <span class="choice-key">${i + 1}</span>
+            <h3>${escapeHtml(c.name)}</h3>
+            <p class="choice-detail">${escapeHtml(c.detail)}</p>
+            <p class="dim">${escapeHtml(c.about)}</p>
+            <span class="choice-kind">${c.kind === "spell" ? "spell" : "upgrade"}</span>
+          </button>`).join("")}
+      </div>`;
+  };
+
   const deadHtml = () => `<h2>You died</h2>
     <p>${escapeHtml(game?.over?.reason ?? "")}</p>
     <p class="dim">Turn ${game?.turn} · seed ${game?.seedWord}</p>
@@ -166,6 +210,32 @@ export async function boot(): Promise<void> {
   window.addEventListener("keydown", (e) => {
     if ((e.target as HTMLElement)?.tagName === "INPUT") return;
     if (document.body.classList.contains("designer-open")) return;
+
+    /*
+     * A pending level-up swallows everything.
+     *
+     * It has to come before `commandFor`, or the number keys would be read as
+     * spell slots and the choice would never be made — and before the screen
+     * checks, so no other overlay can be opened on top of it and strand you.
+     */
+    if (game?.pendingChoices) {
+      /*
+       * Make sure it is actually on screen.
+       *
+       * The command handler shows it after the key that earned it, but a level
+       * can arrive from anywhere — a creature burning to death on its own turn,
+       * or a script. If the choice is pending and the screen is not up, the
+       * game looks frozen for no visible reason, so surface it here too.
+       */
+      if (screen !== "levelup") setScreen("levelup");
+      const n = Number(e.key);
+      if (n >= 1 && n <= game.pendingChoices.length) {
+        e.preventDefault();
+        game.chooseUpgrade(n - 1);
+        setScreen("play");
+      }
+      return;
+    }
 
     const cmd = commandFor(e);
     if (!cmd) return;
@@ -190,14 +260,23 @@ export async function boot(): Promise<void> {
       }
     }
     if (game.over) setScreen("dead");
+    else if (game.pendingChoices) setScreen("levelup");
     render();
   });
 
   document.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
+    const card = t.closest<HTMLElement>("[data-choice]");
+    if (card && game?.pendingChoices) {
+      game.chooseUpgrade(Number(card.dataset.choice));
+      setScreen("play");
+      return;
+    }
     if (t.id === "again") { setScreen("class-select"); }
     if (t.id === "anyway") { setScreen("class-select"); }
-    if (t.id === "close-overlay") { setScreen(game ? "play" : "class-select"); }
+    // Not closable while a choice is pending: dismissing it would freeze the
+    // game with an unspent level and no way back to it.
+    if (t.id === "close-overlay" && !game?.pendingChoices) { setScreen(game ? "play" : "class-select"); }
   });
 
   window.addEventListener("resize", resize);

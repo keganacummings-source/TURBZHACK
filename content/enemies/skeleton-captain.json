@@ -1,0 +1,28 @@
+{
+  "name": "Skeleton Captain",
+  "sprite": "skeleton-captain",
+  "pools": {
+    "hp": 0,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 9,
+  "xp": 72,
+  "resist": {
+    "poison": 0,
+    "physical": 0.8
+  }
+}

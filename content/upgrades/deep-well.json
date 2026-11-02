@@ -1,0 +1,8 @@
+{
+  "name": "Deep Well",
+  "about": "More mana, so more spells.",
+  "modify": {
+    "manaMax": 25
+  },
+  "weight": 12
+}

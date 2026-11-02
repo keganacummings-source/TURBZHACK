@@ -1,0 +1,14 @@
+{
+  "name": "Web",
+  "about": "Sticky enough to hold.",
+  "mana": 12,
+  "kind": "pure",
+  "range": 6,
+  "target": "actor",
+  "tier": 2,
+  "say": "{caster} fling{s} a web over {target}.",
+  "applies": [
+    "webbed"
+  ],
+  "cooldown": 2
+}

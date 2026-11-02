@@ -15,7 +15,8 @@ import { ENERGY_PER_ACTION, playerActed, type TurnContext } from "./engine/turns
 import type { StatusDef } from "./engine/status.ts";
 import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
-import type { AbilityDef, ClassDef, EnemyDef, SpellDef, TileDef } from "./content/schema.ts";
+import type { AbilityDef, ClassDef, EnemyDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
+import { applyChoice, levelForXp, progressOf, rollChoices, PER_LEVEL, type Choice } from "./engine/progress.ts";
 import { generateContinent, type Continent } from "./world/continent.ts";
 import { generateDungeon, type Dungeon } from "./world/dungeon.ts";
 
@@ -46,7 +47,27 @@ export class Game {
   /** Set when the run is over, so the UI stops taking input. */
   over: null | { won: boolean; reason: string } = null;
 
+  /**
+   * Experience, and the character level it has earned.
+   *
+   * Named `playerLevel` rather than `level` because `level` on this class is
+   * already the MAP you are standing on, and two meanings of the word in one
+   * object is how you end up reading the wrong one.
+   */
+  xp = 0;
+  playerLevel = 1;
+  /**
+   * The five on offer, when a level-up is waiting to be spent.
+   *
+   * The game does not pause itself for this — the turn that killed the thing
+   * still resolved — but the UI will not take another command until it is
+   * chosen, which is what makes it feel like a decision rather than a popup.
+   */
+  pendingChoices: Choice[] | null = null;
+
   private nextId = 1;
+  /** What each living creature is worth, so a death can be priced after the fact. */
+  private deadXp = new Map<string, number>();
 
   constructor(reg: Registry, seed: number | string = Date.now()) {
     this.reg = reg;
@@ -70,6 +91,19 @@ export class Game {
   }
 
   log(text: string, tone?: Message["tone"]): void {
+    /*
+     * Repeats are counted, not appended.
+     *
+     * Refused actions log every time they are refused, which is correct — you
+     * asked, and it said no — but bumping the same tree twenty times filled the
+     * whole log with it and pushed the fight above out of sight.
+     */
+    const last = this.messages[this.messages.length - 1];
+    if (last && last.text === text && last.tone === tone) {
+      last.count = (last.count ?? 1) + 1;
+      last.turn = this.turn;
+      return;
+    }
     this.messages.push({ text, tone, turn: this.turn });
     // The log is read, not archived; keeping the last few hundred lines is
     // plenty and stops a long run growing without limit.
@@ -98,6 +132,7 @@ export class Game {
     this.actors = [this.player];
     this.place = { kind: "overworld" };
     this.populate();
+    this.rememberWorth();
     this.refreshFov();
 
     this.log(`You wake in ${this.continent.level.name}. Seed ${this.seedWord}.`, "good");
@@ -122,6 +157,7 @@ export class Game {
       spells: def.spells ?? [],
       armour: def.armour ?? 0,
       resist: (def.resist ?? {}) as Record<string, number>,
+      stats: def.stats,
     });
     a.speed = (def as EnemyDef).speed ?? 100;
 
@@ -248,7 +284,17 @@ export class Game {
     // what makes stairs a real escape when a fight has gone wrong.
     this.actors = [this.player];
     this.populate();
+    this.rememberWorth();
     this.refreshFov();
+  }
+
+  /** Price everyone currently alive, so awardXp can tell what a death was worth. */
+  private rememberWorth(): void {
+    this.deadXp.clear();
+    for (const a of this.actors) {
+      if (a.isPlayer) continue;
+      this.deadXp.set(a.id, this.reg.enemies.get(a.def)?.xp ?? 0);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -259,6 +305,7 @@ export class Game {
     return {
       level: this.level,
       actors: this.actors,
+      rng: this.rng,
       statuses: this.reg.statuses as Map<string, StatusDef>,
       turn: this.turn,
       cooldowns: this.cooldowns,
@@ -290,11 +337,74 @@ export class Game {
       spells: this.reg.spells as Map<string, SpellDef>,
     };
     playerActed(this.turnCtx, result, (actor) => monsterTurn(actor, { ...ai, turn: this.turn }));
+    this.awardXp();
     this.refreshFov();
     if (!this.player.alive) {
       this.over = { won: false, reason: "You died." };
       this.log("Your run ends here.", "bad");
     }
+  }
+
+  /**
+   * Hand out experience for anything that has died, and level up if it is earned.
+   *
+   * Driven entirely by the `deadXp` ledger: anything in it that is no longer
+   * alive died since the last check, whatever killed it. That matters because
+   * nothing here can hook "the kill" — a creature can die to a punch, to
+   * burning three turns later, or to poison on somebody else's turn.
+   *
+   * The first version snapshotted who was alive at the top of `finishTurn`,
+   * which looked right and was not: an ability resolves BEFORE finishTurn is
+   * called, so the thing you had just killed was already dead by the time the
+   * snapshot was taken, and punching something to death earned nothing.
+   */
+  private awardXp(): void {
+    let gained = 0;
+    const alive = new Set(this.actors.filter((a) => a.alive).map((a) => a.id));
+    for (const [id, worth] of this.deadXp) {
+      if (!alive.has(id)) gained += worth;
+    }
+    this.rememberWorth();
+    if (gained <= 0) return;
+
+    this.xp += gained;
+    const now = levelForXp(this.xp);
+    while (this.playerLevel < now) {
+      this.playerLevel++;
+      this.player.pools.hpMax += PER_LEVEL.hpMax;
+      this.player.pools.hp += PER_LEVEL.hpMax;
+      this.player.pools.staminaMax += PER_LEVEL.staminaMax;
+      this.player.pools.stamina += PER_LEVEL.staminaMax;
+      this.player.pools.manaMax += PER_LEVEL.manaMax;
+      this.player.pools.mana += PER_LEVEL.manaMax;
+      this.player.clampPools();
+      this.log(`You reach level ${this.playerLevel}.`, "good");
+      // The roll is forked by level, so it is the same five every time for a
+      // given seed — the choice is a decision, not something to reroll.
+      this.pendingChoices = rollChoices(
+        this.playerLevel,
+        this.player.spells,
+        this.reg.spells as Map<string, SpellDef>,
+        this.reg.upgrades as Map<string, UpgradeDef>,
+        this.rng.fork(`level:${this.playerLevel}`),
+      );
+    }
+  }
+
+  /** Take one of the five. */
+  chooseUpgrade(index: number): boolean {
+    const offered = this.pendingChoices;
+    if (!offered) return false;
+    const pick = offered[index];
+    if (!pick) return false;
+    this.log(applyChoice(this.player, pick, this.reg.upgrades as Map<string, UpgradeDef>), "good");
+    this.pendingChoices = null;
+    return true;
+  }
+
+  /** Level, and how far into the next one. */
+  get progress() {
+    return progressOf(this.xp);
   }
 
   refreshFov(): void {
@@ -303,7 +413,7 @@ export class Game {
 
   /** Walk, or attack whatever is in the way. */
   move(dx: number, dy: number): void {
-    if (this.over) return;
+    if (this.over || this.pendingChoices) return;
     const punch = this.reg.abilities.get("punch");
     const res = moveOrAttack(this.actionCtx, this.player, dx, dy, punch);
     // Stepping onto stairs or a dungeon mouth takes you through them at once,
@@ -319,13 +429,13 @@ export class Game {
 
   /** Stand still for a turn. */
   rest(): void {
-    if (this.over) return;
+    if (this.over || this.pendingChoices) return;
     this.finishTurn(wait());
   }
 
   /** Use an ability on an adjacent creature, picking the nearest hostile. */
   ability(id: string, target?: Actor): void {
-    if (this.over) return;
+    if (this.over || this.pendingChoices) return;
     const def = this.reg.abilities.get(id);
     if (!def) { this.log(`There is no ability "${id}".`, "warn"); return; }
     const victim = target ?? this.nearestHostile(def.range ?? 1);
@@ -335,7 +445,7 @@ export class Game {
 
   /** Cast one of the player's spells at the nearest hostile it can reach. */
   cast(id: string, target?: Actor): void {
-    if (this.over) return;
+    if (this.over || this.pendingChoices) return;
     const def = this.reg.spells.get(id);
     if (!def) { this.log(`There is no spell "${id}".`, "warn"); return; }
     if (!this.player.spells.includes(id)) { this.log(`You do not know ${def.name}.`, "warn"); return; }

@@ -1,0 +1,16 @@
+{
+  "name": "Firestorm",
+  "about": "Everything within reach of the blast.",
+  "mana": 28,
+  "kind": "fire",
+  "range": 6,
+  "target": "burst",
+  "tier": 5,
+  "say": "{caster} call{s} down a firestorm.",
+  "damage": 30,
+  "applies": [
+    "burning"
+  ],
+  "radius": 2,
+  "cooldown": 3
+}

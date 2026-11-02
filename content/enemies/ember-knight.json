@@ -1,0 +1,33 @@
+{
+  "name": "Ember Knight",
+  "sprite": "ember-knight",
+  "pools": {
+    "hp": 10,
+    "mana": 20
+  },
+  "armour": 4,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "badlands",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 8,
+  "xp": 82,
+  "spells": [
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0,
+    "cold": 1.6
+  }
+}

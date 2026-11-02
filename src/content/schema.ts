@@ -68,6 +68,11 @@ export type SpellDef = ContentBase & {
   cooldown?: number;
   /** What the log says when it is cast. `{caster}` and `{target}` are filled in. */
   say?: string;
+  /**
+   * How advanced it is, 1-5. The level-up roll only offers spells whose tier
+   * you have reached, so this is what keeps Firestorm off a level-2 roll.
+   */
+  tier?: number;
   /** A sibling .js file with an `onCast` export, for anything the above cannot say. */
   script?: string;
 };
@@ -89,6 +94,8 @@ export type ClassDef = ContentBase & {
   abilities?: string[];
   /** Item ids in the starting pack. */
   items?: string[];
+  /** Starting combat stats, over the defaults in actor.ts. */
+  stats?: Partial<Record<"might" | "focus" | "accuracy" | "evasion", number>>;
   /** Shown on the class-select screen. */
   blurb?: string;
 };
@@ -149,6 +156,8 @@ export type EnemyDef = ContentBase & {
   weight?: number;
   /** Experience for killing it. */
   xp?: number;
+  /** Combat stats, over the defaults. Mostly used to make something hard to hit. */
+  stats?: Partial<Record<"might" | "focus" | "accuracy" | "evasion", number>>;
   /** A sibling .js file: `onTurn`, `onHurt`, `onDeath`. */
   script?: string;
 };
@@ -211,8 +220,28 @@ export type TileDef = ContentBase & {
   biomes?: string[];
 };
 
+// ---------------------------------------------------------------------------
+// Upgrades — content/upgrades/*.json
+// ---------------------------------------------------------------------------
+
+/**
+ * A permanent improvement offered at a level-up.
+ *
+ * These sit alongside spells in the roll of five, so adding one is writing a
+ * file — the same promise as everything else.
+ */
+export type UpgradeDef = ContentBase & {
+  /** What it raises. Added to the current value, so negatives are allowed. */
+  modify: Partial<Record<
+    "might" | "focus" | "accuracy" | "evasion" | "armour" | "hpMax" | "staminaMax" | "manaMax",
+    number
+  >>;
+  /** Relative commonness in the roll. Default 10. */
+  weight?: number;
+};
+
 /** Every kind of content file, by folder name. */
 export const CONTENT_KINDS = [
-  "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items",
+  "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
 ] as const;
 export type ContentKind = (typeof CONTENT_KINDS)[number];

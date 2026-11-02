@@ -1,0 +1,30 @@
+{
+  "name": "Pilgrim",
+  "sprite": "pilgrim",
+  "pools": {
+    "hp": -30,
+    "mana": 20
+  },
+  "armour": 0,
+  "speed": 100,
+  "ai": "wander",
+  "sight": 8,
+  "abilities": [
+    "punch"
+  ],
+  "biomes": [
+    "plains",
+    "forest",
+    "savanna"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "weight": 8,
+  "xp": 0,
+  "spells": [
+    "mend"
+  ],
+  "stance": "neutral"
+}

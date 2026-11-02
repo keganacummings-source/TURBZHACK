@@ -1,0 +1,10 @@
+{
+  "name": "Frost Bite",
+  "damage": 7,
+  "kind": "cold",
+  "range": 1,
+  "say": "{caster} bite{s} {target} with frozen teeth.",
+  "applies": [
+    "chilled"
+  ]
+}

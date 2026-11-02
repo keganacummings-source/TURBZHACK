@@ -1,0 +1,8 @@
+{
+  "name": "Light Foot",
+  "about": "Harder to land a blow on.",
+  "modify": {
+    "evasion": 5
+  },
+  "weight": 11
+}

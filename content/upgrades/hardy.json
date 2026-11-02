@@ -1,0 +1,8 @@
+{
+  "name": "Hardy",
+  "about": "More to lose before you lose it.",
+  "modify": {
+    "hpMax": 20
+  },
+  "weight": 12
+}

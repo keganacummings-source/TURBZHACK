@@ -1,0 +1,26 @@
+{
+  "name": "Guard",
+  "sprite": "guard",
+  "pools": {
+    "hp": 10,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 95,
+  "ai": "wander",
+  "sight": 9,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "plains",
+    "hills"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "weight": 5,
+  "xp": 0,
+  "stance": "neutral"
+}

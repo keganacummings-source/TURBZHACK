@@ -1,10 +1,12 @@
 {
   "name": "Wanderer",
-  "about": "Another soul out here. Leaves you alone unless you start something.",
+  "sprite": "wanderer",
   "pools": {
-    "hp": -20
+    "hp": -20,
+    "mana": -50
   },
-  "stance": "neutral",
+  "armour": 1,
+  "speed": 100,
   "ai": "wander",
   "sight": 8,
   "abilities": [
@@ -20,6 +22,7 @@
     "min": 0,
     "max": 0
   },
-  "weight": 8,
-  "xp": 0
+  "weight": 10,
+  "xp": 0,
+  "stance": "neutral"
 }

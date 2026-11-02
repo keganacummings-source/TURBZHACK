@@ -10,8 +10,9 @@
  * by their content files, so the engine never grows a branch per content item.
  */
 import type { Actor } from "./actor.ts";
-import { applyDamage } from "./combat.ts";
+import { applyDamage, rollToHit } from "./combat.ts";
 import { distance, hasLineOfSight, line, type Level } from "./grid.ts";
+import type { Rng } from "./rng.ts";
 import { applyStatus, type StatusDef } from "./status.ts";
 import type { AbilityDef, SpellDef } from "../content/schema.ts";
 import type { ActionResult, DamageKind, Pos } from "./types.ts";
@@ -19,6 +20,8 @@ import type { ActionResult, DamageKind, Pos } from "./types.ts";
 /** Everything an action needs to reach. */
 export type ActionCtx = {
   level: Level;
+  /** Needed for the to-hit roll. */
+  rng: Rng;
   actors: Actor[];
   statuses: Map<string, StatusDef>;
   turn: number;
@@ -42,8 +45,34 @@ function startCooldown(ctx: ActionCtx, actor: Actor, id: string, turns?: number)
   ctx.cooldowns.set(`${actor.id}:${id}`, ctx.turn + turns);
 }
 
-const say = (text: string, caster: Actor, target?: Actor) =>
-  text.replace(/\{caster\}/g, caster.name).replace(/\{target\}/g, target?.name ?? "it");
+/**
+ * Fill in a content file's `say` line.
+ *
+ * The player is called "You", which is second person, while every monster is
+ * third person — so one template cannot serve both without help, and the first
+ * version printed "You punches Wolf."
+ *
+ * Content writes the verb with a `{s}` or `{es}` token on it:
+ *
+ *     "{caster} punch{es} {target}."   ->  "You punch Wolf."
+ *                                      ->  "Goblin punches you."
+ *
+ * which keeps the grammar in the file that owns the sentence rather than in a
+ * list of irregular verbs in here.
+ */
+export function say(text: string, caster: Actor, target?: Actor): string {
+  const second = caster.isPlayer;
+  return text
+    .replace(/\{caster\}/g, caster.name)
+    .replace(/\{target\}/g, target ? objectName(target) : "it")
+    .replace(/\{es\}/g, second ? "" : "es")
+    .replace(/\{s\}/g, second ? "" : "s");
+}
+
+/** How to refer to an actor in the middle of a sentence. */
+export function objectName(actor: Actor): string {
+  return actor.isPlayer ? "you" : actor.name;
+}
 
 /**
  * Walk one step, or attack whoever is standing there.
@@ -119,8 +148,26 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   const messages: NonNullable<ActionResult["messages"]> = [];
   if (def.say) messages.push({ text: say(def.say, actor, target), tone: "plain" });
 
+  /*
+   * Abilities roll to hit; spells do not.
+   *
+   * That split is the point of having two kinds of attack: a swing can miss
+   * and gets better as you raise accuracy, while magic always lands and is
+   * paid for in mana instead. It also means `accuracy` is a meaningful thing
+   * to be offered at a level-up rather than a stat with nothing attached.
+   *
+   * The cost is spent either way — a miss is a turn and a kick's stamina gone.
+   */
+  if (!rollToHit(actor, target, ctx.rng)) {
+    messages.push({
+      text: `${def.name} misses ${objectName(target)}.`,
+      tone: actor.isPlayer ? "warn" : "plain",
+    });
+    return { tookTurn: true, messages };
+  }
+
   const out = applyDamage(target, {
-    amount: def.damage,
+    amount: def.damage + actor.stats.might,
     kind: (def.kind ?? "physical") as DamageKind,
     source: actor,
     label: def.name,
@@ -204,7 +251,9 @@ export function castSpell(
     let dealt = 0;
     if (def.damage) {
       const out = applyDamage(v, {
-        amount: def.damage,
+        // Focus raises every spell, which is what makes it worth taking at a
+        // level-up whatever you happen to have learned.
+        amount: def.damage + actor.stats.focus,
         kind: (def.kind ?? "pure") as DamageKind,
         source: actor,
         label: def.name,

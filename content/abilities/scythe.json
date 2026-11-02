@@ -1,0 +1,12 @@
+{
+  "name": "Scythe",
+  "damage": 20,
+  "kind": "pure",
+  "range": 1,
+  "say": "{caster} sweep{s} a scythe through {target}.",
+  "stamina": 20,
+  "applies": [
+    "withered"
+  ],
+  "cooldown": 1
+}

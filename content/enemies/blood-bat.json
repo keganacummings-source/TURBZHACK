@@ -1,0 +1,25 @@
+{
+  "name": "Blood Bat",
+  "sprite": "blood-bat",
+  "pools": {
+    "hp": -66,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 150,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "drain-bite"
+  ],
+  "biomes": [
+    "dungeon",
+    "swamp"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 28
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Warmage",
+  "about": "Hits harder with everything, at a cost in skin.",
+  "modify": {
+    "might": 4,
+    "focus": 4,
+    "armour": -1
+  },
+  "weight": 6
+}

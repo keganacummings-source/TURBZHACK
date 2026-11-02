@@ -1,6 +1,6 @@
 {
   "name": "Burning",
-  "about": "Takes a quarter of the damage that lit it, every turn, and armour does not stop it.",
+  "about": "A quarter of the damage that lit it, every turn, and armour does not stop it.",
   "turns": 4,
   "tick": {
     "kind": "fire",

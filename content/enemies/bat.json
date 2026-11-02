@@ -1,0 +1,26 @@
+{
+  "name": "Bat",
+  "sprite": "bat",
+  "pools": {
+    "hp": -82,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 150,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "dungeon",
+    "hills",
+    "badlands"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 7
+  },
+  "weight": 22,
+  "xp": 10
+}

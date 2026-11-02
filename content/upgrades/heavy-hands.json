@@ -1,0 +1,8 @@
+{
+  "name": "Heavy Hands",
+  "about": "Considerably heavier.",
+  "modify": {
+    "might": 6
+  },
+  "weight": 6
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Orc Veteran",
+  "sprite": "orc-veteran",
+  "pools": {
+    "hp": 10,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave",
+    "slam"
+  ],
+  "biomes": [
+    "badlands",
+    "highland",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 10,
+  "xp": 60
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Steady Aim",
+  "about": "You miss less.",
+  "modify": {
+    "accuracy": 6
+  },
+  "weight": 12
+}

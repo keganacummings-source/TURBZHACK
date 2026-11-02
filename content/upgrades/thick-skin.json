@@ -1,0 +1,8 @@
+{
+  "name": "Thick Skin",
+  "about": "Blows glance off.",
+  "modify": {
+    "armour": 2
+  },
+  "weight": 12
+}

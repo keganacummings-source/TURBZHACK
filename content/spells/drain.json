@@ -1,9 +1,11 @@
 {
   "name": "Drain",
-  "mana": 6,
-  "damage": 6,
+  "about": "Takes the warmth out of a thing.",
+  "mana": 7,
   "kind": "pure",
   "range": 6,
   "target": "actor",
-  "say": "{caster} draws the warmth out of {target}."
+  "tier": 1,
+  "say": "{caster} draw{s} the warmth out of {target}.",
+  "damage": 10
 }

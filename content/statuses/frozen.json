@@ -1,13 +1,15 @@
 {
   "name": "Frozen",
-  "about": "Cannot act. Rolls an even chance to break free at the start of every one of its turns.",
+  "about": "Cannot act. Even odds of breaking free each turn.",
   "turns": 6,
   "preventsAction": true,
   "breakChance": 0.5,
-  "modify": { "armour": -2 },
+  "modify": {
+    "armour": -2
+  },
   "messages": {
     "applied": "{name} is frozen solid!",
     "broke": "{name} breaks out of the ice.",
-    "ended": "The ice around {name} melts away."
+    "ended": "The ice around {name} melts."
   }
 }

@@ -23,7 +23,7 @@
 import {
   CONTENT_KINDS,
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
-  type EnemyDef, type ItemDef, type SpellDef, type TileDef,
+  type EnemyDef, type ItemDef, type SpellDef, type TileDef, type UpgradeDef,
 } from "./schema.ts";
 import type { StatusDef } from "../engine/status.ts";
 
@@ -58,6 +58,7 @@ export class Registry {
   readonly statuses = new Map<string, StatusDef>();
   readonly tiles = new Map<string, TileDef>();
   readonly items = new Map<string, ItemDef>();
+  readonly upgrades = new Map<string, UpgradeDef>();
   readonly origins = new Map<string, Origin>();
   readonly scripts = new Map<string, unknown>();
   readonly problems: Problem[] = [];
@@ -73,6 +74,7 @@ export class Registry {
       case "statuses": return this.statuses as never;
       case "tiles": return this.tiles as never;
       case "items": return this.items as never;
+      case "upgrades": return this.upgrades as never;
     }
   }
 
@@ -233,6 +235,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("heal", { min: 0 });
       num("cooldown", { min: 0 });
       num("statusTurns", { min: 1 });
+      num("tier", { min: 1, max: 5 });
       damageKind("kind");
       oneOf("target", ["actor", "self", "beam", "burst"]);
       strList("applies");
@@ -257,6 +260,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       strList("items");
       checkPools(def, out);
       checkResist(def, out);
+      checkStats(def, out);
       break;
 
     case "enemies":
@@ -272,6 +276,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       oneOf("stance", ["hostile", "neutral", "friendly"]);
       checkPools(def, out);
       checkResist(def, out);
+      checkStats(def, out);
       break;
 
     case "statuses":
@@ -318,6 +323,27 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("cost", { min: 0 });
       strList("biomes");
       break;
+
+    case "upgrades": {
+      num("weight", { min: 0 });
+      const m = def.modify;
+      if (m === undefined) {
+        out.push(`"modify" is required — what does this upgrade raise?`);
+        break;
+      }
+      if (m === null || typeof m !== "object" || Array.isArray(m)) {
+        out.push(`"modify" must be an object like {"might": 2}`);
+        break;
+      }
+      const allowed = ["might", "focus", "accuracy", "evasion", "armour", "hpMax", "staminaMax", "manaMax"];
+      const entries = Object.entries(m as Record<string, unknown>);
+      if (!entries.length) out.push(`"modify" is empty, so this upgrade does nothing`);
+      for (const [k, v] of entries) {
+        if (!allowed.includes(k)) out.push(`"modify.${k}" is not something an upgrade can raise — use ${allowed.join(", ")}`);
+        else if (typeof v !== "number" || !Number.isFinite(v)) out.push(`"modify.${k}" must be a number`);
+      }
+      break;
+    }
   }
   return out;
 }
@@ -334,6 +360,22 @@ function checkPools(def: Record<string, unknown>, out: string[]): void {
       out.push(`"pools.${k}" is not a pool — use hp, stamina or mana`);
     } else if (typeof v !== "number" || !Number.isFinite(v)) {
       out.push(`"pools.${k}" must be a number (it is added to the base, so it may be negative)`);
+    }
+  }
+}
+
+function checkStats(def: Record<string, unknown>, out: string[]): void {
+  const st = def.stats;
+  if (st === undefined) return;
+  if (st === null || typeof st !== "object" || Array.isArray(st)) {
+    out.push(`"stats" must be an object like {"accuracy": 90, "might": 2}`);
+    return;
+  }
+  for (const [k, v] of Object.entries(st as Record<string, unknown>)) {
+    if (!["might", "focus", "accuracy", "evasion"].includes(k)) {
+      out.push(`"stats.${k}" is not a combat stat — use might, focus, accuracy or evasion`);
+    } else if (typeof v !== "number" || !Number.isFinite(v)) {
+      out.push(`"stats.${k}" must be a number`);
     }
   }
 }
