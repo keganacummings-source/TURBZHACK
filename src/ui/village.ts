@@ -167,6 +167,7 @@ export function talkHtml(game: Game, who: Actor): string {
 /** A skill id as a person would say it. */
 export function skillName(skill: string): string {
   if (skill.startsWith("weapon-")) return `${skill.slice(7)} work`;
+  if (skill.startsWith("recipe:")) return `recipe: ${skill.slice(7).replace(/-/g, " ")}`;
   return skill;
 }
 

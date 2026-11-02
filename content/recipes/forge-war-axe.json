@@ -5,15 +5,15 @@
   "turns": 5,
   "needs": [
     {
-      "item": "iron-ingot",
-      "amount": 3
+      "metal": 3
     },
     {
-      "item": "hardwood"
+      "timber": 1
     }
   ],
   "makes": {
     "item": "war-axe"
   },
-  "about": "Most of the work is the haft."
+  "about": "Most of the work is the haft.",
+  "forge": true
 }

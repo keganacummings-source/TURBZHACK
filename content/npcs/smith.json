@@ -44,6 +44,14 @@
     {
       "skill": "smithing",
       "price": 90
+    },
+    {
+      "skill": "recipe:steel-ingot",
+      "price": 200
+    },
+    {
+      "skill": "recipe:meteoric-ingot",
+      "price": 600
     }
   ],
   "quests": [

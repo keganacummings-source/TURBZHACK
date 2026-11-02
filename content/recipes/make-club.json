@@ -11,5 +11,6 @@
   "makes": {
     "item": "club"
   },
-  "about": "It is a heavy stick and it works."
+  "about": "It is a heavy stick and it works.",
+  "forge": true
 }

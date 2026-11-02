@@ -3,5 +3,7 @@
   "sprite": "itm-wood",
   "slot": "material",
   "about": "Dense, slow-grown, worth the arm.",
-  "stack": true
+  "stack": true,
+  "provides": "wood",
+  "family": "timber"
 }

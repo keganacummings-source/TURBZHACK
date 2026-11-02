@@ -3,5 +3,7 @@
   "sprite": "itm-ingot",
   "slot": "material",
   "about": "Soft, bright, and good against some things.",
-  "stack": true
+  "stack": true,
+  "provides": "silver",
+  "family": "metal"
 }

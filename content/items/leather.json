@@ -3,5 +3,6 @@
   "sprite": "itm-hide",
   "slot": "material",
   "about": "Scraped and dried.",
-  "stack": true
+  "stack": true,
+  "provides": "copper"
 }

@@ -12,5 +12,6 @@
   "makes": {
     "item": "leather-armour"
   },
-  "about": "Cut, punch, lace."
+  "about": "Cut, punch, lace.",
+  "forge": true
 }

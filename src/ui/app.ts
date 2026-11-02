@@ -416,13 +416,44 @@ export async function boot(): Promise<void> {
         if (!mine.length) return "";
         return `<h3>${g}</h3>
         <table class="pack-table">${mine.map((r) => `<tr>
-          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.name)}${
+            r.forge && r.material ? ` <span class="dim">(${escapeHtml(r.material)})</span>` : ""}</td>
           <td class="choice-detail">${escapeHtml(r.why)}</td>
           <td>${r.can ? `<button data-craft="${escapeAttr(r.id)}">make</button>` : ""}
               <button data-wiki-jump="recipes/${escapeAttr(r.id)}">what is it</button></td>
         </tr>`).join("")}</table>`;
       }).join("")}
+      ${reforgeBlock()}
       <p class="dim">Esc closes.</p>`;
+  };
+
+  /**
+   * Reforging: a gamble on something you already own.
+   *
+   * Only offered at a forge or a bench, and only for the equipment you are
+   * carrying, since there is no point reforging a potion. The cost and the risk
+   * are both stated, because a reforge that could come out worse is only a fair
+   * bet if the player knows that going in.
+   */
+  const reforgeBlock = () => {
+    if (!game) return "";
+    if (!game.stationsInReach.has("forge") && !game.stationsInReach.has("bench")) return "";
+    const gear = [...new Set(game.pack)].filter((id) => {
+      const slot = reg.items.get(id)?.slot;
+      return slot && !["potion", "scroll", "misc", "material", "food"].includes(slot);
+    });
+    if (!gear.length) return "";
+    const haveIngot = game.countOf("iron-ingot") > 0;
+    return `<h3>Reforge</h3>
+      <p class="dim">Costs an iron ingot and may come out worse. For something already worth the gamble.</p>
+      <table class="pack-table">${gear.map((id) => {
+        const inst = game!.instanceOf(id);
+        return `<tr>
+          <td>${escapeHtml(game!.displayName(id))}</td>
+          <td class="choice-detail">${inst?.quality ? escapeHtml(inst.quality) : "plain"}</td>
+          <td>${haveIngot ? `<button data-reforge="${escapeAttr(id)}">reforge</button>` : `<span class="dim">need an iron ingot</span>`}</td>
+        </tr>`;
+      }).join("")}</table>`;
   };
 
   /**
@@ -662,20 +693,32 @@ export async function boot(): Promise<void> {
       const item = id ? items.get(id) : undefined;
       return `<tr>
         <td class="dim">${SLOT_NAME[slot]}</td>
-        <td>${item ? escapeHtml(item.name) : '<span class="dim">—</span>'}</td>
+        <td>${item ? escapeHtml(game!.displayName(id!)) : '<span class="dim">—</span>'}</td>
         <td class="choice-detail">${item ? escapeHtml(describe(item)) : ""}</td>
         <td>${item ? `<button data-off="${slot}">take off</button>` : ""}</td>
       </tr>`;
     }).join("");
 
+    /*
+     * Stack the pack for display.
+     *
+     * A pack of forty ore as forty rows is unreadable, so identical things are
+     * counted into one row. An item with its own instance data — a crafted
+     * weapon of a particular quality — is never stacked, because two of them are
+     * genuinely different objects and hiding one behind a "×2" would lose it.
+     */
+    const counts = new Map<string, number>();
+    for (const id of game.pack) counts.set(id, (counts.get(id) ?? 0) + 1);
     const packRows = game.pack.length
-      ? game.pack.map((id, i) => {
+      ? [...counts].map(([id, n]) => {
           const item = items.get(id);
           if (!item) return "";
-          const wearable = !!item.slot && !["potion", "scroll", "misc"].includes(item.slot);
+          const inst = game!.instanceOf(id);
+          const name = game!.displayName(id);
+          const wearable = !!item.slot && !["potion", "scroll", "misc", "material", "food"].includes(item.slot);
           return `<tr>
-            <td class="dim">${i + 1}</td>
-            <td>${escapeHtml(item.name)}</td>
+            <td class="dim">${n > 1 && !inst ? `×${n}` : ""}</td>
+            <td>${escapeHtml(name)}</td>
             <td class="choice-detail">${escapeHtml(describe(item))}</td>
             <td>
               ${wearable ? `<button data-wear="${id}">wear</button>` : ""}
@@ -1021,6 +1064,8 @@ export async function boot(): Promise<void> {
     // --- crafting ----------------------------------------------------------
     const make = t.closest<HTMLElement>("[data-craft]");
     if (make && game) { game.craft(make.dataset.craft!); render(); return; }
+    const reforgeBtn = t.closest<HTMLElement>("[data-reforge]");
+    if (reforgeBtn && game) { game.reforge(reforgeBtn.dataset.reforge!, { item: "iron-ingot", amount: 1 }); render(); return; }
 
     if (game) {
       const wear = t.closest<HTMLElement>("[data-wear]");

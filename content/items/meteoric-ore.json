@@ -1,0 +1,8 @@
+{
+  "name": "Meteoric Shard",
+  "sprite": "itm-gem",
+  "slot": "material",
+  "about": "It fell a long way and remembers.",
+  "stack": true,
+  "value": 90
+}

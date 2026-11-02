@@ -1,0 +1,8 @@
+{
+  "name": "Copper Ore",
+  "sprite": "itm-ore",
+  "slot": "material",
+  "about": "Green-streaked rock.",
+  "stack": true,
+  "value": 3
+}

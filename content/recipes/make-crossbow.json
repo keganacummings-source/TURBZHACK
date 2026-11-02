@@ -5,12 +5,10 @@
   "turns": 6,
   "needs": [
     {
-      "item": "hardwood",
-      "amount": 3
+      "metal": 2
     },
     {
-      "item": "iron-ingot",
-      "amount": 2
+      "timber": 3
     },
     {
       "item": "leather"
@@ -19,5 +17,6 @@
   "makes": {
     "item": "crossbow"
   },
-  "about": "Fiddly, and then suddenly lethal."
+  "about": "Fiddly, and then suddenly lethal.",
+  "forge": true
 }

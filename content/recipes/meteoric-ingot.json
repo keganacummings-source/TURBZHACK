@@ -1,0 +1,20 @@
+{
+  "name": "Work Meteoric Iron",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 6,
+  "needs": [
+    {
+      "item": "meteoric-ore",
+      "amount": 2
+    },
+    {
+      "item": "silver-ingot"
+    }
+  ],
+  "makes": {
+    "item": "meteoric-ingot"
+  },
+  "about": "Mostly listening.",
+  "secret": true
+}

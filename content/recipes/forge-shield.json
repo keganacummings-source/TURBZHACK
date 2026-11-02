@@ -5,15 +5,15 @@
   "turns": 4,
   "needs": [
     {
-      "item": "iron-ingot"
+      "metal": 1
     },
     {
-      "item": "hardwood",
-      "amount": 2
+      "timber": 2
     }
   ],
   "makes": {
     "item": "shield"
   },
-  "about": "Wood takes the blow, iron takes the edge."
+  "about": "Wood takes the blow, iron takes the edge.",
+  "forge": true
 }

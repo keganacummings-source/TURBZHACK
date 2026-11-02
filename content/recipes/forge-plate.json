@@ -5,16 +5,15 @@
   "turns": 8,
   "needs": [
     {
-      "item": "iron-ingot",
-      "amount": 6
+      "metal": 6
     },
     {
-      "item": "leather",
-      "amount": 2
+      "item": "leather"
     }
   ],
   "makes": {
     "item": "plate-armour"
   },
-  "about": "Weeks, compressed."
+  "about": "Weeks, compressed.",
+  "forge": true
 }

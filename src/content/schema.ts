@@ -333,12 +333,40 @@ export type RecipeDef = ContentBase & {
   station: "camp" | "forge" | "bench";
   /** Which trade it belongs to, for grouping and for skill. */
   craft: "smithing" | "cooking" | "alchemy" | "woodwork";
-  /** What it consumes. */
-  needs: { item: string; amount?: number }[];
+  /**
+   * What it consumes.
+   *
+   * A need is usually a specific item. A forge recipe can instead ask for an
+   * amount of a MATERIAL FAMILY — `{ metal: 2 }` or `{ timber: 1 }` — which any
+   * item of that family satisfies, and the best one used decides what the result
+   * is made of. That is what lets a single "forge a sword" recipe produce an
+   * iron, steel or meteoric sword without a recipe per metal.
+   */
+  needs: { item?: string; amount?: number; metal?: number; timber?: number }[];
   /** What it produces. */
   makes: { item: string; amount?: number };
   /** Turns of work. */
   turns?: number;
+  /**
+   * This recipe forges a piece of equipment, so the result rolls a quality and
+   * takes a material.
+   *
+   * The material is whichever material-bearing ingredient was used — a sword
+   * forged from steel ingots is a steel sword — and the quality is rolled from
+   * the smith's skill, their Cunning, and the dice. That is where the depth of
+   * crafting lives: the same recipe makes a crude iron blade in a beginner's
+   * hands and a masterwork meteoric one in a master's.
+   */
+  forge?: boolean;
+  /**
+   * Hidden until learned.
+   *
+   * A recipe marked secret does not appear on the crafting screen until it has
+   * been discovered — taught by a trainer, found written down, or worked out by
+   * having its ingredients to hand. The basics are always known; the good things
+   * are the reward for exploring the trade.
+   */
+  secret?: boolean;
 };
 
 export type ItemDef = ContentBase & {
@@ -353,6 +381,17 @@ export type ItemDef = ContentBase & {
   source?: string;
   /** This is the tool for a trade, so carrying it makes that work faster. */
   tool?: "mining" | "woodcutting" | "foraging";
+  /** Which family this material belongs to, for recipes that take "any metal". */
+  family?: "metal" | "timber";
+  /**
+   * This item is a lump of a material: an ingot, a plank, a hide.
+   *
+   * A recipe that forges equipment takes the material of whichever such
+   * ingredient it consumed, so "forge a sword" plus a steel ingot is a steel
+   * sword. One field rather than a recipe per material is what keeps the recipe
+   * book from being seven near-identical copies of every weapon.
+   */
+  provides?: string;
   /** Several of these stack in the pack rather than taking a line each. */
   stack?: boolean;
   /**

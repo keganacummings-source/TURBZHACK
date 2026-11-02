@@ -15,8 +15,9 @@ import { makeQuest, isDone, ordinal, progressLine, type ActiveQuest } from "./en
 import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
-  WEAPON_CLASS, accuracyWith, classOf, damageWith, itemValue, skillFor, swingCost, weaponStats,
-  type ItemInstance,
+  MATERIALS, WEAPON_CLASS, accuracyWith, classOf, damageWith, fullName, itemValue,
+  qualityFor, qualityRank, skillFor, swingCost, weaponStats,
+  type ItemInstance, type MaterialId,
 } from "./engine/weapons.ts";
 import { monsterTurn, type AiCtx } from "./engine/ai.ts";
 import { castSpell, moveOrAttack, useAbility, wait, actorAt, type ActionCtx } from "./engine/actions.ts";
@@ -24,7 +25,7 @@ import { ENERGY_PER_ACTION, playerActed, type TurnContext } from "./engine/turns
 import type { StatusDef } from "./engine/status.ts";
 import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
-import type { AbilityDef, ClassDef, EnemyDef, NpcDef, QuestDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
+import type { AbilityDef, ClassDef, EnemyDef, NpcDef, QuestDef, RecipeDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
 import {
   applyChoice, isMilestone, levelForXp, newPerks, rollChoices, xpForLevel,
   PER_LEVEL, type Choice, type Perks,
@@ -1326,6 +1327,7 @@ export class Game {
    * so this is the one lookup that sees all of them.
    */
   skillLevel(skill: string): number {
+    if (skill.startsWith("recipe:")) return this.knownRecipes.has(skill.slice(7)) ? 1 : 0;
     if (skill.startsWith("weapon-")) return this.skillIn(skill.slice(7));
     if (skill in this.skills) return this.skills[skill as keyof typeof this.skills];
     if (skill in this.crafts) return this.crafts[skill as keyof typeof this.crafts];
@@ -1347,7 +1349,13 @@ export class Game {
   train(skill: string, price: number): boolean {
     if (this.coin < price) { this.log("You cannot afford that.", "warn"); return false; }
     this.coin -= price;
-    if (skill.startsWith("weapon-")) {
+    if (skill.startsWith("recipe:")) {
+      const id = skill.slice(7);
+      if (this.knownRecipes.has(id)) { this.coin += price; this.log("You already know that.", "warn"); return false; }
+      this.learnRecipe(id);
+      this.finishTurn({ tookTurn: true });
+      return true;
+    } else if (skill.startsWith("weapon-")) {
       const cls = skill.slice(7);
       this.weaponSkills[cls] = (this.weaponSkills[cls] ?? 0) + 1;
     } else if (skill in this.skills) {
@@ -1380,6 +1388,13 @@ export class Game {
 
   instanceOf(itemId: string): ItemInstance | undefined {
     return this.instances.get(itemId);
+  }
+
+  /** The name to show for an item, crafted quality and material included. */
+  displayName(itemId: string): string {
+    const def = this.reg.items.get(itemId);
+    if (!def) return itemId;
+    return fullName(def, this.instances.get(itemId));
   }
 
   /** Put something on. */
@@ -1492,6 +1507,7 @@ export class Game {
       weaponSkills: { ...this.weaponSkills },
       coin: this.coin,
       tameSkill: this.tameSkill,
+      knownRecipes: [...this.knownRecipes],
       markets: [...this.markets].map(([k, m]) => [k, { ...m, stock: { ...m.stock } }] as [number, Market]),
       standing: [...this.standing],
       quests: this.quests.map((q) => ({ ...q })),
@@ -1539,6 +1555,7 @@ export class Game {
     this.weaponSkills = { ...(save.weaponSkills ?? {}) };
     this.coin = save.coin ?? 0;
     this.tameSkill = save.tameSkill ?? 0;
+    this.knownRecipes = new Set(save.knownRecipes ?? []);
     this.markets = new Map((save.markets ?? []) as [number, Market][]);
     this.standing = new Map((save.standing ?? []) as [number, number][]);
     this.quests = (save.quests ?? []) as ActiveQuest[];
@@ -1820,23 +1837,40 @@ export class Game {
   }
 
   /** Everything you could make right now, and why you cannot make the rest. */
-  recipesHere(): { id: string; name: string; can: boolean; why: string; craft: string; station: string }[] {
+  recipesHere(): { id: string; name: string; can: boolean; why: string; craft: string; station: string; material?: string; forge?: boolean }[] {
     const stations = this.stationsInReach;
-    return [...this.reg.recipes.values()].map((r) => {
-      const id = String(r.id);
-      const short: string[] = [];
-      for (const n of r.needs ?? []) {
-        const have = this.countOf(n.item);
-        const want = n.amount ?? 1;
-        if (have < want) short.push(`${want - have}× ${this.reg.items.get(n.item)?.name ?? n.item}`);
-      }
-      const hasStation = stations.has(r.station);
-      return {
-        id, name: r.name ?? id, craft: r.craft, station: r.station,
-        can: hasStation && !short.length,
-        why: !hasStation ? `needs a ${r.station}` : short.length ? `short ${short.join(", ")}` : "ready",
-      };
-    });
+    return [...this.reg.recipes.values()]
+      // Secret recipes you have not worked out yet are not shown at all — a
+      // greyed-out "locked" row would give the secret away.
+      .filter((r) => this.knowsRecipe(String(r.id)))
+      .map((r) => {
+        const id = String(r.id);
+        const short: string[] = [];
+        for (const n of r.needs ?? []) {
+          if (n.item) {
+            const have = this.countOf(n.item);
+            const want = n.amount ?? 1;
+            if (have < want) short.push(`${want - have}× ${this.reg.items.get(n.item)?.name ?? n.item}`);
+          }
+        }
+        // Family needs are reported as "metal" / "timber", with the best you
+        // have in brackets so you can see what it would be made of.
+        const need = this.familyNeed(r);
+        for (const [fam, want] of [["metal", need.metal], ["timber", need.timber]] as ["metal" | "timber", number][]) {
+          if (!want) continue;
+          const have = this.metalsInPack(fam).reduce((n, id2) => n + this.countOf(id2), 0);
+          if (have < want) short.push(`${want - have} ${fam}`);
+        }
+        const hasStation = stations.has(r.station);
+        const best = need.metal ? this.metalsInPack("metal")[0] : need.timber ? this.metalsInPack("timber")[0] : undefined;
+        return {
+          id, name: r.name ?? id, craft: r.craft, station: r.station,
+          material: best ? this.reg.items.get(best)?.provides : undefined,
+          forge: !!r.forge,
+          can: hasStation && !short.length,
+          why: !hasStation ? `needs a ${r.station}` : short.length ? `short ${short.join(", ")}` : "ready",
+        };
+      });
   }
 
   /**
@@ -1848,35 +1882,91 @@ export class Game {
    * holding off a wolf — but the world does still move, so a camp is not a safe
    * room.
    */
-  craft(recipeId: string): void {
+  craft(recipeId: string, chosen?: { metal?: string; timber?: string }): void {
     if (this.over || this.pendingChoices) return;
     const r = this.reg.recipes.get(recipeId);
     if (!r) { this.log("You do not know that one.", "warn"); return; }
+    if (!this.knowsRecipe(recipeId)) { this.log("You have not worked that one out yet.", "warn"); return; }
     if (!this.stationsInReach.has(r.station)) {
       this.log(`You need to be at a ${r.station} for that.`, "warn");
       return;
     }
+
+    // Family needs: pick the metal/timber to use. The caller may name one; if
+    // not, use the best available, because nobody forges a sword out of their
+    // worst metal by choice.
+    const need = this.familyNeed(r);
+    const metalId = need.metal ? (chosen?.metal ?? this.metalsInPack("metal")[0]) : undefined;
+    const timberId = need.timber ? (chosen?.timber ?? this.metalsInPack("timber")[0]) : undefined;
+
+    if (need.metal && (!metalId || this.countOf(metalId) < need.metal)) {
+      this.log(`You need ${need.metal} metal for that.`, "warn");
+      return;
+    }
+    if (need.timber && (!timberId || this.countOf(timberId) < need.timber)) {
+      this.log(`You need ${need.timber} timber for that.`, "warn");
+      return;
+    }
     for (const n of r.needs ?? []) {
+      if (!n.item) continue;
       if (this.countOf(n.item) < (n.amount ?? 1)) {
         this.log(`Not enough ${this.reg.items.get(n.item)?.name ?? n.item}.`, "warn");
         return;
       }
     }
 
+    /*
+     * The result's material is the better of the two families used.
+     *
+     * A sword forged from steel and plain wood is a steel sword, because the
+     * metal is what a blade is; the family needs are ranked and the best wins.
+     */
+    const usedMats = [metalId, timberId]
+      .map((id) => id && this.reg.items.get(id)?.provides as MaterialId | undefined)
+      .filter((m): m is MaterialId => !!m);
+    const material = usedMats.length
+      ? usedMats.sort((a, b) => MATERIALS.indexOf(b) - MATERIALS.indexOf(a))[0]!
+      : this.materialUsed(r);
+
+    // Consume the families, then the fixed ingredients.
+    if (metalId) for (let k = 0; k < need.metal; k++) this.pack.splice(this.pack.indexOf(metalId), 1);
+    if (timberId) for (let k = 0; k < need.timber; k++) this.pack.splice(this.pack.indexOf(timberId), 1);
     for (const n of r.needs ?? []) {
+      if (!n.item) continue;
       for (let k = 0; k < (n.amount ?? 1); k++) this.pack.splice(this.pack.indexOf(n.item), 1);
     }
+
+    const def = this.reg.items.get(r.makes.item);
     const madeCount = r.makes.amount ?? 1;
-    for (let k = 0; k < madeCount; k++) {
+    let madeName = def?.name ?? r.makes.item;
+
+    if (r.forge && def) {
+      /*
+       * A forged item is a specific object, not a stack.
+       *
+       * It rolls a quality from the smith's skill, their Cunning and the dice,
+       * and takes the material it was made of. That is the whole depth of
+       * crafting: the same recipe is a crude iron blade in a beginner's hands and
+       * a masterwork meteoric one in a master's, and which you get is worth
+       * caring about.
+       */
+      const inst = this.forgeInstance(r, material);
       this.pack.push(r.makes.item);
-      // Making the thing counts: an order for ten ingots does not care whether
-      // you dug them up or smelted them.
+      this.instances.set(r.makes.item, inst);
       this.noteProgress("gather", r.makes.item);
+      madeName = fullName(def, inst);
+    } else {
+      for (let k = 0; k < madeCount; k++) {
+        this.pack.push(r.makes.item);
+        // Making the thing counts: an order for ten ingots does not care whether
+        // you dug them up or smelted them.
+        this.noteProgress("gather", r.makes.item);
+      }
     }
     this.crafts[r.craft]++;
+    this.discoverFrom(r.craft);
 
-    const name = this.reg.items.get(r.makes.item)?.name ?? r.makes.item;
-    this.log(`You make ${madeCount > 1 ? `${madeCount} × ${name}` : name}.`, "good");
+    this.log(`You make ${madeCount > 1 && !r.forge ? `${madeCount} × ${madeName}` : madeName}.`, "good");
 
     // Skill shortens the job, to a floor of one turn.
     const turns = Math.max(1,
@@ -1885,6 +1975,141 @@ export class Game {
       if (this.over) break;
       this.finishTurn({ tookTurn: true });
     }
+  }
+
+  /** Items in the pack of a given family, best material first. */
+  private metalsInPack(family: "metal" | "timber"): string[] {
+    const mats = [...new Set(this.pack)]
+      .filter((id) => this.reg.items.get(id)?.family === family)
+      .sort((a, b) => MATERIALS.indexOf((this.reg.items.get(b)?.provides ?? "iron") as MaterialId)
+                    - MATERIALS.indexOf((this.reg.items.get(a)?.provides ?? "iron") as MaterialId));
+    return mats;
+  }
+
+  /** How much of a family need a recipe has. */
+  private familyNeed(r: RecipeDef): { metal: number; timber: number } {
+    let metal = 0, timber = 0;
+    for (const n of r.needs ?? []) {
+      if (n.metal) metal += n.metal;
+      if (n.timber) timber += n.timber;
+    }
+    return { metal, timber };
+  }
+
+  /**
+   * Which material a forged item should be, from what went into it.
+   *
+   * The best material among the ingredients, so paying for steel ingots gets you
+   * a steel sword rather than the recipe's nominal iron. Falls back to iron when
+   * nothing in the recipe declares a material, so a recipe that forges from, say,
+   * leather still produces something rather than a materialless object.
+   */
+  private materialUsed(r: RecipeDef): MaterialId {
+    let best: MaterialId = "iron";
+    let bestRank = -1;
+    for (const n of r.needs ?? []) {
+      if (!n.item) continue;
+      const provides = this.reg.items.get(n.item)?.provides as MaterialId | undefined;
+      if (!provides) continue;
+      const rank = MATERIALS.indexOf(provides);
+      if (rank > bestRank) { bestRank = rank; best = provides; }
+    }
+    return best;
+  }
+
+  /** Roll the quality of a forged item from skill, Cunning and the dice. */
+  private forgeInstance(r: RecipeDef, material: MaterialId): ItemInstance {
+    const rng = this.rng.fork(`forge:${r.id}:${this.turn}`);
+    const skill = this.crafts[r.craft as keyof typeof this.crafts] ?? 0;
+    const d = this.player.derived;
+    // Skill and Cunning raise the roll; the dice are wide enough that a beginner
+    // can get lucky and a master can have a bad day, so the outcome stays a
+    // reason to keep crafting rather than a foregone conclusion.
+    const roll = skill * 2 + d.craftQuality + rng.int(45);
+    return { item: String(r.makes.item), material, quality: qualityFor(roll), maker: "You" };
+  }
+
+  // --- recipe discovery ----------------------------------------------------
+
+  /** Secret recipes the player has worked out or been taught. */
+  knownRecipes = new Set<string>();
+
+  /** Is this recipe available to craft from? */
+  knowsRecipe(id: string): boolean {
+    const r = this.reg.recipes.get(id);
+    if (!r) return false;
+    return !r.secret || this.knownRecipes.has(id);
+  }
+
+  /** Learn a recipe, from a trainer or a find. Returns whether it was new. */
+  learnRecipe(id: string): boolean {
+    if (!this.reg.recipes.has(id) || this.knownRecipes.has(id)) return false;
+    this.knownRecipes.add(id);
+    this.log(`You work out how to make ${this.reg.recipes.get(id)?.name ?? id}.`, "good");
+    return true;
+  }
+
+  /**
+   * Working a trade can turn up a secret of it.
+   *
+   * After a craft, a secret recipe in the same trade whose ingredients you are
+   * carrying may suddenly make sense — which is how a smith discovers steel: by
+   * having the iron and the salt in front of them often enough. Skill raises the
+   * odds, so discovery comes faster to someone who has been at it.
+   */
+  private discoverFrom(craft: string): void {
+    const rng = this.rng.fork(`discover:${craft}:${this.turn}`);
+    const skill = this.crafts[craft as keyof typeof this.crafts] ?? 0;
+    for (const [id, r] of this.reg.recipes) {
+      if (!r.secret || r.craft !== craft || this.knownRecipes.has(id)) continue;
+      const hasParts = (r.needs ?? []).every((n) => {
+        if (n.item) return this.countOf(n.item) >= (n.amount ?? 1);
+        if (n.metal) return this.metalsInPack("metal").reduce((s, id2) => s + this.countOf(id2), 0) >= n.metal;
+        if (n.timber) return this.metalsInPack("timber").reduce((s, id2) => s + this.countOf(id2), 0) >= n.timber;
+        return true;
+      });
+      if (!hasParts) continue;
+      if (rng.next() < 0.1 + skill * 0.02) { this.learnRecipe(id); return; }
+    }
+  }
+
+  /**
+   * Reforge an item you own, for materials and a chance at better.
+   *
+   * The catch that makes it a decision rather than a free retry: a reforge can
+   * come out WORSE, and it always costs. So it is a gamble you take on something
+   * that is already good enough to be worth gambling on, not a slot machine you
+   * pull until it pays.
+   */
+  reforge(itemId: string, cost: { item: string; amount: number }): boolean {
+    const def = this.reg.items.get(itemId);
+    if (!def || def.slot === "material") return false;
+    if (!this.stationsInReach.has("forge") && !this.stationsInReach.has("bench")) {
+      this.log("You need a forge or a bench for that.", "warn");
+      return false;
+    }
+    if (this.countOf(cost.item) < cost.amount) {
+      this.log(`You need ${cost.amount} ${this.reg.items.get(cost.item)?.name ?? cost.item} to reforge that.`, "warn");
+      return false;
+    }
+    for (let k = 0; k < cost.amount; k++) this.pack.splice(this.pack.indexOf(cost.item), 1);
+
+    const current = this.instances.get(itemId);
+    const rng = this.rng.fork(`reforge:${itemId}:${this.turn}`);
+    const roll = this.crafts.smithing * 2 + this.player.derived.craftQuality + rng.int(45);
+    const quality = qualityFor(roll);
+    const material = current?.material ?? (def.material as MaterialId | undefined) ?? "iron";
+    this.instances.set(itemId, { item: itemId, material, quality, maker: "You" });
+
+    const before = current?.quality ?? "plain";
+    const better = qualityRank(quality) > qualityRank(before);
+    this.log(
+      better ? `The ${fullName(def, this.instances.get(itemId))} comes out better.`
+             : `The reforge comes out ${quality}. No better than before.`,
+      better ? "good" : "warn");
+    this.refreshGear();
+    this.finishTurn({ tookTurn: true });
+    return true;
   }
 
   // --- taming and followers -----------------------------------------------

@@ -5,12 +5,12 @@
   "turns": 3,
   "needs": [
     {
-      "item": "iron-ingot",
-      "amount": 2
+      "metal": 2
     }
   ],
   "makes": {
     "item": "helm"
   },
-  "about": "Shaped over a stake."
+  "about": "Shaped over a stake.",
+  "forge": true
 }

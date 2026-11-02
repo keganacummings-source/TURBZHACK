@@ -431,6 +431,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       strList("enchantments");
       oneOf("weaponClass", [...WEAPON_CLASSES]);
       oneOf("material", [...MATERIALS]);
+      oneOf("provides", [...MATERIALS]);
       checkResist(def, out);
       checkAttributeMap(def, "requires", out);
       checkAttributeMap(def, "attributes", out);
@@ -559,10 +560,14 @@ function checkParts(def: Record<string, unknown>, out: string[]): void {
     out.push(`"needs" must be a non-empty list of { "item": ..., "amount": ... }`);
   } else {
     needs.forEach((n, i) => {
-      const { item, amount } = (n ?? {}) as { item?: unknown; amount?: unknown };
-      if (typeof item !== "string" || !item) out.push(`"needs[${i}].item" must name an item`);
-      if (amount !== undefined && (typeof amount !== "number" || amount < 1)) {
-        out.push(`"needs[${i}].amount" must be at least 1`);
+      const { item, amount, metal, timber } = (n ?? {}) as
+        { item?: unknown; amount?: unknown; metal?: unknown; timber?: unknown };
+      const kinds = [item, metal, timber].filter((x) => x !== undefined).length;
+      if (kinds === 0) out.push(`"needs[${i}]" must have an "item", a "metal" or a "timber"`);
+      if (kinds > 1) out.push(`"needs[${i}]" mixes item/metal/timber — pick one`);
+      if (item !== undefined && (typeof item !== "string" || !item)) out.push(`"needs[${i}].item" must name an item`);
+      for (const [k, v] of [["metal", metal], ["timber", timber], ["amount", amount]] as [string, unknown][]) {
+        if (v !== undefined && (typeof v !== "number" || v < 1)) out.push(`"needs[${i}].${k}" must be at least 1`);
       }
     });
   }

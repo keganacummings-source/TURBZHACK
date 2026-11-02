@@ -1,0 +1,20 @@
+{
+  "name": "Smelt Steel",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 3,
+  "needs": [
+    {
+      "item": "iron-ingot",
+      "amount": 2
+    },
+    {
+      "item": "ash-salt"
+    }
+  ],
+  "makes": {
+    "item": "steel-ingot"
+  },
+  "about": "Iron, charcoal, patience, and a secret everybody knows.",
+  "secret": true
+}

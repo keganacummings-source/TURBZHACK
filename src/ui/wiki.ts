@@ -207,7 +207,10 @@ export function pageHtml(reg: Registry, section: WikiSection, id: string): strin
         ["Work", `${r.turns ?? 2} turns, less as the trade improves`],
       ])}
       <h3>Takes</h3>
-      ${list((r.needs ?? []).map((n) => `${n.amount ?? 1} × ${name(reg.items as never, n.item)}`))}
+      ${list((r.needs ?? []).map((n) =>
+        n.item ? `${n.amount ?? 1} × ${name(reg.items as never, n.item)}`
+        : n.metal ? `${n.metal} × any metal`
+        : n.timber ? `${n.timber} × any timber` : "something"))}
       <h3>Makes</h3>
       ${list([`${r.makes.amount ?? 1} × ${name(reg.items as never, r.makes.item)}`])}`;
   }

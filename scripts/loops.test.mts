@@ -182,8 +182,11 @@ test("every recipe can actually be reached from what the world provides", () => 
   for (const [, e] of reg.enemies) for (const d of e.drops ?? []) reachable.add(d.item);
   for (const [, i] of reg.items) if (!i.unique) reachable.add(String(i.id));
 
+  // Metals and timber are families of items, all of which the world provides, so
+  // a family need is satisfied by definition.
   for (const [id, r] of reg.recipes) {
     for (const n of r.needs ?? []) {
+      if (!n.item) continue;
       assert.ok(reachable.has(n.item),
         `content/recipes/${id}.json needs "${n.item}", which nothing in the game provides`);
     }

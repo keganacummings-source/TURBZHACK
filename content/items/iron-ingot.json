@@ -3,5 +3,7 @@
   "sprite": "itm-ingot",
   "slot": "material",
   "about": "Smelted and squared off.",
-  "stack": true
+  "stack": true,
+  "provides": "iron",
+  "family": "metal"
 }

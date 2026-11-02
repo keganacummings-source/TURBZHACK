@@ -12,5 +12,6 @@
   "makes": {
     "item": "cloak"
   },
-  "about": "Warm, and it hides a shape."
+  "about": "Warm, and it hides a shape.",
+  "forge": true
 }

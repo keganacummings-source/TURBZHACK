@@ -5,8 +5,7 @@
   "turns": 4,
   "needs": [
     {
-      "item": "iron-ingot",
-      "amount": 2
+      "metal": 2
     },
     {
       "item": "wood"
@@ -15,5 +14,6 @@
   "makes": {
     "item": "short-sword"
   },
-  "about": "A blade, a tang, a grip."
+  "about": "A blade, a tang, a grip.",
+  "forge": true
 }

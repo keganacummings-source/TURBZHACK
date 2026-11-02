@@ -5,14 +5,15 @@
   "turns": 2,
   "needs": [
     {
-      "item": "iron-ingot"
+      "metal": 1
     },
     {
-      "item": "wood"
+      "timber": 1
     }
   ],
   "makes": {
     "item": "hatchet"
   },
-  "about": "Short handle, mean head."
+  "about": "Short handle, mean head.",
+  "forge": true
 }

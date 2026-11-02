@@ -5,15 +5,15 @@
   "turns": 3,
   "needs": [
     {
-      "item": "iron-ingot",
-      "amount": 2
+      "metal": 2
     },
     {
-      "item": "wood"
+      "timber": 1
     }
   ],
   "makes": {
     "item": "pickaxe"
   },
-  "about": "The tool that gets you the rest of them."
+  "about": "The tool that gets you the rest of them.",
+  "forge": true
 }

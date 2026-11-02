@@ -86,6 +86,7 @@ export type SaveFile = {
   /** Coin, markets, standing and quests. */
   coin?: number;
   tameSkill?: number;
+  knownRecipes?: string[];
   markets?: unknown[];
   standing?: [number, number][];
   quests?: unknown[];
