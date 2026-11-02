@@ -15,7 +15,7 @@
  * file name and the field, because a modding system that fails silently is
  * worse than one that does not exist.
  */
-import type { DamageKind, Stance } from "../engine/types";
+import type { DamageKind, Stance } from "../engine/types.ts";
 
 /** Every content file carries these. */
 export type ContentBase = {

@@ -1,0 +1,10 @@
+{
+  "name": "Kindling",
+  "about": "Whatever it strikes, it lights.",
+  "applies": [
+    "burning"
+  ],
+  "bonusDamage": 2,
+  "bonusKind": "fire",
+  "tier": 2
+}

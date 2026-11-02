@@ -1,0 +1,7 @@
+{
+  "name": "Ice",
+  "cost": 1.5,
+  "biomes": [
+    "glacier"
+  ]
+}

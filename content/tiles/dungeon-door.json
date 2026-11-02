@@ -1,0 +1,16 @@
+{
+  "name": "Dungeon Entrance",
+  "on": "dungeon-entrance",
+  "biomes": [
+    "plains",
+    "forest",
+    "hills",
+    "highland",
+    "badlands",
+    "desert",
+    "tundra",
+    "swamp",
+    "volcanic",
+    "void"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Corpse Wisp",
+  "about": "Drifts. Drains. Barely there at all.",
+  "pools": {
+    "hp": -85,
+    "mana": 20
+  },
+  "resist": {
+    "physical": 0.25,
+    "pure": 2
+  },
+  "ai": "caster",
+  "sight": 10,
+  "spells": [
+    "drain"
+  ],
+  "biomes": [
+    "swamp",
+    "void",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 9,
+  "xp": 20
+}

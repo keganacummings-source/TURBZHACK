@@ -7,7 +7,7 @@
  * subclass. That is the whole point of the modding design: adding a new enemy
  * must never mean touching the engine.
  */
-import type { ActiveStatus, Pools, Pos, Stance } from "./types";
+import type { ActiveStatus, Pools, Pos, Stance } from "./types.ts";
 
 /** Base stats every actor starts from, before its definition adjusts them. */
 export const BASE_POOLS: Pools = {

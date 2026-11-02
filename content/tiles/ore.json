@@ -1,0 +1,10 @@
+{
+  "name": "Ore Vein",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "highland",
+    "badlands",
+    "dungeon"
+  ]
+}

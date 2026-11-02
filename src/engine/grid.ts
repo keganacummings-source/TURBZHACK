@@ -6,7 +6,7 @@
  * large overworld costs bytes rather than megabytes. What a tile MEANS lives in
  * content/tiles/*.json and is looked up by index.
  */
-import type { Pos } from "./types";
+import type { Pos } from "./types.ts";
 
 /** What a tile does, independent of how it looks. */
 export type TileKind = {

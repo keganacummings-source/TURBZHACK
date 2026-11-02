@@ -1,0 +1,8 @@
+{
+  "name": "Packed Earth",
+  "biomes": [
+    "plains",
+    "hills",
+    "dungeon"
+  ]
+}

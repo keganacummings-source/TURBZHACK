@@ -1,0 +1,7 @@
+{
+  "name": "Stairs Down",
+  "on": "stairs-down",
+  "biomes": [
+    "dungeon"
+  ]
+}

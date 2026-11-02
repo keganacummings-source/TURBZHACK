@@ -1,0 +1,7 @@
+{
+  "name": "Floorboards",
+  "biomes": [
+    "dungeon",
+    "village"
+  ]
+}

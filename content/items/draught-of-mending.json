@@ -1,0 +1,7 @@
+{
+  "name": "Draught of Mending",
+  "slot": "potion",
+  "casts": "mend",
+  "charges": 1,
+  "weight": 1
+}

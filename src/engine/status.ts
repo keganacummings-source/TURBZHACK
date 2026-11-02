@@ -10,10 +10,10 @@
  *   burning  — ticks damage every turn, scaled to the hit that caused it
  *   frozen   — the bearer cannot act, and rolls to break out each turn
  */
-import type { Actor } from "./actor";
-import type { Rng } from "./rng";
-import { applyDamage } from "./combat";
-import type { ActiveStatus, DamageKind, Message } from "./types";
+import type { Actor } from "./actor.ts";
+import type { Rng } from "./rng.ts";
+import { applyDamage } from "./combat.ts";
+import type { ActiveStatus, DamageKind, Message } from "./types.ts";
 
 /** A status definition, as loaded from content/statuses/<id>.json. */
 export type StatusDef = {

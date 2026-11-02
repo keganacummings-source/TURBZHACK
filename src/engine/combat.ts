@@ -7,8 +7,8 @@
  * the "you have not been hurt for ten turns" regen clock are each written once,
  * and a new content file cannot accidentally bypass any of them.
  */
-import type { Actor } from "./actor";
-import type { DamageKind, Message } from "./types";
+import type { Actor } from "./actor.ts";
+import type { DamageKind, Message } from "./types.ts";
 
 export type DamageSpec = {
   amount: number;

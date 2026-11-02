@@ -1,0 +1,9 @@
+{
+  "name": "Heavy",
+  "about": "Hits harder, slows you down.",
+  "bonusDamage": 4,
+  "modify": {
+    "speed": -10
+  },
+  "tier": 1
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Shallow Water",
+  "cost": 2,
+  "biomes": [
+    "river",
+    "ocean"
+  ]
+}

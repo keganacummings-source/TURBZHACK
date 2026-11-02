@@ -1,0 +1,9 @@
+{
+  "name": "Slam",
+  "damage": 18,
+  "kind": "physical",
+  "range": 1,
+  "stamina": 30,
+  "cooldown": 1,
+  "say": "{caster} slams {target}."
+}

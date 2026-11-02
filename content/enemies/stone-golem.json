@@ -1,0 +1,31 @@
+{
+  "name": "Stone Golem",
+  "about": "Slow, heavy, and almost indifferent to being hit.",
+  "pools": {
+    "hp": 60,
+    "stamina": -50,
+    "mana": -50
+  },
+  "armour": 8,
+  "resist": {
+    "physical": 0.5,
+    "fire": 0.5,
+    "cold": 0.5
+  },
+  "speed": 60,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "slam"
+  ],
+  "biomes": [
+    "highland",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight": 6,
+  "xp": 40
+}

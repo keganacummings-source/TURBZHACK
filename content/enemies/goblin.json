@@ -1,0 +1,25 @@
+{
+  "name": "Goblin",
+  "about": "Carries something sharp and knows roughly what to do with it.",
+  "pools": {
+    "hp": -60,
+    "mana": -50
+  },
+  "armour": 1,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "forest",
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 6
+  },
+  "weight": 25,
+  "xp": 10
+}

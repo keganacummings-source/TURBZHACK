@@ -1,0 +1,31 @@
+{
+  "name": "Frost Imp",
+  "about": "Spiteful, and immune to the cold it throws around.",
+  "pools": {
+    "hp": -70,
+    "mana": 10
+  },
+  "resist": {
+    "cold": 0,
+    "fire": 2
+  },
+  "ai": "caster",
+  "sight": 9,
+  "spells": [
+    "frost-bolt"
+  ],
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "tundra",
+    "glacier",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 8
+  },
+  "weight": 12,
+  "xp": 18
+}

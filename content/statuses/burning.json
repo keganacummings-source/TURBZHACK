@@ -1,0 +1,15 @@
+{
+  "name": "Burning",
+  "about": "Takes a quarter of the damage that lit it, every turn, and armour does not stop it.",
+  "turns": 4,
+  "tick": {
+    "kind": "fire",
+    "percent": 0.25,
+    "of": "sourceDamage"
+  },
+  "messages": {
+    "applied": "{name} catches fire!",
+    "tick": "the flames",
+    "ended": "The flames on {name} go out."
+  }
+}

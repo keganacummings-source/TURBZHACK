@@ -1,0 +1,8 @@
+{
+  "name": "Mend",
+  "mana": 0,
+  "heal": 35,
+  "range": 0,
+  "target": "self",
+  "say": "{caster} knits back together."
+}

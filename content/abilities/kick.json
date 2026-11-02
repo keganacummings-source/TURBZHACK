@@ -1,0 +1,10 @@
+{
+  "name": "Kick",
+  "about": "Twice the damage of a punch, and it will empty you in four turns.",
+  "damage": 10,
+  "kind": "physical",
+  "stamina": 25,
+  "range": 1,
+  "key": "x",
+  "say": "{caster} kicks {target}."
+}

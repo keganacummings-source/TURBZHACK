@@ -1,0 +1,7 @@
+{
+  "name": "Lava",
+  "solid": true,
+  "biomes": [
+    "volcanic"
+  ]
+}

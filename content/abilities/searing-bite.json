@@ -1,0 +1,10 @@
+{
+  "name": "Searing Bite",
+  "damage": 7,
+  "kind": "fire",
+  "range": 1,
+  "applies": [
+    "burning"
+  ],
+  "say": "{caster} sinks burning teeth into {target}."
+}

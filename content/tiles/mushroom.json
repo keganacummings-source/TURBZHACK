@@ -1,0 +1,9 @@
+{
+  "name": "Great Mushroom",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "swamp",
+    "sporefield"
+  ]
+}

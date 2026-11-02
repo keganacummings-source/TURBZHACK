@@ -1,0 +1,7 @@
+{
+  "name": "Bite",
+  "damage": 4,
+  "kind": "physical",
+  "range": 1,
+  "say": "{caster} bites {target}."
+}

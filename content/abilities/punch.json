@@ -1,0 +1,10 @@
+{
+  "name": "Punch",
+  "about": "A bare fist. Costs nothing, which is the entire point of it.",
+  "damage": 5,
+  "kind": "physical",
+  "stamina": 0,
+  "range": 1,
+  "key": "z",
+  "say": "{caster} punches {target}."
+}

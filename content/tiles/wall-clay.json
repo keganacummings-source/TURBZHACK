@@ -1,0 +1,8 @@
+{
+  "name": "Clay Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "badlands"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Tree",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "forest",
+    "plains"
+  ]
+}

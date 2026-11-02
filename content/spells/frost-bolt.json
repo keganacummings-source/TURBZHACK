@@ -1,0 +1,12 @@
+{
+  "name": "Frost Bolt",
+  "mana": 8,
+  "damage": 7,
+  "kind": "cold",
+  "range": 7,
+  "target": "actor",
+  "applies": [
+    "chilled"
+  ],
+  "say": "{caster} looses a frost bolt at {target}."
+}

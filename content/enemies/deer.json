@@ -1,0 +1,25 @@
+{
+  "name": "Deer",
+  "about": "Wants nothing to do with you.",
+  "pools": {
+    "hp": -70,
+    "mana": -50
+  },
+  "stance": "neutral",
+  "ai": "skittish",
+  "speed": 130,
+  "sight": 10,
+  "abilities": [
+    "kick"
+  ],
+  "biomes": [
+    "plains",
+    "forest"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "weight": 20,
+  "xp": 6
+}
