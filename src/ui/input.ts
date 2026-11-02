@@ -82,6 +82,8 @@ export type Command =
   | { kind: "wiki" }
   | { kind: "craft" }
   | { kind: "sheet" }
+  | { kind: "quests" }
+  | { kind: "market" }
   | { kind: "menu" }
   | { kind: "designer" }
   | { kind: "close" };
@@ -133,6 +135,10 @@ export const ACTIONS: Action[] = [
   // depends on the browser reporting the modified character, which not every
   // layout does.
   { id: "sheet", what: "Character sheet", group: "Screens", command: { kind: "sheet" }, keys: ["p", "@"] },
+  // Not "j" or "b": those are south and south-west. One key does one thing, and
+  // the controls test is what noticed.
+  { id: "quests", what: "Work you have taken", group: "Screens", command: { kind: "quests" }, keys: ["q"] },
+  { id: "market", what: "Trade, where there is a market", group: "Screens", command: { kind: "market" }, keys: ["s"] },
   { id: "wiki", what: "Wiki", group: "Screens", command: { kind: "wiki" }, keys: ["w"] },
   { id: "help", what: "Controls", group: "Screens", command: { kind: "help" }, keys: ["?", "/"] },
   { id: "designer", what: "Texture designer", group: "Screens", command: { kind: "designer" }, keys: ["t"] },

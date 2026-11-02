@@ -1,0 +1,17 @@
+{
+  "name": "Watchman",
+  "role": "guard",
+  "sprite": "pc-human",
+  "about": "Stands near the gate and would like to be somewhere else.",
+  "chance": 0.8,
+  "greetings": [
+    "Move along, or do not. It is a public road.",
+    "Nothing happens here. That is the job.",
+    "If you start something I will have to finish it."
+  ],
+  "gossip": [
+    "Something has been taking livestock from the east field.",
+    "The elder will talk your ear off. Bring patience.",
+    "Do not go into the deep ones alone. People do. People stop."
+  ]
+}

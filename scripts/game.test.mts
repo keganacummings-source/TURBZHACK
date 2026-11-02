@@ -61,7 +61,12 @@ test("creatures only appear where their own file says they belong", () => {
   const g = newGame();
   for (const a of g.actors) {
     if (a.isPlayer) continue;
-    const def = reg.enemies.get(a.def)!;
+    // Villagers are actors too, and are not in the bestiary. Anything that is
+    // neither is an actor nobody meant to create.
+    if (a.data["npc"]) continue;
+    const def = reg.enemies.get(a.def);
+    assert.ok(def, `${a.name} is neither a creature nor a villager`);
+    if (!def) continue;
     // Depth 0 is the overworld, so nothing with a minimum depth should be here.
     assert.ok((def.depth?.min ?? 0) <= 0, `${def.name} (min depth ${def.depth?.min}) spawned on the surface`);
     if (def.biomes?.length) {

@@ -28,7 +28,7 @@ import {
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
   type EnemyDef, type ItemDef, type SpeciesDef, type SpellDef, type TileDef, type UpgradeDef,
 } from "./schema.ts";
-import type { RecipeDef } from "./schema.ts";
+import type { NpcDef, QuestDef, RecipeDef } from "./schema.ts";
 import type { StatusDef } from "../engine/status.ts";
 
 /** Where a definition came from, so errors can point at a real file. */
@@ -58,6 +58,8 @@ export class Registry {
   readonly classes = new Map<string, ClassDef>();
   readonly enemies = new Map<string, EnemyDef>();
   readonly recipes = new Map<string, RecipeDef>();
+  readonly npcs = new Map<string, NpcDef>();
+  readonly quests = new Map<string, QuestDef>();
   readonly spells = new Map<string, SpellDef>();
   readonly abilities = new Map<string, AbilityDef>();
   readonly enchantments = new Map<string, EnchantmentDef>();
@@ -76,6 +78,8 @@ export class Registry {
       case "classes": return this.classes as never;
       case "enemies": return this.enemies as never;
       case "recipes": return this.recipes as never;
+      case "npcs": return this.npcs as never;
+      case "quests": return this.quests as never;
       case "spells": return this.spells as never;
       case "abilities": return this.abilities as never;
       case "enchantments": return this.enchantments as never;
@@ -193,6 +197,13 @@ export class Registry {
     for (const [id, r] of this.recipes) {
       for (const n of r.needs ?? []) ref(`recipes:${id}`, "items", n.item, `"needs"`);
       if (r.makes?.item) ref(`recipes:${id}`, "items", r.makes.item, `"makes"`);
+    }
+    for (const [id, n] of this.npcs) {
+      for (const d of n.deals ?? []) ref(`npcs:${id}`, "items", d, `"deals"`);
+      for (const q of n.quests ?? []) ref(`npcs:${id}`, "quests", q, `"quests"`);
+    }
+    for (const [id, q] of this.quests) {
+      if (q.reward) ref(`quests:${id}`, "items", q.reward, `"reward"`);
     }
     for (const [id, i] of this.items) {
       if (i.casts) ref(`items:${id}`, "spells", i.casts, `"casts"`);
@@ -318,6 +329,46 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       checkPools(def, out);
       checkResist(def, out);
       checkStats(def, out);
+      break;
+
+    case "npcs":
+      oneOf("role", ["trader", "smith", "alchemist", "trainer", "elder", "stablemaster", "guard"]);
+      num("chance", { min: 0, max: 1 });
+      strList("trades");
+      strList("greetings");
+      strList("gossip");
+      strList("deals");
+      strList("quests");
+      break;
+
+    case "quests":
+      oneOf("kind", ["bounty", "slay", "gather", "deliver", "delve"]);
+      num("tier", { min: 1, max: 5 });
+      num("pay", { min: 0 });
+      num("standing", { min: 0 });
+      strList("from");
+      strList("ask");
+      strList("thanks");
+      break;
+
+    case "npcs":
+      oneOf("role", ["trader", "smith", "alchemist", "trainer", "elder", "stablemaster", "guard"]);
+      num("chance", { min: 0, max: 1 });
+      strList("trades");
+      strList("greetings");
+      strList("gossip");
+      strList("deals");
+      strList("quests");
+      break;
+
+    case "quests":
+      oneOf("kind", ["bounty", "slay", "gather", "deliver", "delve"]);
+      num("tier", { min: 1, max: 5 });
+      num("pay", { min: 0 });
+      num("standing", { min: 0 });
+      strList("from");
+      strList("ask");
+      strList("thanks");
       break;
 
     case "recipes":

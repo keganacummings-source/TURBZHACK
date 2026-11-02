@@ -357,5 +357,21 @@
     "scribe-warding",
     "silver-ingot",
     "tan-leather"
+  ],
+  "npcs": [
+    "alchemist",
+    "elder",
+    "guard",
+    "smith",
+    "stablemaster",
+    "trader",
+    "trainer"
+  ],
+  "quests": [
+    "bounty-local",
+    "delivery-run",
+    "delve-dungeon",
+    "gather-order",
+    "slay-boss"
   ]
 }

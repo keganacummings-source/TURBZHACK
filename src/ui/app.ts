@@ -17,6 +17,7 @@ import {
 import { menuHtml, controlsHtml, savesHtml } from "./menu.ts";
 import { indexWiki, wikiHtml, type WikiSection } from "./wiki.ts";
 import { menuAt, type ContextMenu } from "./context.ts";
+import { marketHtml, questsHtml, talkHtml } from "./village.ts";
 import { ATTRIBUTES, ATTRIBUTE_INFO, explainPoint, type AttributeId } from "../engine/attributes.ts";
 import { WEAPON_CLASS } from "../engine/weapons.ts";
 import { newMotion, noteMoves, moving } from "../render/motion.ts";
@@ -29,12 +30,14 @@ import type { Registry } from "../content/registry.ts";
 
 type Screen =
   | "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup"
-  | "pack" | "menu" | "controls" | "save" | "load" | "wiki" | "craft" | "sheet";
+  | "pack" | "menu" | "controls" | "save" | "load" | "wiki" | "craft" | "sheet"
+  | "market" | "talk" | "quests";
 
 /** Screens drawn into the overlay panel rather than onto the canvas. */
 const OVERLAY_SCREENS: Screen[] = [
   "map", "help", "problems", "dead", "levelup", "pack",
   "menu", "controls", "save", "load", "wiki", "craft", "sheet",
+  "market", "talk", "quests",
 ];
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -74,6 +77,10 @@ export async function boot(): Promise<void> {
 
   /** Travel ticks while this is running. */
   let travelTimer: number | null = null;
+
+  /** Which village's market is open, and which villager is being talked to. */
+  let openMarket: number | null = null;
+  let openTalk: string | null = null;
 
   // A content error is shown before anything else: a mod that does not load is
   // the single most likely thing to go wrong, and silence would be cruel.
@@ -118,6 +125,12 @@ export async function boot(): Promise<void> {
     if (screen === "pack") { renderOverlay(packHtml()); }
     if (screen === "craft") { renderOverlay(craftHtml()); }
     if (screen === "sheet") { renderOverlay(sheetHtml()); }
+    if (screen === "quests") { renderOverlay(questsHtml(game)); }
+    if (screen === "market") { renderOverlay(openMarket !== null ? marketHtml(game, openMarket) : ""); }
+    if (screen === "talk") {
+      const who = openTalk ? game.actors.find((a) => a.id === openTalk) : undefined;
+      renderOverlay(who ? talkHtml(game, who) : "");
+    }
     if (screen === "dead") { renderOverlay(deadHtml()); }
 
     const now = performance.now();
@@ -186,6 +199,16 @@ export async function boot(): Promise<void> {
       ? `<div class="hud-row">${companions.map((c) =>
           `<span class="pip pip-companion">${escapeHtml(c.name)} ${Math.round(c.pools.hp)}/${Math.round(c.pools.hpMax)}</span>`).join("")}</div>`
       : "";
+    const here = game.place.kind === "overworld" ? game.villageHere : null;
+    const lines = game.questLines();
+    const openQuests = lines.filter((l) => !l.done).length;
+    const doneQuests = lines.filter((l) => l.done).length;
+    const coinLine = `<span class="coin">${game.coin} coin</span>`
+      + (here ? ` · <span class="dim">${escapeHtml(here.village.name)} — press s to trade</span>` : "")
+      + (openQuests || doneQuests
+          ? ` · <span class="dim">${openQuests} job${openQuests === 1 ? "" : "s"}${
+              doneQuests ? `, ${doneQuests} ready` : ""} (press q)</span>`
+          : "");
     const trades = { ...game.skills, ...game.crafts };
     const learned = Object.entries(trades).filter(([, v]) => v > 0);
     const skills = learned.length
@@ -209,6 +232,7 @@ export async function boot(): Promise<void> {
       </div>
       ${party}
       <div class="hud-row dim">${skills}</div>
+      <div class="hud-row">${coinLine}</div>
       <div class="hud-row dim">turn ${game.turn} · seed ${game.seedWord} · Esc for the menu · right-click anything</div>`;
   }
 
@@ -309,7 +333,21 @@ export async function boot(): Promise<void> {
       }
       case "talk": {
         const target = g.actors.find((a) => a.id === action.target);
-        if (target) g.talk(target);
+        if (!target) break;
+        // A villager opens a conversation screen; a wandering creature just says
+        // its line into the log, because there is nothing to negotiate with it.
+        if (target.data["npc"]) { openTalk = target.id; setScreen("talk"); return; }
+        g.talk(target);
+        break;
+      }
+      case "market": {
+        openMarket = action.village;
+        setScreen("market");
+        return;
+      }
+      case "handin": {
+        const target = g.actors.find((a) => a.id === action.target);
+        if (target) g.handIn(target);
         break;
       }
       case "tame": {
@@ -768,6 +806,15 @@ export async function boot(): Promise<void> {
     if (cmd.kind === "pack") { setScreen(screen === "pack" ? "play" : "pack"); return; }
     if (cmd.kind === "craft") { setScreen(screen === "craft" ? "play" : "craft"); return; }
     if (cmd.kind === "sheet") { setScreen(screen === "sheet" ? "play" : "sheet"); return; }
+    if (cmd.kind === "quests") { setScreen(screen === "quests" ? "play" : "quests"); return; }
+    if (cmd.kind === "market") {
+      // The trade key only does anything where there is somebody to trade with.
+      const here = game?.villageHere;
+      if (!here) { game?.log("There is nobody here to trade with.", "warn"); render(); return; }
+      openMarket = here.index;
+      setScreen(screen === "market" ? "play" : "market");
+      return;
+    }
     if (cmd.kind === "designer") { openDesigner(atlas, () => render()); return; }
 
     if (!game || screen !== "play" || game.over) return;
@@ -915,6 +962,61 @@ export async function boot(): Promise<void> {
     // --- the character sheet ------------------------------------------------
     const raise = t.closest<HTMLElement>("[data-raise]");
     if (raise && game) { game.raiseAttribute(raise.dataset.raise as AttributeId); render(); return; }
+
+    // --- trading, talking and work -----------------------------------------
+    const doBuy = t.closest<HTMLElement>("[data-buy]");
+    if (doBuy && game) {
+      const [where, item] = doBuy.dataset.buy!.split(":");
+      game.buy(Number(where), item!);
+      render();
+      return;
+    }
+    const doSell = t.closest<HTMLElement>("[data-sell]");
+    if (doSell && game) {
+      const [where, item] = doSell.dataset.sell!.split(":");
+      game.sell(Number(where), item!);
+      render();
+      return;
+    }
+    const doSellAll = t.closest<HTMLElement>("[data-sell-all]");
+    if (doSellAll && game) {
+      const [where, item] = doSellAll.dataset.sellAll!.split(":");
+      game.sellAll(Number(where), item!);
+      render();
+      return;
+    }
+    const openStall = t.closest<HTMLElement>("[data-market]");
+    if (openStall) { openMarket = Number(openStall.dataset.market); setScreen("market"); return; }
+
+    const accept = t.closest<HTMLElement>("[data-accept]");
+    if (accept && game) {
+      const [whoId, questId] = accept.dataset.accept!.split(":");
+      const who = game.actors.find((a) => a.id === whoId);
+      const quest = who && game.questsFrom(who).find((q) => q.id === questId);
+      if (quest) game.acceptQuest(quest);
+      render();
+      return;
+    }
+    const handin = t.closest<HTMLElement>("[data-handin]");
+    if (handin && game) {
+      const who = game.actors.find((a) => a.id === handin.dataset.handin);
+      if (who) game.handIn(who);
+      render();
+      return;
+    }
+    const abandon = t.closest<HTMLElement>("[data-abandon]");
+    if (abandon && game) { game.abandonQuest(abandon.dataset.abandon!); render(); return; }
+
+    const trainBtn = t.closest<HTMLElement>("[data-train]");
+    if (trainBtn && game) {
+      const [whoId, skill] = trainBtn.dataset.train!.split(":");
+      const who = game.actors.find((a) => a.id === whoId);
+      const npc = who && game.reg.npcs.get(String(who.data["npc"]));
+      const offer = npc?.teaches?.find((x) => x.skill === skill);
+      if (offer) game.train(skill!, Math.round(offer.price * (1 + game.skillLevel(skill!) * 0.08)));
+      render();
+      return;
+    }
 
     // --- crafting ----------------------------------------------------------
     const make = t.closest<HTMLElement>("[data-craft]");

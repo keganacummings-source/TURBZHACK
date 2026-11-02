@@ -10,6 +10,9 @@ import { Actor, type ActorSave } from "./engine/actor.ts";
 import { Rng, seedFrom, seedName } from "./engine/rng.ts";
 import { computeFov, distance, type Level } from "./engine/grid.ts";
 import { findPath } from "./engine/path.ts";
+import { newMarket, quote, stall, trade, type Market, type Quote } from "./engine/market.ts";
+import { makeQuest, isDone, ordinal, progressLine, type ActiveQuest } from "./engine/quests.ts";
+import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
   WEAPON_CLASS, accuracyWith, classOf, damageWith, itemValue, skillFor, swingCost, weaponStats,
@@ -21,7 +24,7 @@ import { ENERGY_PER_ACTION, playerActed, type TurnContext } from "./engine/turns
 import type { StatusDef } from "./engine/status.ts";
 import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
-import type { AbilityDef, ClassDef, EnemyDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
+import type { AbilityDef, ClassDef, EnemyDef, NpcDef, QuestDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
 import {
   applyChoice, isMilestone, levelForXp, newPerks, rollChoices, xpForLevel,
   PER_LEVEL, type Choice, type Perks,
@@ -30,7 +33,7 @@ import {
   applyLoadout, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
 } from "./engine/equipment.ts";
 import type { EnchantmentDef, ItemDef } from "./content/schema.ts";
-import { BIOME_BY_ID, generateContinent, placeLairs, REGION_BANDS, type Continent } from "./world/continent.ts";
+import { BIOME_BY_ID, generateContinent, placeLairs, REGION_BANDS, type Continent, type Village } from "./world/continent.ts";
 import { DUNGEON_FLOORS, generateDungeon, type Dungeon } from "./world/dungeon.ts";
 import { SAVE_VERSION, decodeRuns, encodeRuns, type SaveFile } from "./engine/save.ts";
 
@@ -131,6 +134,31 @@ export class Game {
 
   /** Actor ids following you. */
   party: string[] = [];
+
+  // --- money, markets, standing, quests -----------------------------------
+
+  /**
+   * Coin.
+   *
+   * One currency, because two is a spreadsheet. It comes from selling, from
+   * quests, and from what the dead were carrying.
+   */
+  coin = 0;
+
+  /** A market per village, by index into `continent.villages`. */
+  markets = new Map<number, Market>();
+
+  /** How well each village thinks of you, by index. */
+  standing = new Map<number, number>();
+
+  /** Quests taken and not yet handed in, plus the ones that are done. */
+  quests: ActiveQuest[] = [];
+
+  /** Quest ids already handed in, so the same errand is not offered twice. */
+  questsDone: string[] = [];
+
+  /** The deepest floor reached in each dungeon, for delve quests. */
+  deepestIn = new Map<number, number>();
 
   /** World bosses already dealt with, so a lair stays empty once cleared. */
   bossesKilled = new Set<string>();
@@ -471,9 +499,236 @@ export class Game {
       this.actors.push(this.makeActor(String(pick.id), pick, { x, y }));
       made++;
     }
-    if (this.place.kind === "overworld") this.placeBosses();
+    if (this.place.kind === "overworld") { this.placeBosses(); this.placeVillagers(); }
     else this.placeKeeper(floorNumber);
     this.scatterLoot(rng, depth);
+  }
+
+  /**
+   * Put the villagers in their villages.
+   *
+   * One actor per NPC role that suits the village's trade, each with a name of
+   * its own, standing on the paving. They are real actors rather than a menu
+   * attached to the tile, so that right-clicking one works exactly like
+   * right-clicking anything else — and so that they can be seen, walked up to,
+   * and in principle killed, which is a decision the world should allow even if
+   * it is a bad one.
+   */
+  private placeVillagers(): void {
+    const rng = this.rng.fork("villagers");
+    this.continent.villages.forEach((village, index) => {
+      // Already standing there from an earlier visit.
+      if (this.villagersOf(index).length) return;
+
+      const roles = [...this.reg.npcs.values()].filter((npc) => {
+        if (npc.trades?.length && !npc.trades.includes(village.trade)) return false;
+        return true;
+      });
+
+      // A fixed stream per village, so the same seed always has the same people
+      // in the same place with the same names.
+      const own = rng.fork(`village:${index}`);
+      let slot = 0;
+      for (const npc of roles) {
+        if ((npc.chance ?? 1) < 1 && own.next() > (npc.chance ?? 1)) continue;
+        const spot = this.spotInVillage(village, slot++);
+        if (!spot) continue;
+        const a = new Actor({
+          id: `a${this.nextId++}`,
+          def: `npc:${npc.id}`,
+          name: `${villagerName(own)} the ${npc.name ?? npc.role}`,
+          pos: spot,
+          stance: "neutral",
+          sprite: npc.sprite ?? "pc-human",
+        });
+        a.data["npc"] = String(npc.id);
+        a.data["village"] = index;
+        // Villagers do not wander and do not fight. A shopkeeper who walks off
+        // mid-transaction is a bug report, not a feature.
+        a.speed = 0;
+        this.actors.push(a);
+      }
+    });
+  }
+
+  /** An open square inside a village, for the nth villager. */
+  private spotInVillage(village: Village, n: number): Pos | null {
+    const ring: [number, number][] = [
+      [-2, -1], [2, -1], [-2, 1], [2, 1], [-1, 0], [1, 0], [0, -1], [0, 1], [-3, 1], [3, -1],
+    ];
+    for (let i = 0; i < ring.length; i++) {
+      const [dx, dy] = ring[(n + i) % ring.length]!;
+      const x = village.pos.x + dx, y = village.pos.y + dy;
+      if (!this.level.inBounds(x, y)) continue;
+      if (this.level.solid(x, y)) continue;
+      if (this.actorAt(x, y)) continue;
+      return { x, y };
+    }
+    return null;
+  }
+
+  // --- quests --------------------------------------------------------------
+
+  /**
+   * What this villager has to offer.
+   *
+   * Built from the world around the village rather than from a fixed list, and
+   * cached by id so that asking twice shows the same errand — being offered a
+   * different quest every time you reopen a conversation would make the whole
+   * thing feel like a slot machine.
+   */
+  questsFrom(who: Actor): ActiveQuest[] {
+    const npcId = String(who.data["npc"] ?? "");
+    const index = who.data["village"] as number | undefined;
+    const npc = this.reg.npcs.get(npcId);
+    if (!npc || index === undefined) return [];
+
+    const out: ActiveQuest[] = [];
+    for (const templateId of npc.quests ?? []) {
+      const template = this.reg.quests.get(templateId);
+      if (!template) continue;
+      const made = makeQuest(
+        template, this.questWorld(index), index, who.name,
+        this.rng.fork(`quest:${index}:${templateId}`),
+      );
+      if (!made) continue;
+      if (this.questsDone.includes(made.id)) continue;
+      if (this.quests.some((q) => q.id === made.id)) continue;
+      out.push(made);
+    }
+    return out;
+  }
+
+  /** What the world around a village can supply a quest with. */
+  private questWorld(index: number) {
+    const village = this.continent.villages[index];
+    if (!village) {
+      return { localEnemies: [], bosses: [], wanted: [], elsewhere: [], dungeons: [], band: 0 };
+    }
+    const W = this.continent.level.w;
+    const here = this.continent.biome[village.pos.y * W + village.pos.x] ?? "";
+    const band = this.continent.region[village.pos.y * W + village.pos.x] ?? 0;
+
+    const localEnemies = [...this.reg.enemies.values()].filter((e) => {
+      if (e.boss) return false;
+      if (e.biomes?.length && !e.biomes.includes(here) && !e.biomes.includes("dungeon")) return false;
+      if ((e.region?.min ?? 0) > band + 1) return false;
+      if ((e.region?.max ?? 5) < band) return false;
+      return true;
+    });
+
+    const bosses = this.continent.lairs
+      .filter((l) => !this.bossesKilled.has(l.enemy))
+      .map((l) => ({
+        def: this.reg.enemies.get(l.enemy)!,
+        where: this.biomeName(this.continent.biome[l.pos.y * W + l.pos.x] ?? ""),
+      }))
+      .filter((b) => !!b.def);
+
+    const wanted = (TRADE[village.trade].wants ?? [])
+      .map((id) => this.reg.items.get(id))
+      .filter((d): d is ItemDef => !!d);
+
+    const elsewhere = this.continent.villages
+      .map((v, i) => ({ index: i, name: v.name }))
+      .filter((v) => v.index !== index);
+
+    const dungeons = this.continent.entrances
+      .map((e, i) => ({ index: i, name: e.name, d: Math.hypot(e.pos.x - village.pos.x, e.pos.y - village.pos.y) }))
+      .filter((e) => e.d < 90)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 3)
+      .map(({ index: i, name }) => ({ index: i, name }));
+
+    return { localEnemies, bosses, wanted, elsewhere, dungeons, band };
+  }
+
+  /** Take a quest. */
+  acceptQuest(q: ActiveQuest): boolean {
+    if (this.quests.some((x) => x.id === q.id)) return false;
+    this.quests.push({ ...q });
+    this.log(`Taken: ${q.ask}`, "good");
+    return true;
+  }
+
+  /** Give up on one. The standing cost is the point of being able to. */
+  abandonQuest(id: string): void {
+    const at = this.quests.findIndex((q) => q.id === id);
+    if (at < 0) return;
+    const [dropped] = this.quests.splice(at, 1);
+    if (dropped) {
+      this.standing.set(dropped.village, (this.standing.get(dropped.village) ?? 0) - 1);
+      this.log(`You give up on: ${dropped.ask}`, "warn");
+    }
+  }
+
+  /** Hand in everything this villager's village is owed. */
+  handIn(who: Actor): number {
+    const index = who.data["village"] as number | undefined;
+    if (index === undefined) return 0;
+    let paid = 0;
+
+    for (const q of [...this.quests]) {
+      if (q.village !== index || !isDone(q)) continue;
+      this.quests.splice(this.quests.indexOf(q), 1);
+      this.questsDone.push(q.id);
+
+      // A gather quest actually takes the goods. The others are already spent.
+      if (q.kind === "gather") {
+        for (let n = 0; n < q.need; n++) {
+          const at = this.pack.indexOf(q.target);
+          if (at >= 0) this.pack.splice(at, 1);
+        }
+      }
+
+      this.coin += q.pay;
+      this.standing.set(index, (this.standing.get(index) ?? 0) + q.standing);
+      paid += q.pay;
+
+      const template = this.reg.quests.get(q.def);
+      const thanks = template?.thanks?.length
+        ? template.thanks[this.rng.fork(`thanks:${q.id}`).int(template.thanks.length)]
+        : "That is settled.";
+      this.log(`${who.name}: "${(thanks ?? "")
+        .replace(/\{count\}/g, String(q.need))
+        .replace(/\{nth\}/g, ordinal(q.need))}"`, "good");
+      this.log(`You are paid ${q.pay} coin.`, "good");
+
+      if (q.reward) {
+        this.pack.push(q.reward);
+        this.log(`You are given ${this.reg.items.get(q.reward)?.name ?? q.reward}.`, "good");
+      }
+    }
+    return paid;
+  }
+
+  /**
+   * Tell the quests something happened.
+   *
+   * Everything that could advance a quest goes through here rather than each
+   * system knowing about quests: killing, gathering, arriving somewhere,
+   * descending. One function means a new quest kind is a change in one place,
+   * and means no system can advance a quest it does not understand.
+   */
+  private noteProgress(kind: ActiveQuest["kind"], target: string, by = 1): void {
+    for (const q of this.quests) {
+      if (q.kind !== kind || q.target !== target) continue;
+      if (isDone(q)) continue;
+      q.done = kind === "delve" ? Math.max(q.done, by) : Math.min(q.need, q.done + by);
+      if (isDone(q)) this.log(`Done: ${q.ask} — take it back.`, "good");
+    }
+  }
+
+  /** How far along every quest is, for the log screen. */
+  questLines(): { quest: ActiveQuest; where: string; progress: string; done: boolean }[] {
+    return this.quests.map((q) => ({
+      quest: q,
+      where: this.continent.villages[q.village]?.name ?? "somewhere",
+      progress: progressLine(q, (id) =>
+        this.reg.enemies.get(id)?.name ?? this.reg.items.get(id)?.name
+        ?? this.continent.villages[Number(id)]?.name ?? id),
+      done: isDone(q),
+    }));
   }
 
   /**
@@ -629,6 +884,9 @@ export class Game {
       const d = this.floor(this.place.entrance, next);
       this.enterLevel({ kind: "dungeon", entrance: this.place.entrance, depth: next }, d.up);
       this.log(`You descend to floor ${next}.`, "good");
+      const was = this.deepestIn.get(this.place.entrance) ?? 0;
+      if (next > was) this.deepestIn.set(this.place.entrance, next);
+      this.noteProgress("delve", String(this.place.entrance), next);
       return true;
     }
     if (t.on === "stairs-up" && this.place.kind === "dungeon") {
@@ -648,6 +906,20 @@ export class Game {
   }
 
   /** Move the player to another level, leaving its creatures behind. */
+  /**
+   * Notice that you have arrived somewhere, for delivery quests.
+   *
+   * Called after every move rather than being hooked into the village tiles,
+   * because a delivery should complete when you WALK INTO the village, not when
+   * you happen to step on one particular square of it.
+   */
+  private noteArrival(): void {
+    if (this.place.kind !== "overworld") return;
+    const here = this.villageHere;
+    if (!here) return;
+    this.noteProgress("deliver", String(here.index));
+  }
+
   private enterLevel(place: Place, at: Pos): void {
     this.place = place;
     this.player.pos = { ...at };
@@ -750,6 +1022,22 @@ export class Game {
       if (a.alive || a.isPlayer || a.data["looted"]) continue;
       a.data["looted"] = true;
       const def = this.reg.enemies.get(a.def);
+
+      /*
+       * A kill is quest progress, and it is also money.
+       *
+       * Both go through here rather than through the combat code, because this
+       * is the one place that runs exactly once per corpse — the combat code
+       * runs once per blow, and a bounty that counted blows would be finished by
+       * hitting one goblin eight times.
+       */
+      this.noteProgress("bounty", a.def);
+      if (def?.boss) this.noteProgress("slay", a.def);
+      const purse = Math.round((def?.xp ?? 0) * 0.5);
+      if (purse > 0) {
+        this.coin += purse;
+        if (purse >= 40) this.log(`You find ${purse} coin on it.`, "good");
+      }
       const table = def?.drops ?? [];
       if (!table.length) continue;
 
@@ -1031,6 +1319,56 @@ export class Game {
   }
 
   /**
+   * Any skill by its full id, whichever table it lives in.
+   *
+   * Weapon practice, trades and crafts are three separate records because they
+   * are advanced by three different things, but a trainer does not care which —
+   * so this is the one lookup that sees all of them.
+   */
+  skillLevel(skill: string): number {
+    if (skill.startsWith("weapon-")) return this.skillIn(skill.slice(7));
+    if (skill in this.skills) return this.skills[skill as keyof typeof this.skills];
+    if (skill in this.crafts) return this.crafts[skill as keyof typeof this.crafts];
+    if (skill === "taming") return this.tameSkill;
+    return 0;
+  }
+
+  /** Practice at talking creatures round. Raised by trying, and by training. */
+  tameSkill = 0;
+
+  /**
+   * Pay somebody to teach you something.
+   *
+   * The price rises with what you already have, so training is a way to start a
+   * weapon rather than a way to finish one: the last points always have to be
+   * earned by using it. Otherwise coin would substitute for play entirely, and
+   * the trade economy would quietly become the whole game.
+   */
+  train(skill: string, price: number): boolean {
+    if (this.coin < price) { this.log("You cannot afford that.", "warn"); return false; }
+    this.coin -= price;
+    if (skill.startsWith("weapon-")) {
+      const cls = skill.slice(7);
+      this.weaponSkills[cls] = (this.weaponSkills[cls] ?? 0) + 1;
+    } else if (skill in this.skills) {
+      this.skills[skill as keyof typeof this.skills]++;
+    } else if (skill in this.crafts) {
+      this.crafts[skill as keyof typeof this.crafts]++;
+    } else if (skill === "taming") {
+      this.tameSkill++;
+    } else {
+      // Refund rather than silently pocket the coin: a skill the game does not
+      // have is a content bug, and the player should not pay for it.
+      this.coin += price;
+      this.log(`Nobody here knows anything about ${skill}.`, "warn");
+      return false;
+    }
+    this.log(`You practise. Your ${skill.replace("weapon-", "")} is now ${this.skillLevel(skill)}.`, "good");
+    this.finishTurn({ tookTurn: true });
+    return true;
+  }
+
+  /**
    * Instance data for a specific item in the pack or worn.
    *
    * Two Iron Axes are the same content file and may not be the same object: one
@@ -1101,6 +1439,7 @@ export class Game {
     if (!here?.length) { this.log("There is nothing here.", "warn"); return; }
     for (const id of here) {
       this.pack.push(id);
+      this.noteProgress("gather", id);
       this.log(`You pick up ${this.reg.items.get(id)?.name ?? id}.`, "good");
     }
     this.loot.delete(key);
@@ -1151,6 +1490,13 @@ export class Game {
       talentsTaken: [...this.talentsTaken],
       attributePoints: this.attributePoints,
       weaponSkills: { ...this.weaponSkills },
+      coin: this.coin,
+      tameSkill: this.tameSkill,
+      markets: [...this.markets].map(([k, m]) => [k, { ...m, stock: { ...m.stock } }] as [number, Market]),
+      standing: [...this.standing],
+      quests: this.quests.map((q) => ({ ...q })),
+      questsDone: [...this.questsDone],
+      deepestIn: [...this.deepestIn],
       instances: [...this.instances].map(([k, v]) => [k, { ...v }] as [string, ItemInstance]),
       party: [...this.party],
       skills: { ...this.skills },
@@ -1191,6 +1537,13 @@ export class Game {
     this.talentsTaken = [...(save.talentsTaken ?? [])];
     this.attributePoints = save.attributePoints ?? 0;
     this.weaponSkills = { ...(save.weaponSkills ?? {}) };
+    this.coin = save.coin ?? 0;
+    this.tameSkill = save.tameSkill ?? 0;
+    this.markets = new Map((save.markets ?? []) as [number, Market][]);
+    this.standing = new Map((save.standing ?? []) as [number, number][]);
+    this.quests = (save.quests ?? []) as ActiveQuest[];
+    this.questsDone = [...(save.questsDone ?? [])];
+    this.deepestIn = new Map((save.deepestIn ?? []) as [number, number][]);
     this.instances = new Map((save.instances ?? []) as [string, ItemInstance][]);
     this.party = [...(save.party ?? [])];
     if (save.skills) this.skills = { ...this.skills, ...save.skills };
@@ -1229,6 +1582,7 @@ export class Game {
     // Whatever is in your hand, or your fist if it is empty.
     const attack = this.weaponAbility;
     const res = moveOrAttack(this.actionCtx, this.player, dx, dy, attack);
+    if (res.tookTurn) this.noteArrival();
     // Walking into something is a swing, so it counts as practice too.
     if (res.tookTurn && this.actorAt(this.player.pos.x + dx, this.player.pos.y + dy)) {
       this.practise(this.heldClass);
@@ -1405,7 +1759,10 @@ export class Game {
       if (rng.next() >= chance) continue;
       for (let n = 0; n < (y2.amount ?? 1); n++) got.push(y2.item);
     }
-    for (const id of got) this.pack.push(id);
+    for (const id of got) {
+      this.pack.push(id);
+      this.noteProgress("gather", id);
+    }
 
     // What it leaves: whatever its file says, or else the ground it stood on.
     const becomes = h.becomes;
@@ -1510,7 +1867,12 @@ export class Game {
       for (let k = 0; k < (n.amount ?? 1); k++) this.pack.splice(this.pack.indexOf(n.item), 1);
     }
     const madeCount = r.makes.amount ?? 1;
-    for (let k = 0; k < madeCount; k++) this.pack.push(r.makes.item);
+    for (let k = 0; k < madeCount; k++) {
+      this.pack.push(r.makes.item);
+      // Making the thing counts: an order for ten ingots does not care whether
+      // you dug them up or smelted them.
+      this.noteProgress("gather", r.makes.item);
+    }
     this.crafts[r.craft]++;
 
     const name = this.reg.items.get(r.makes.item)?.name ?? r.makes.item;
@@ -1568,6 +1930,8 @@ export class Game {
     if (!t) return 0;
     let chance = t.chance;
     chance += this.perks.tame;
+    chance += this.tameSkill * 0.02;
+    chance += this.player.derived.tameBonus;
     if ((t.food ?? []).some((f) => this.pack.includes(f))) chance += 0.3;
     if (who.pools.hp < who.pools.hpMax / 2) chance += 0.2;
     if (who.pools.hp < who.pools.hpMax / 5) chance += 0.2;
@@ -1691,6 +2055,163 @@ export class Game {
     return actorAt(this.actors, x, y);
   }
 
+  // --- villages ------------------------------------------------------------
+
+  /** The village whose square you are standing in, if any. */
+  get villageHere(): { index: number; village: Village } | null {
+    return this.villageNear(this.player.pos.x, this.player.pos.y, 6);
+  }
+
+  /** The village near a point, if any. */
+  villageNear(x: number, y: number, within = 6): { index: number; village: Village } | null {
+    let best: { index: number; village: Village } | null = null;
+    let bestD = within + 1;
+    this.continent.villages.forEach((village, index) => {
+      const d = Math.hypot(village.pos.x - x, village.pos.y - y);
+      if (d < bestD) { bestD = d; best = { index, village }; }
+    });
+    return best;
+  }
+
+  /** The market for a village, made on first use. */
+  marketOf(index: number): Market {
+    const had = this.markets.get(index);
+    if (had) return had;
+    const village = this.continent.villages[index];
+    const made = newMarket(village?.trade ?? "market", village?.depth ?? 12, this.turn);
+    this.markets.set(index, made);
+    return made;
+  }
+
+  /**
+   * How much better a price you get, as a fraction.
+   *
+   * Cunning and Presence, plus standing with this particular village. Standing
+   * is capped well below the point where it would close the spread, because a
+   * village that likes you enough to let you buy and sell at the same price is a
+   * village you can print money at.
+   */
+  haggleAt(index: number): number {
+    const d = this.player.derived;
+    const liked = Math.min(0.08, (this.standing.get(index) ?? 0) * 0.004);
+    return d.haggle + liked;
+  }
+
+  /** Everything a village will deal in, priced. */
+  stallAt(index: number): Quote[] {
+    const extra = this.villagersOf(index)
+      .flatMap((a) => this.reg.npcs.get(String(a.data["npc"]))?.deals ?? []);
+    return stall(
+      this.marketOf(index), this.reg.items as Map<string, ItemDef>, extra,
+      this.turn, this.haggleAt(index));
+  }
+
+  /** The villagers currently standing in a village. */
+  villagersOf(index: number): Actor[] {
+    return this.actors.filter((a) => a.alive && a.data["village"] === index && a.data["npc"]);
+  }
+
+  /**
+   * Buy one of something.
+   *
+   * Takes a turn, because standing at a stall is standing somewhere — and
+   * because a free action would let you buy a village out of ore without the
+   * world noticing.
+   */
+  buy(index: number, itemId: string): boolean {
+    const def = this.reg.items.get(itemId);
+    if (!def) return false;
+    const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
+    if (this.coin < q.buy) {
+      this.log(`You cannot afford ${def.name} (${q.buy} coin).`, "warn");
+      return false;
+    }
+    this.coin -= q.buy;
+    this.pack.push(itemId);
+    trade(this.marketOf(index), itemId, -1, this.turn);
+    this.log(`You buy ${def.name} for ${q.buy}.`, "plain");
+    this.finishTurn({ tookTurn: true });
+    return true;
+  }
+
+  /** Sell one of something. */
+  sell(index: number, itemId: string): boolean {
+    const def = this.reg.items.get(itemId);
+    if (!def) return false;
+    const at = this.pack.indexOf(itemId);
+    if (at < 0) { this.log(`You are not carrying any ${def.name}.`, "warn"); return false; }
+    const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
+    this.pack.splice(at, 1);
+    this.coin += q.sell;
+    trade(this.marketOf(index), itemId, 1, this.turn);
+    this.log(`You sell ${def.name} for ${q.sell}.`, "good");
+    this.finishTurn({ tookTurn: true });
+    return true;
+  }
+
+  /**
+   * Sell everything of one kind at once.
+   *
+   * Each one is priced as it goes, so a stack sells at a falling price rather
+   * than all at the best one — which is what stops a full pack of ore being
+   * worth as much as the first sack times forty.
+   */
+  sellAll(index: number, itemId: string): void {
+    let sold = 0, got = 0;
+    const def = this.reg.items.get(itemId);
+    if (!def) return;
+    while (this.pack.includes(itemId)) {
+      const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
+      this.pack.splice(this.pack.indexOf(itemId), 1);
+      this.coin += q.sell;
+      got += q.sell;
+      trade(this.marketOf(index), itemId, 1, this.turn);
+      sold++;
+      if (sold > 500) break;        // a guard, not a rule
+    }
+    if (sold) {
+      this.log(`You sell ${sold} × ${def.name} for ${got}.`, "good");
+      this.finishTurn({ tookTurn: true });
+    }
+  }
+
+  /**
+   * Where to sell what you are carrying, and for how much more.
+   *
+   * This is the Warbanner feature made legible: for every tradeable thing in the
+   * pack, the village that pays best for it and how much more than here. Computed
+   * from the live markets, so it reflects what you have already done to the
+   * prices — sell a village out of ore and this stops recommending it.
+   *
+   * It only names villages you have actually visited, by whether a market exists
+   * for them yet. A route to somewhere you have never been is not a tip, it is a
+   * spoiler, and finding the places is half the game.
+   */
+  bestRoutes(fromIndex: number): { item: string; name: string; here: number; to: number; toName: string; profit: number }[] {
+    const out: { item: string; name: string; here: number; to: number; toName: string; profit: number }[] = [];
+    for (const itemId of new Set(this.pack)) {
+      const def = this.reg.items.get(itemId);
+      if (!def || def.unique) continue;
+      const here = quote(this.marketOf(fromIndex), def, this.turn, this.haggleAt(fromIndex));
+
+      let best: { index: number; sell: number } | null = null;
+      for (const index of this.markets.keys()) {
+        if (index === fromIndex) continue;
+        const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
+        if (!best || q.sell > best.sell) best = { index, sell: q.sell };
+      }
+      if (!best) continue;
+      const profit = best.sell - here.buy;
+      if (profit <= 0) continue;
+      out.push({
+        item: itemId, name: def.name ?? itemId, here: here.sell,
+        to: best.sell, toName: this.continent.villages[best.index]?.name ?? "elsewhere",
+        profit,
+      });
+    }
+    return out.sort((a, b) => b.profit - a.profit).slice(0, 8);
+  }
+
   /** What a biome is called, for the look panel and the wiki. */
   biomeName(id: string): string {
     return BIOME_BY_ID.get(id)?.name ?? id;
@@ -1736,4 +2257,20 @@ export function loadGame(reg: Registry, save: SaveFile): Game {
   const game = new Game(reg, save.seed);
   game.restore(save);
   return game;
+}
+
+/**
+ * A villager's given name.
+ *
+ * Two syllables out of a small table, which is enough for a world of nine
+ * villages to have no two people the same without shipping a name list. The
+ * stream is forked per village, so the same seed always produces the same
+ * people — a smith who is called something different every time you load is a
+ * smith nobody remembers.
+ */
+export function villagerName(rng: Rng): string {
+  const first = ["Bren", "Hal", "Mor", "Tess", "Ard", "Gil", "Wen", "Rask", "Dol", "Pell",
+                 "Cuth", "Ims", "Nary", "Oss", "Fenn", "Thal", "Bry", "Kel", "Sarn", "Vess"];
+  const last = ["a", "wyn", "ric", "mund", "is", "or", "eth", "an", "ow", "ick"];
+  return `${first[rng.int(first.length)]}${last[rng.int(last.length)]}`;
 }

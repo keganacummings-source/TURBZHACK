@@ -19,6 +19,7 @@ import { Rng } from "../engine/rng.ts";
 import { Level, type TileKind } from "../engine/grid.ts";
 import type { Pos } from "../engine/types.ts";
 import type { TileDef } from "../content/schema.ts";
+import { TRADE, VILLAGE_TRADES, type VillageTrade } from "./economy.ts";
 
 export const CONTINENT_W = 240;
 export const CONTINENT_H = 160;
@@ -86,12 +87,23 @@ export type Continent = {
   region: Uint8Array;
   /** World bosses: one lair each, fixed for this seed. */
   lairs: { pos: Pos; enemy: string }[];
-  /** Camps: a fire, a forge and a bench, on flagstone. */
-  camps: { pos: Pos; name: string }[];
+  /** Settlements: stations to craft at, and a market to trade with. */
+  villages: Village[];
 };
 
 /** The most remote band. Band 0 is home. */
 export const REGION_BANDS = 5;
+
+/** A settlement. What it does decides what it has and what it wants. */
+export type Village = {
+  pos: Pos;
+  name: string;
+  trade: VillageTrade;
+  /** Crafting stations it has, by tile id. */
+  stations: string[];
+  /** How much trade it absorbs before its prices move. */
+  depth: number;
+};
 
 // --- noise -----------------------------------------------------------------
 
@@ -297,70 +309,151 @@ export function generateContinent(seed: number, tiles: Map<string, TileDef>, w =
   const entrances = placeEntrances(level, biome, w, h, kind("dungeon-door"), start, rng.fork("dungeons"));
 
   const region = measureRegions(level, start, w, h);
-  const camps = placeCamps(level, biome, w, h, start, kind, rng.fork("camps"));
+  const villages = placeVillages(level, biome, w, h, start, kind, rng.fork("camps"));
 
-  return { seed, level, biome, start, entrances, region, lairs: [], camps };
+  return { seed, level, biome, start, entrances, region, lairs: [], villages };
 }
 
 /**
- * Camps: somewhere to actually make things.
+ * Villages: somewhere to make things, and somewhere to sell them.
  *
- * A fire, a forge and a bench on a patch of flagstone. They exist because the
- * gathering loop is pointless without somewhere to take the ore — and they are
- * placed in the world rather than carried with you so that going out, filling
- * your pack and coming back is a journey with a shape to it.
+ * Each one has a trade — farming, mining, logging, smithing, herbalism, fishing
+ * or market — which decides three things at once: which biome it is found in,
+ * what its crafting stations are, and what its market has too much and too
+ * little of. That last is what makes trade routes exist: a mining camp's ore is a
+ * smithing town's raw material, and the smithing town's tools are what the mining
+ * camp cannot get.
  *
- * The first one is put within easy reach of where you wake up. Without that, a
- * seed could bury every forge four hundred tiles away and the whole crafting
- * half of the game would be invisible for an hour.
+ * The trade is chosen from the biome rather than at random, so the world makes
+ * sense when you look at it — loggers in the forest, fishers on the coast — and
+ * so a player can guess what is likely to be over the next hill.
+ *
+ * The first village is put within easy reach of where you wake up. Without that,
+ * a seed could bury every forge four hundred tiles away and the whole crafting
+ * and trading half of the game would be invisible for an hour.
  */
-function placeCamps(
+function placeVillages(
   level: Level, biome: string[], w: number, h: number, start: Pos,
   kind: (id: string) => number, rng: Rng,
-): { pos: Pos; name: string }[] {
-  const LIVEABLE = new Set(["plains", "forest", "savanna", "hills", "beach", "taiga", "downs"]);
+): Village[] {
   const floor = kind("flagstone");
-  const pieces: [string, number, number][] = [
-    ["campfire", 0, 0],
-    ["forge", 2, 0],
-    ["workbench", -2, 0],
+  const wall = kind("wall-wood");
+  const names = [
+    "Dunmoor", "Tallow Rest", "The Pegs", "Candlewick", "Ashford", "Low Barrow",
+    "Mirefoot", "Hobbs Ferry", "Stonemarket", "Thistlewick", "Cold Harbour",
+    "Greymill", "Saltpenny", "Harrowgate", "Nettlebed",
   ];
-  const names = ["Dunmoor", "Tallow Rest", "The Pegs", "Candlewick", "Ashford", "Low Barrow", "Mirefoot"];
-  const out: { pos: Pos; name: string }[] = [];
+  const out: Village[] = [];
 
-  const fits = (cx: number, cy: number, maxFromStart: number): boolean => {
-    if (Math.hypot(cx - start.x, cy - start.y) > maxFromStart) return false;
-    if (Math.hypot(cx - start.x, cy - start.y) < 6) return false;   // not on your doorstep
-    if (!LIVEABLE.has(biome[cy * w + cx] ?? "")) return false;
-    // A clear 7x3 so the three stations and the ground around them fit.
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -3; dx <= 3; dx++) {
-        if (!level.inBounds(cx + dx, cy + dy)) return false;
-        if (level.solid(cx + dx, cy + dy)) return false;
+  /** Which trades suit the ground here, in the order they are preferred. */
+  const tradesFor = (b: string): VillageTrade[] =>
+    VILLAGE_TRADES.filter((t) => TRADE[t].biomes.includes(b));
+
+  const fits = (cx: number, cy: number, maxFromStart: number): VillageTrade | null => {
+    if (Math.hypot(cx - start.x, cy - start.y) > maxFromStart) return null;
+    if (Math.hypot(cx - start.x, cy - start.y) < 6) return null;   // not on your doorstep
+    const here = biome[cy * w + cx] ?? "";
+    const trades = tradesFor(here);
+    if (!trades.length) return null;
+    // A clear patch, so the whole settlement fits without being carved into rock.
+    for (let dy = -3; dy <= 3; dy++) {
+      for (let dx = -5; dx <= 5; dx++) {
+        if (!level.inBounds(cx + dx, cy + dy)) return null;
+        if (level.solid(cx + dx, cy + dy)) return null;
       }
     }
-    for (const c of out) if (Math.hypot(c.pos.x - cx, c.pos.y - cy) < 25) return false;
-    return true;
+    for (const v of out) if (Math.hypot(v.pos.x - cx, v.pos.y - cy) < 30) return null;
+
+    /*
+     * Prefer a trade the world does not have yet.
+     *
+     * Picking at random from the trades a biome allows produced four farming
+     * villages out of five, because plains, savanna and hills are the commonest
+     * ground and farming suits all three. A world of farms has no routes in it,
+     * and the whole economy then looks broken rather than unlucky. Unseen trades
+     * come first; if the biome only allows ones already present, that is a real
+     * fact about the land and it takes whichever is rarest.
+     */
+    const counts = new Map<VillageTrade, number>();
+    for (const v of out) counts.set(v.trade, (counts.get(v.trade) ?? 0) + 1);
+    const fewest = Math.min(...trades.map((t) => counts.get(t) ?? 0));
+    const rarest = trades.filter((t) => (counts.get(t) ?? 0) === fewest);
+    return rarest[rng.int(rarest.length)]!;
   };
 
-  const build = (cx: number, cy: number) => {
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -3; dx <= 3; dx++) level.set(cx + dx, cy + dy, floor, floor);
+  const build = (cx: number, cy: number, trade: VillageTrade) => {
+    // The ground: a paved square, with a low wooden wall along the top and
+    // bottom so it reads as a place rather than as a patch of different floor.
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -4; dx <= 4; dx++) level.set(cx + dx, cy + dy, floor, floor);
     }
-    for (const [id, dx, dy] of pieces) level.set(cx + dx, cy + dy, kind(id), floor);
-    out.push({ pos: { x: cx, y: cy }, name: names[out.length % names.length]! });
+    for (let dx = -4; dx <= 4; dx++) {
+      if (dx === 0) continue;                       // leave a gap to walk through
+      level.set(cx + dx, cy - 2, wall, floor);
+      level.set(cx + dx, cy + 2, wall, floor);
+    }
+
+    /*
+     * Stations, chosen by trade.
+     *
+     * Every village has a fire — somewhere to cook is the least a place can be —
+     * and the other two depend on what it does. A mining camp has a forge
+     * because it has the ore; a herbalist has a bench because that is where the
+     * brewing happens. That is also the reason to visit a particular village
+     * rather than the nearest one.
+     */
+    const stations: string[] = ["campfire"];
+    if (trade === "smithing" || trade === "mining" || trade === "market") stations.push("forge");
+    if (trade === "herbalism" || trade === "logging" || trade === "market") stations.push("workbench");
+    if (stations.length < 2) stations.push(rng.next() < 0.5 ? "forge" : "workbench");
+
+    const spots: [number, number][] = [[-3, 0], [3, 0], [0, -1], [0, 1]];
+    stations.forEach((id, i) => {
+      const [dx, dy] = spots[i] ?? [0, 0];
+      level.set(cx + dx, cy + dy, kind(id), floor);
+    });
+
+    out.push({
+      pos: { x: cx, y: cy },
+      name: names[out.length % names.length]!,
+      trade,
+      stations,
+      /*
+       * How deep its market is.
+       *
+       * A market town absorbs a lot before its prices move; a hamlet does not.
+       * This is what stops one sack of ore crashing a price, and what makes a
+       * big town the place to unload a full pack.
+       */
+      depth: trade === "market" ? 40 : 10 + rng.int(10),
+    });
   };
 
-  // The first camp: near, so the crafting loop is findable. Then the rest,
-  // anywhere liveable, spread out.
-  for (const reach of [45, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9]) {
-    for (let t = 0; t < 3000; t++) {
+  // The first village: near, so the crafting and trading loops are findable.
+  // Then the rest, anywhere that suits a trade, spread out.
+  for (const reach of [50, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9]) {
+    for (let t = 0; t < 4000; t++) {
       const x = rng.int(w), y = rng.int(h);
-      if (!fits(x, y, reach)) continue;
-      build(x, y);
+      const trade = fits(x, y, reach);
+      if (!trade) continue;
+      build(x, y, trade);
       break;
     }
   }
+
+  /*
+   * At least two different trades, or there is nothing to trade between.
+   *
+   * On a seed where every village came out the same, the second one is
+   * reassigned. A world with four mining camps and nothing else is a world with
+   * no routes in it, which would make the whole economy look broken rather than
+   * unlucky.
+   */
+  if (out.length > 1 && new Set(out.map((v) => v.trade)).size === 1) {
+    const other = VILLAGE_TRADES.find((t) => t !== out[0]!.trade && TRADE[t].produces.length);
+    if (other) out[1]!.trade = other;
+  }
+
   return out;
 }
 

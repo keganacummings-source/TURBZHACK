@@ -1,0 +1,21 @@
+{
+  "name": "Elder",
+  "role": "elder",
+  "sprite": "pc-mummy",
+  "about": "Knows what is out there and would rather you dealt with it.",
+  "greetings": [
+    "You are not from the valley.",
+    "Sit, if you are sitting.",
+    "We have a problem, and you have a weapon."
+  ],
+  "gossip": [
+    "There is a thing in the deep places that was here before the village.",
+    "The old road east is not safe and has not been for a generation.",
+    "Every dungeon has ten floors and something at the bottom of them. Every single one."
+  ],
+  "quests": [
+    "slay-boss",
+    "delve-dungeon",
+    "bounty-local"
+  ]
+}

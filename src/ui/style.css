@@ -429,3 +429,24 @@ table.slots td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); v
    read, so it is the one that gets emphasis. */
 table.attrs .attr-value { color: var(--kyo); width: 110px; }
 table.attrs td:first-child { color: var(--dim); width: 44px; letter-spacing: .1em; }
+
+/* --- the market ---------------------------------------------------------- */
+
+table.market th { text-align: left; font-weight: normal; padding-bottom: 4px; }
+table.market img { image-rendering: pixelated; vertical-align: middle; }
+table.market .price { color: var(--kyo); text-align: right; width: 54px; }
+/* What the village thinks of the good is the thing a trader is reading, so it
+   is coloured rather than left as another word in a row of words. */
+table.market .mood { width: 80px; font-size: 11px; }
+.webfont table.market .mood { font-size: 15px; }
+.mood-desperate { color: var(--blood); }
+.mood-short { color: #e2874a; }
+.mood-steady { color: var(--dim); }
+.mood-plenty { color: #9ab86a; }
+.mood-glut { color: var(--good); }
+table.market tr.wants { background: rgba(196, 71, 58, .07); }
+table.market tr.makes { background: rgba(143, 196, 106, .05); }
+
+.quest-done td { color: var(--good); }
+.good-text { color: var(--good); }
+.coin { color: var(--kyo); }

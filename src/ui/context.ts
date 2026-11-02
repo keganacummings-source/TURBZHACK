@@ -23,6 +23,8 @@ export type ContextAction =
   | { kind: "attack"; label: string; detail?: string; id: string; target: string }
   | { kind: "cast"; label: string; detail?: string; id: string; target: string }
   | { kind: "talk"; label: string; detail?: string; target: string }
+  | { kind: "market"; label: string; detail?: string; village: number }
+  | { kind: "handin"; label: string; detail?: string; target: string }
   | { kind: "tame"; label: string; detail?: string; target: string }
   | { kind: "pickup"; label: string; detail?: string }
   | { kind: "harvest"; label: string; detail?: string; x: number; y: number }
@@ -141,7 +143,32 @@ export function menuAt(game: Game, x: number, y: number): ContextMenu {
           detail: `${spell.mana} mana${can ? "" : " · not enough"}`,
         });
       }
-      if (who.stance !== "hostile") {
+      /*
+       * A villager is a conversation, not a creature.
+       *
+       * They come first and they are named for what they do, because a player
+       * standing in a village wants to trade, not to consider their options
+       * about a person. Attacking one is still possible — it is further down the
+       * list, where a deliberate act belongs.
+       */
+      const npcId = who.data["npc"];
+      if (typeof npcId === "string") {
+        const npc = game.reg.npcs.get(npcId);
+        const village = who.data["village"] as number | undefined;
+        const owed = village !== undefined
+          && game.questLines().some((l) => l.quest.village === village && l.done);
+        if (owed) {
+          actions.unshift({ kind: "handin", label: "Hand in finished work", target: who.id });
+        }
+        actions.unshift({
+          kind: "talk", label: `Talk to ${who.name.split(" ")[0]}`,
+          target: who.id,
+          detail: npc?.about,
+        });
+        if (village !== undefined && (npc?.role === "trader" || (npc?.deals?.length ?? 0) > 0)) {
+          actions.unshift({ kind: "market", label: "Trade", village, detail: marketHint(game, village) });
+        }
+      } else if (who.stance !== "hostile") {
         actions.push({ kind: "talk", label: "Talk to it", target: who.id });
       }
       if (game.canTame(who)) {
@@ -181,9 +208,31 @@ export function menuAt(game: Game, x: number, y: number): ContextMenu {
     }
   }
 
+  // Standing in a village, the market is always worth offering.
+  const village = game.place.kind === "overworld" ? game.villageNear(x, y, 5) : null;
+  if (village && !who) {
+    actions.push({
+      kind: "market", label: `Trade in ${village.village.name}`, village: village.index,
+      detail: marketHint(game, village.index),
+    });
+  }
+
   if (tile) actions.push({ kind: "wiki", label: `Look up ${tile.name}`, topic: `tiles/${tile.id}` });
 
   return { title, about, sprite, facts, actions };
+}
+
+/**
+ * One line about what a village is short of.
+ *
+ * Shown on the menu entry itself, so a player walking past can tell whether it
+ * is worth stopping without opening the market — which is what turns a village
+ * from a shop into a place on a route.
+ */
+function marketHint(game: Game, index: number): string | undefined {
+  const wants = game.stallAt(index).filter((q) => q.mood === "desperate" || q.mood === "short");
+  if (!wants.length) return undefined;
+  return `wants ${wants.slice(0, 3).map((q) => q.name.toLowerCase()).join(", ")}`;
 }
 
 /** A line about a piece of ground, assembled from what the game knows. */

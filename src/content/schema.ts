@@ -240,6 +240,83 @@ export type EnchantmentDef = ContentBase & {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// NPCs — content/npcs/*.json
+// ---------------------------------------------------------------------------
+
+/**
+ * Somebody who lives in a village.
+ *
+ * An NPC is a role rather than a person: "the smith" is a file, and each village
+ * that has one gets its own, with its own name and its own stock. That is what
+ * lets a seed have nine villages with nine different smiths without nine
+ * content files — and it means adding a new kind of villager is still one file,
+ * which is the rule the whole content system is built on.
+ */
+export type NpcDef = ContentBase & {
+  /** What they do, which decides what the conversation offers. */
+  role: "trader" | "smith" | "alchemist" | "trainer" | "elder" | "stablemaster" | "guard";
+  /** Which village trades they turn up in. Empty means all of them. */
+  trades?: string[];
+  /** How likely they are to be present at all, 0-1. Default 1. */
+  chance?: number;
+  /** What they say when you open the conversation, picked at random. */
+  greetings?: string[];
+  /** Things they will say if asked about the area. */
+  gossip?: string[];
+  /**
+   * Which goods they deal in, beyond whatever the village produces.
+   *
+   * A trader deals in everything the village has; a specialist deals in their
+   * own line as well, which is what makes it worth finding the right person
+   * rather than the nearest one.
+   */
+  deals?: string[];
+  /** Weapon or trade skills they will teach, and what it costs per point. */
+  teaches?: { skill: string; price: number }[];
+  /** Quest ids they may offer. */
+  quests?: string[];
+};
+
+// ---------------------------------------------------------------------------
+// Quests — content/quests/*.json
+// ---------------------------------------------------------------------------
+
+/**
+ * Something somebody wants done.
+ *
+ * Quests are templates rather than fixed errands: "kill eight of something that
+ * lives near here" is one file, and the particular creature, the count and the
+ * reward are filled in from the world when it is offered. A hand-written quest
+ * for every creature in a 71-strong bestiary would be 71 files that all say the
+ * same thing, and the ones nobody ever sees would rot.
+ */
+export type QuestDef = ContentBase & {
+  /**
+   * What shape of task this is.
+   *   "bounty"  — kill a number of a particular creature
+   *   "slay"    — kill one named thing: a world boss or a dungeon keeper
+   *   "gather"  — bring back a number of a particular good
+   *   "deliver" — carry something to another village
+   *   "delve"   — reach a given depth of a particular dungeon
+   */
+  kind: "bounty" | "slay" | "gather" | "deliver" | "delve";
+  /** Who offers it. Roles, not names. */
+  from?: string[];
+  /** Difficulty band, 1-5, which decides what gets asked and what is paid. */
+  tier?: number;
+  /** How the request is phrased. `{what}`, `{count}` and `{where}` are filled in. */
+  ask?: string[];
+  /** What they say when it is done. */
+  thanks?: string[];
+  /** Coin, as a multiple of the tier. The real reward is worked out from the task. */
+  pay?: number;
+  /** An item handed over on completion, if any. */
+  reward?: string;
+  /** How much standing it earns with the village. */
+  standing?: number;
+};
+
+// ---------------------------------------------------------------------------
 // Recipes — content/recipes/*.json
 // ---------------------------------------------------------------------------
 
@@ -466,6 +543,6 @@ export type UpgradeDef = ContentBase & {
 /** Every kind of content file, by folder name. */
 export const CONTENT_KINDS = [
   "species", "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
-  "recipes",
+  "recipes", "npcs", "quests",
 ] as const;
 export type ContentKind = (typeof CONTENT_KINDS)[number];

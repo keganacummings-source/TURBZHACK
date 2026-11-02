@@ -1,0 +1,43 @@
+{
+  "name": "Alchemist",
+  "role": "alchemist",
+  "sprite": "pc-deep-elf",
+  "about": "Sells what she brews and buys what she cannot grow.",
+  "trades": [
+    "herbalism",
+    "market"
+  ],
+  "greetings": [
+    "Do not touch that one.",
+    "You look like somebody who has been bleeding recently.",
+    "Roots, caps, or something for the pain?"
+  ],
+  "gossip": [
+    "Glowcap only grows where something died badly. Make of that what you like.",
+    "Bitterroot is bitter. That is the active ingredient.",
+    "Frostleaf and emberfruit in the same pouch is how people lose a pouch."
+  ],
+  "deals": [
+    "potion-of-mending",
+    "potion-of-greater-mending",
+    "potion-of-haste",
+    "bitterroot",
+    "frostleaf",
+    "emberfruit",
+    "glowcap",
+    "scroll-of-warding"
+  ],
+  "teaches": [
+    {
+      "skill": "alchemy",
+      "price": 110
+    },
+    {
+      "skill": "foraging",
+      "price": 70
+    }
+  ],
+  "quests": [
+    "gather-order"
+  ]
+}

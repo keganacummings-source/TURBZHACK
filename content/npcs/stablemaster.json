@@ -1,0 +1,36 @@
+{
+  "name": "Stablemaster",
+  "role": "stablemaster",
+  "sprite": "pc-gnoll",
+  "about": "Feeds whatever you have talked into following you.",
+  "trades": [
+    "farming",
+    "market",
+    "fishing"
+  ],
+  "chance": 0.7,
+  "greetings": [
+    "That one looks hungry.",
+    "I have seen worse come through here. Not many.",
+    "Feed it or it leaves. That is the whole of the art."
+  ],
+  "gossip": [
+    "Hurt it first and feed it second. Nobody likes that advice and it works.",
+    "A full beast fights. A hungry one watches.",
+    "Three is as many as anyone can keep track of, whatever they tell you."
+  ],
+  "deals": [
+    "dried-meat",
+    "cap-mushroom",
+    "hide"
+  ],
+  "teaches": [
+    {
+      "skill": "taming",
+      "price": 130
+    }
+  ],
+  "quests": [
+    "gather-order"
+  ]
+}

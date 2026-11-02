@@ -243,10 +243,10 @@ test("crafting away from a station is refused", () => {
 test("the world has somewhere to craft, and one of them is findable", () => {
   for (const seed of [1, 2, 3, 4, 5]) {
     const g = new Game(reg, seed);
-    assert.ok(g.continent.camps.length > 0, `seed ${seed} has nowhere to craft`);
-    const near = g.continent.camps.some((c) =>
-      Math.hypot(c.pos.x - g.continent.start.x, c.pos.y - g.continent.start.y) < 60);
-    assert.ok(near, `seed ${seed} buries every camp out of reach`);
+    assert.ok(g.continent.villages.length > 0, `seed ${seed} has nowhere to craft`);
+    const near = g.continent.villages.some((v) =>
+      Math.hypot(v.pos.x - g.continent.start.x, v.pos.y - g.continent.start.y) < 70);
+    assert.ok(near, `seed ${seed} buries every village out of reach`);
   }
 });
 

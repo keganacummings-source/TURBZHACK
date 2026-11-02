@@ -1,0 +1,59 @@
+{
+  "name": "Weapon Master",
+  "role": "trainer",
+  "sprite": "pc-minotaur",
+  "about": "Takes coin and gives it back as practice.",
+  "trades": [
+    "market",
+    "smithing",
+    "farming"
+  ],
+  "chance": 0.6,
+  "greetings": [
+    "Show me how you hold it.",
+    "You are quick. You are not accurate.",
+    "Practice is cheaper than a funeral."
+  ],
+  "gossip": [
+    "A dagger lands everything and finishes nothing. Know which fight you are in.",
+    "Two squares of reach is worth more than two points of damage.",
+    "Nobody is good with every weapon. Pick one and stop apologising."
+  ],
+  "teaches": [
+    {
+      "skill": "weapon-dagger",
+      "price": 100
+    },
+    {
+      "skill": "weapon-sword",
+      "price": 100
+    },
+    {
+      "skill": "weapon-axe",
+      "price": 100
+    },
+    {
+      "skill": "weapon-mace",
+      "price": 100
+    },
+    {
+      "skill": "weapon-polearm",
+      "price": 100
+    },
+    {
+      "skill": "weapon-bow",
+      "price": 100
+    },
+    {
+      "skill": "weapon-staff",
+      "price": 100
+    },
+    {
+      "skill": "weapon-unarmed",
+      "price": 80
+    }
+  ],
+  "quests": [
+    "bounty-local"
+  ]
+}

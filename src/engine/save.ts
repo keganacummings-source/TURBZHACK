@@ -83,6 +83,14 @@ export type SaveFile = {
   /** Banked attribute points, and practice with each weapon class. */
   attributePoints?: number;
   weaponSkills?: Record<string, number>;
+  /** Coin, markets, standing and quests. */
+  coin?: number;
+  tameSkill?: number;
+  markets?: unknown[];
+  standing?: [number, number][];
+  quests?: unknown[];
+  questsDone?: string[];
+  deepestIn?: [number, number][];
   /** Material and quality for particular items, keyed by item id. */
   instances?: [string, { item: string; material?: string; quality?: string; maker?: string }][];
   party?: string[];

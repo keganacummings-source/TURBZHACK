@@ -1,0 +1,23 @@
+{
+  "name": "Bounty",
+  "kind": "bounty",
+  "tier": 1,
+  "pay": 14,
+  "standing": 2,
+  "ask": [
+    "{what} have been coming down out of {where}. Bring me {count} fewer of them.",
+    "There is a price on {what}. {count} of them, and I will not ask where.",
+    "{count} {what}. Nobody here will do it and everybody here wants it done."
+  ],
+  "thanks": [
+    "That is {count}. Here.",
+    "Good. The field is usable again.",
+    "I will not say I doubted you. I did."
+  ],
+  "from": [
+    "elder",
+    "guard",
+    "trainer",
+    "smith"
+  ]
+}
