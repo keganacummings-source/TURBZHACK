@@ -8,7 +8,9 @@
     "test": "node --experimental-strip-types --test scripts/*.test.mts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "serve": "node tools/serve.mjs"
+    "serve": "node tools/serve.mjs",
+    "stage": "node tools/stage-web.mjs",
+    "build:web": "npm run build && node tools/index-content.mjs content && npm run stage"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

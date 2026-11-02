@@ -10,10 +10,13 @@ to touch. See [docs/MODDING.md](docs/MODDING.md).
 ## Running it
 
 ```bash
-npm install      # typescript, and nothing else
-npm run build    # tsc. no bundler.
-npm run serve    # http://localhost:8099
+npm install        # typescript, and nothing else
+npm run build:web  # tsc, index the content, stage it into dist-web/
+npm run serve      # http://localhost:8099
 ```
+
+While working on the game, `npm run build` alone is enough — `build:web` also
+stages `dist-web/`, which is what the installer packages.
 
 Open it in a browser and pick a class. `npm run serve` regenerates the content
 index on every request, so adding an enemy file is: save it, reload.
@@ -29,9 +32,15 @@ Push a tag and GitHub Actions builds it:
 git tag v0.1.0 && git push --tags
 ```
 
-The workflow runs the tests, builds the web game, wraps it with Tauri and
-attaches the installer to a release. It is the same code either way — the
-native shell only opens a window and points it at the game.
+The workflow runs the tests, builds the web game into `dist-web/`, wraps that
+with Tauri and attaches the installer to a release. It is the same code either
+way — the native shell only opens a window and points it at the game.
+
+`dist-web/` exists because Tauri bundles whatever `frontendDist` points at, and
+pointing it at the repository root is refused: it would pack `node_modules` and
+Tauri's own `target/` into the installer. `scripts/package.test.mts` checks that
+and the icon set locally, so a packaging mistake fails in seconds rather than
+ten minutes into a Windows runner.
 
 ## Playing
 
@@ -86,6 +95,7 @@ src/ui/        the browser shell and the texture designer
 content/       every thing in the game, one file each
 assets/tiles16 16x16 art
 scripts/       tests — `node --test`, no framework
+src-tauri/     the native shell: a window, and nothing else
 tools/         dev server, content indexer, art pipeline
 ```
 

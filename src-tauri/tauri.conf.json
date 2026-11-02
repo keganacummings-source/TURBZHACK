@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.turbz.turbzhack",
   "build": {
-    "frontendDist": "../"
+    "frontendDist": "../dist-web"
   },
   "app": {
     "windows": [
@@ -14,7 +14,8 @@
         "height": 800,
         "minWidth": 800,
         "minHeight": 560,
-        "resizable": true
+        "resizable": true,
+        "label": "main"
       }
     ],
     "security": {
@@ -23,8 +24,15 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "icon": ["icons/icon.ico"],
-    "resources": ["content/**/*", "assets/**/*", "dist/**/*"]
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
   }
 }

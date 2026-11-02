@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "TURBZHACK runs entirely in its own window and asks the host for nothing: no filesystem, no network, no shell. The game is a self-contained web app, so the default webview permissions are all it needs.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

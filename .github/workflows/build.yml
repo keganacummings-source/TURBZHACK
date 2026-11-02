@@ -27,19 +27,12 @@ jobs:
         run: npm test
       - name: Type-check
         run: npm run typecheck
-      - name: Build the web game
-        run: |
-          npm run build
-          node tools/index-content.mjs content
+      - name: Build and stage the web game
+        run: npm run build:web
       - uses: actions/upload-artifact@v4
         with:
           name: turbzhack-web
-          path: |
-            index.html
-            dist/
-            assets/
-            content/
-            src/ui/style.css
+          path: dist-web/
 
   windows:
     needs: test
@@ -59,10 +52,11 @@ jobs:
             src-tauri/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
       - run: npm ci || npm install
-      - name: Build the web game
-        run: |
-          npm run build
-          node tools/index-content.mjs content
+      # dist-web/ holds only the files the game loads. Tauri bundles whatever
+      # `frontendDist` points at, and pointing it at the repo root fails: it
+      # would pack node_modules and Tauri's own target/ into the installer.
+      - name: Build and stage the web game
+        run: npm run build:web
       - name: Build the executable
         run: |
           npm install --no-save @tauri-apps/cli@^2
