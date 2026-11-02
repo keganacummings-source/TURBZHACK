@@ -26,7 +26,8 @@
     "firestorm"
   ],
   "resist": {
-    "fire": 0
+    "fire": 0,
+    "poison": 0.5
   },
   "region": {
     "min": 3,

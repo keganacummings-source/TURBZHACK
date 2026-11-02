@@ -26,7 +26,7 @@
     "chain-arc"
   ],
   "resist": {
-    "shock": 0,
+    "shock": 0.0,
     "physical": 0.4
   },
   "region": {

@@ -27,7 +27,8 @@
     "soul-rend"
   ],
   "resist": {
-    "pure": 0.5
+    "pure": 0.5,
+    "poison": 0.5
   },
   "region": {
     "min": 2,

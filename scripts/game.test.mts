@@ -248,3 +248,30 @@ test("no pairing of species and background can make a negative pool", () => {
     }
   }
 });
+
+test("the undead do not feel poison, and elementals shrug off their own element", () => {
+  // Cross-checked against the Stone Soup source: the resistance DIRECTIONS a
+  // player would expect — an undead thing cannot be poisoned, a fire elemental
+  // cannot be burned — have to hold, or a whole school of attack quietly fails
+  // against the creatures it should work on, or wastes itself on ones it should
+  // not.
+  const undead = ["skeleton", "zombie", "wraith", "mummy", "ghoul", "wight", "phantom", "lich", "vampire"];
+  for (const id of undead) {
+    const e = reg.enemies.get(id);
+    if (!e) continue;
+    assert.equal(e.resist?.poison ?? 1, 0, `${id} is undead but can be poisoned`);
+  }
+  // Elementals are immune to their own element.
+  assert.equal(reg.enemies.get("fire-elemental")?.resist?.fire, 0, "a fire elemental burns");
+  assert.equal(reg.enemies.get("earth-elemental")?.resist?.fire, 0, "an earth elemental burns");
+  assert.equal(reg.enemies.get("air-elemental")?.resist?.shock, 0, "an air elemental is shocked");
+  assert.equal(reg.enemies.get("balrug")?.resist?.fire, 0, "a balrug, a fire demon, burns");
+  assert.equal(reg.enemies.get("ice-beast")?.resist?.cold, 0, "an ice beast freezes");
+});
+
+test("a creature's vulnerabilities make the opposite element land harder", () => {
+  // The flip side: an ice beast should take extra from fire, a fire demon extra
+  // from cold. A resistance table with no vulnerabilities is half a table.
+  assert.ok((reg.enemies.get("ice-beast")?.resist?.fire ?? 1) > 1, "fire does ice beasts no extra harm");
+  assert.ok((reg.enemies.get("balrug")?.resist?.cold ?? 1) > 1, "cold does a balrug no extra harm");
+});

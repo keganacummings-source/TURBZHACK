@@ -25,7 +25,7 @@
     "drain"
   ],
   "resist": {
-    "cold": 0,
+    "cold": 0.6,
     "poison": 0
   },
   "region": {

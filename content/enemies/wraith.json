@@ -27,7 +27,9 @@
   ],
   "resist": {
     "physical": 0.2,
-    "pure": 1.75
+    "pure": 1.75,
+    "poison": 0,
+    "cold": 0.5
   },
   "region": {
     "min": 2,

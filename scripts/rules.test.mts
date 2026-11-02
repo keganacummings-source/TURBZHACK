@@ -100,7 +100,7 @@ test("fire burns for a quarter of the hit, every turn, through armour", () => {
   assert.equal(burning.tick?.of, "sourceDamage");
 
   const you = spawn(reg, "classes", "conjurer", 2, 2, true);
-  const golem = spawn(reg, "enemies", "earth-elemental", 4, 2);   // heavy armour
+  const golem = spawn(reg, "enemies", "gargoyle", 4, 2);   // heavy armour, not fire-immune
   const { ctx, messages } = makeGame(reg, [you, golem]);
 
   const res = castSpell(ctx, you, reg.spells.get("ember-bolt")!, golem);

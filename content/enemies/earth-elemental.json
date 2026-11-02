@@ -25,7 +25,9 @@
   "xp": 135,
   "resist": {
     "physical": 0.5,
-    "shock": 0
+    "shock": 0,
+    "fire": 0.0,
+    "cold": 0.0
   },
   "region": {
     "min": 2,

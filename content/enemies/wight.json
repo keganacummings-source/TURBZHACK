@@ -23,7 +23,7 @@
   "xp": 70,
   "resist": {
     "poison": 0,
-    "cold": 0
+    "cold": 0.6
   },
   "region": {
     "min": 1,

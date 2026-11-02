@@ -28,7 +28,7 @@
   ],
   "resist": {
     "poison": 0,
-    "cold": 0,
+    "cold": 0.5,
     "pure": 0.5
   },
   "region": {

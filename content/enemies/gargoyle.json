@@ -24,7 +24,8 @@
   "xp": 110,
   "resist": {
     "physical": 0.5,
-    "poison": 0
+    "poison": 0.0,
+    "shock": 0.5
   },
   "region": {
     "min": 2,
