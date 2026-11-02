@@ -1,0 +1,19 @@
+{
+  "name": "Dry Meat",
+  "station": "camp",
+  "craft": "cooking",
+  "turns": 3,
+  "needs": [
+    {
+      "item": "hide"
+    },
+    {
+      "item": "ash-salt"
+    }
+  ],
+  "makes": {
+    "item": "dried-meat",
+    "amount": 2
+  },
+  "about": "Salt and smoke do the keeping."
+}

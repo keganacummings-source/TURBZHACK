@@ -1,0 +1,16 @@
+{
+  "name": "Smelt Silver",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "silver-ore",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "silver-ingot"
+  },
+  "about": "Lower heat, more patience."
+}

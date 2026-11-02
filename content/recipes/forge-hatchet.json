@@ -1,0 +1,18 @@
+{
+  "name": "Forge a Hatchet",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "iron-ingot"
+    },
+    {
+      "item": "wood"
+    }
+  ],
+  "makes": {
+    "item": "hatchet"
+  },
+  "about": "Short handle, mean head."
+}

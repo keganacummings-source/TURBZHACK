@@ -1,0 +1,7 @@
+{
+  "name": "Gemstone",
+  "sprite": "itm-gem",
+  "slot": "material",
+  "about": "Whatever it is, it is not quartz.",
+  "stack": true
+}

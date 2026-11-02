@@ -1,0 +1,23 @@
+{
+  "name": "Brew Greater Mending",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 5,
+  "needs": [
+    {
+      "item": "bitterroot",
+      "amount": 3
+    },
+    {
+      "item": "glowcap",
+      "amount": 2
+    },
+    {
+      "item": "silver-ingot"
+    }
+  ],
+  "makes": {
+    "item": "potion-of-greater-mending"
+  },
+  "about": "The same idea, taken seriously."
+}

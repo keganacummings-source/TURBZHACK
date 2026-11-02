@@ -1,0 +1,7 @@
+{
+  "name": "Silver Ore",
+  "sprite": "itm-ore",
+  "slot": "material",
+  "about": "Pale in the seam.",
+  "stack": true
+}

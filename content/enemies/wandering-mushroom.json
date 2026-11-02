@@ -25,5 +25,23 @@
   "xp": 40,
   "resist": {
     "poison": 0
-  }
+  },
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "tameable": {
+    "chance": 0.3,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  },
+  "says": [
+    "...",
+    "(it shifts slightly, and seems pleased)"
+  ],
+  "stance": "neutral"
 }

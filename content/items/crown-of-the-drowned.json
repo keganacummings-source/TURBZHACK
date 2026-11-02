@@ -1,0 +1,13 @@
+{
+  "name": "Crown of the Drowned",
+  "sprite": "arm-helm",
+  "slot": "head",
+  "about": "Weed-knotted gold. It whispers tides.",
+  "armour": 3,
+  "focus": 6,
+  "resist": {
+    "cold": 0.6
+  },
+  "unique": true,
+  "source": "Dropped by Sallowdeep in the Mire."
+}

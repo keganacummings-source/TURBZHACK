@@ -10,13 +10,30 @@ import { Game } from "../game.ts";
 import { loadContent, spriteKeys } from "../content/load-web.ts";
 import { newAtlas, loadSprites, TILE, type Atlas } from "../render/atlas.ts";
 import { draw, drawOverview, viewFor } from "../render/draw.ts";
-import { commandFor, controlsText } from "./input.ts";
+import {
+  actionFor, clearBindings, commandFor, isBindable, keyToken, loadBindings,
+  movementHint, rebind, saveBindings, unbind, type Bindings,
+} from "./input.ts";
+import { menuHtml, controlsHtml, savesHtml } from "./menu.ts";
+import { indexWiki, wikiHtml, type WikiSection } from "./wiki.ts";
+import { menuAt, type ContextMenu } from "./context.ts";
+import { newMotion, noteMoves, moving } from "../render/motion.ts";
+import { deleteSlot, readSlot, writeSlot } from "../engine/save.ts";
+import { loadGame } from "../game.ts";
 import { BIOME_BY_ID } from "../world/continent.ts";
 import { openDesigner } from "./designer.ts";
 import { SLOTS, SLOT_NAME, describe, type Slot } from "../engine/equipment.ts";
 import type { Registry } from "../content/registry.ts";
 
-type Screen = "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup" | "pack";
+type Screen =
+  | "class-select" | "play" | "map" | "help" | "problems" | "dead" | "levelup"
+  | "pack" | "menu" | "controls" | "save" | "load" | "wiki" | "craft";
+
+/** Screens drawn into the overlay panel rather than onto the canvas. */
+const OVERLAY_SCREENS: Screen[] = [
+  "map", "help", "problems", "dead", "levelup", "pack",
+  "menu", "controls", "save", "load", "wiki", "craft",
+];
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -31,6 +48,30 @@ export async function boot(): Promise<void> {
   let game: Game | null = null;
   let screen: Screen = "class-select";
   let scale = 3;
+
+  /** Keys, as the player has them. */
+  let bindings: Bindings = loadBindings();
+  /** The action waiting to be given a key on the controls screen. */
+  let listening: string | null = null;
+
+  /** Slides between tiles. Presentation only; the rules never consult it. */
+  const motion = newMotion();
+  let frameQueued = false;
+
+  /** The right-click menu, and where it was opened. */
+  let context: { menu: ContextMenu; x: number; y: number; sx: number; sy: number } | null = null;
+
+  /** Wiki state, kept across openings so it reopens where you left it. */
+  const wikiEntries = indexWiki(reg);
+  let wikiSection: WikiSection = "enemies";
+  let wikiQuery = "";
+  let wikiOpen: string | null = null;
+
+  /** Where to go back to when a sub-screen is closed. */
+  let menuReturn: Screen = "play";
+
+  /** Travel ticks while this is running. */
+  let travelTimer: number | null = null;
 
   // A content error is shown before anything else: a mod that does not load is
   // the single most likely thing to go wrong, and silence would be cruel.
@@ -54,24 +95,65 @@ export async function boot(): Promise<void> {
     // Every screen that is drawn INTO the overlay has to be listed here, or the
     // markup is built and then left hidden — which looks exactly like the game
     // having frozen, because for the level-up it also stops taking input.
-    if (next === "map" || next === "help" || next === "problems" || next === "dead" || next === "levelup" || next === "pack") {
-      $("overlay").classList.remove("hidden");
-    }
+    if (OVERLAY_SCREENS.includes(next)) $("overlay").classList.remove("hidden");
     render();
   }
 
   function render(): void {
+    if (screen === "problems") { renderOverlay(problemsHtml(reg)); return; }
+    // The menu screens work with or without a run, so they come before the
+    // "no game yet" branch — otherwise Load would be unreachable from the title.
+    if (screen === "menu") { renderOverlay(menuHtml(!!game && !game.over)); return; }
+    if (screen === "controls") { renderOverlay(controlsHtml(bindings, listening)); return; }
+    if (screen === "save") { renderOverlay(savesHtml("save", !!game && !game.over)); return; }
+    if (screen === "load") { renderOverlay(savesHtml("load", !!game)); return; }
+    if (screen === "wiki") { renderOverlay(wikiHtml(reg, wikiEntries, wikiSection, wikiQuery, wikiOpen)); restoreWikiFocus(); return; }
+
     if (screen === "class-select" || !game) { renderClassSelect(reg); return; }
     if (screen === "map") { drawOverview(ctx, game, (id) => BIOME_BY_ID.get(id)?.colour ?? "#555"); renderOverlay(mapHtml()); return; }
-    if (screen === "help") { renderOverlay(helpHtml()); }
-    if (screen === "problems") { renderOverlay(problemsHtml(reg)); return; }
+    if (screen === "help") { renderOverlay(controlsHtml(bindings, listening)); }
     if (screen === "levelup") { renderOverlay(levelUpHtml()); }
     if (screen === "pack") { renderOverlay(packHtml()); }
+    if (screen === "craft") { renderOverlay(craftHtml()); }
     if (screen === "dead") { renderOverlay(deadHtml()); }
 
-    draw(ctx, game, atlas, viewFor(game, canvas, scale));
+    const now = performance.now();
+    noteMoves(motion, game.actors, now);
+    draw(ctx, game, atlas, viewFor(game, canvas, scale, motion, now), motion, now);
     renderHud();
     renderLog();
+    renderContext();
+    // Keep drawing while anything is part-way between tiles.
+    if (moving(motion)) queueFrame();
+  }
+
+  /**
+   * Ask for another frame, at most one at a time.
+   *
+   * Without the guard every slide would schedule a frame per call and the
+   * callbacks would pile up geometrically — the classic way an animation loop
+   * ends up running sixty copies of itself.
+   */
+  function queueFrame(): void {
+    if (frameQueued) return;
+    frameQueued = true;
+    requestAnimationFrame(() => { frameQueued = false; render(); });
+  }
+
+  /**
+   * Put the cursor back in the wiki search box after a redraw.
+   *
+   * The screen is rebuilt from a string on every keystroke, which throws away
+   * the live input element and with it the focus and the caret. Re-focusing and
+   * re-placing the caret at the end is what makes typing in it feel like typing.
+   */
+  function restoreWikiFocus(): void {
+    const box = document.getElementById("wiki-search") as HTMLInputElement | null;
+    if (!box) return;
+    if (document.activeElement === box) return;
+    if (!wikiQuery) return;
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
   }
 
   // --- HUD ----------------------------------------------------------------
@@ -96,6 +178,17 @@ export async function boot(): Promise<void> {
     }).join("");
 
     const prog = game.progress;
+    const companions = game.actors.filter((a) => a.alive && a.data["companion"]);
+    const party = companions.length
+      ? `<div class="hud-row">${companions.map((c) =>
+          `<span class="pip pip-companion">${escapeHtml(c.name)} ${Math.round(c.pools.hp)}/${Math.round(c.pools.hpMax)}</span>`).join("")}</div>`
+      : "";
+    const trades = { ...game.skills, ...game.crafts };
+    const learned = Object.entries(trades).filter(([, v]) => v > 0);
+    const skills = learned.length
+      ? learned.map(([k, v]) => `${k} ${v}`).join(" · ")
+      : "no trades yet — right-click a tree or an ore vein";
+
     $("hud").innerHTML = `
       <div class="hud-row hud-where">${game.whereAmI}</div>
       <div class="hud-row hud-level">Level ${prog.level}
@@ -111,8 +204,185 @@ export async function boot(): Promise<void> {
         <span class="slot ${p.pools.stamina >= 25 ? "" : "slot-off"}">x Kick <em>25s</em></span>
         ${spells}
       </div>
-      <div class="hud-row dim">turn ${game.turn} · seed ${game.seedWord} · ? for keys · t for the designer</div>`;
+      ${party}
+      <div class="hud-row dim">${skills}</div>
+      <div class="hud-row dim">turn ${game.turn} · seed ${game.seedWord} · Esc for the menu · right-click anything</div>`;
   }
+
+  // --- the right-click menu -----------------------------------------------
+
+  /**
+   * Draw the context menu, or take it off screen.
+   *
+   * It is a floating panel rather than a canvas drawing so the entries are real
+   * buttons: they can be read by a screen reader, clicked with a finger, and
+   * styled with the rest of the UI instead of being hand-drawn text.
+   */
+  function renderContext(): void {
+    const host = $("context");
+    if (!context) { host.classList.add("hidden"); host.innerHTML = ""; return; }
+    const { menu, sx, sy } = context;
+
+    host.innerHTML = `
+      <div class="ctx-head">
+        ${menu.sprite ? `<img src="assets/tiles16/${escapeAttr(menu.sprite)}.png" alt="" width="32" height="32">` : ""}
+        <div>
+          <h3>${escapeHtml(menu.title)}</h3>
+          ${menu.about ? `<p class="dim">${escapeHtml(menu.about)}</p>` : ""}
+        </div>
+        <button class="ctx-close" data-ctx-close="1" title="Close">×</button>
+      </div>
+      ${menu.facts.length ? `<table class="ctx-facts">${menu.facts.map(([k, v]) =>
+        `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join("")}</table>` : ""}
+      <div class="ctx-actions">
+        ${menu.actions.map((a, i) => `
+          <button class="ctx-action" data-ctx="${i}">
+            <span>${escapeHtml(a.label)}</span>
+            ${a.detail ? `<em>${escapeHtml(a.detail)}</em>` : ""}
+          </button>`).join("")}
+      </div>`;
+    host.classList.remove("hidden");
+
+    // Keep it on screen: a menu opened near the right or bottom edge would
+    // otherwise run off, and the entries at the end would be unreachable.
+    host.style.left = "0px";
+    host.style.top = "0px";
+    const box = host.getBoundingClientRect();
+    const left = Math.max(4, Math.min(window.innerWidth - box.width - 4, sx + 8));
+    const top = Math.max(4, Math.min(window.innerHeight - box.height - 4, sy + 8));
+    host.style.left = `${Math.round(left)}px`;
+    host.style.top = `${Math.round(top)}px`;
+  }
+
+  function closeContext(): void {
+    if (!context) return;
+    context = null;
+    renderContext();
+  }
+
+  /** Which tile a mouse event landed on. */
+  function tileAt(e: MouseEvent): { x: number; y: number } | null {
+    if (!game) return null;
+    const box = canvas.getBoundingClientRect();
+    const view = viewFor(game, canvas, scale, motion, performance.now());
+    const size = TILE * view.scale;
+    const x = view.camX + Math.floor((e.clientX - box.left + view.offX) / size);
+    const y = view.camY + Math.floor((e.clientY - box.top + view.offY) / size);
+    return game.level.inBounds(x, y) ? { x, y } : null;
+  }
+
+  /** Carry out one entry from the context menu. */
+  function runContext(index: number): void {
+    if (!game || !context) return;
+    const action = context.menu.actions[index];
+    if (!action) return;
+    const g = game;
+    closeContext();
+    stopTravel();
+
+    switch (action.kind) {
+      case "look": break;
+      case "wiki": {
+        wikiOpen = action.topic;
+        wikiQuery = "";
+        wikiSection = action.topic.split("/")[0] as WikiSection;
+        menuReturn = "play";
+        setScreen("wiki");
+        return;
+      }
+      case "walk": {
+        if (g.travelTo(action.x, action.y)) startTravel();
+        break;
+      }
+      case "attack": {
+        const target = g.actors.find((a) => a.id === action.target);
+        g.ability(action.id, target);
+        break;
+      }
+      case "cast": {
+        const target = g.actors.find((a) => a.id === action.target);
+        g.cast(action.id, target);
+        break;
+      }
+      case "talk": {
+        const target = g.actors.find((a) => a.id === action.target);
+        if (target) g.talk(target);
+        break;
+      }
+      case "tame": {
+        const target = g.actors.find((a) => a.id === action.target);
+        if (target) g.tame(target);
+        break;
+      }
+      case "harvest": g.harvest(action.x, action.y); break;
+      case "pickup": g.pickUp(); break;
+      case "enter": g.rest(); break;     // stepping on it already triggered it
+      case "wait": g.rest(); break;
+    }
+    afterCommand();
+  }
+
+  // --- walking somewhere ----------------------------------------------------
+
+  /**
+   * Walk a route, one turn at a time, on a timer.
+   *
+   * A timer rather than a loop, because each step is a real turn: the world
+   * moves, something can come into view, and the whole journey has to be
+   * abandonable. The interval is a little longer than a slide so the steps read
+   * as walking rather than teleporting.
+   */
+  function startTravel(): void {
+    stopTravel();
+    travelTimer = window.setInterval(() => {
+      if (!game || !game.stepTravel()) { stopTravel(); }
+      afterCommand(false);
+    }, 130);
+  }
+
+  function stopTravel(): void {
+    if (travelTimer !== null) { clearInterval(travelTimer); travelTimer = null; }
+    game?.travelPath.splice(0);
+  }
+
+  /** The bookkeeping every command shares: screens that demand attention, then a redraw. */
+  function afterCommand(redraw = true): void {
+    if (!game) return;
+    if (game.over) { stopTravel(); setScreen("dead"); return; }
+    if (game.pendingChoices) { stopTravel(); setScreen("levelup"); return; }
+    if (redraw) render(); else queueFrame();
+  }
+
+  // --- crafting -------------------------------------------------------------
+
+  const craftHtml = () => {
+    if (!game) return "";
+    const stations = game.stationsInReach;
+    const rows = game.recipesHere();
+    const groups = ["smithing", "woodwork", "alchemy", "cooking"];
+    const mats = [...new Set(game.pack)]
+      .filter((id) => reg.items.get(id)?.slot === "material" || reg.items.get(id)?.slot === "food")
+      .map((id) => `${reg.items.get(id)?.name ?? id} ×${game!.countOf(id)}`);
+
+    return `<h2>Crafting</h2>
+      <p class="dim">${stations.size
+        ? `At: ${[...stations].join(", ")}.`
+        : "You are not at a station. Find a camp — a fire, a forge and a bench."}</p>
+      <p class="dim">Trades: ${Object.entries(game.crafts).map(([k, v]) => `${k} ${v}`).join(" · ")}</p>
+      ${mats.length ? `<p class="dim">Materials: ${escapeHtml(mats.join(", "))}</p>` : `<p class="dim">You are carrying no materials.</p>`}
+      ${groups.map((g) => {
+        const mine = rows.filter((r) => r.craft === g);
+        if (!mine.length) return "";
+        return `<h3>${g}</h3>
+        <table class="pack-table">${mine.map((r) => `<tr>
+          <td>${escapeHtml(r.name)}</td>
+          <td class="choice-detail">${escapeHtml(r.why)}</td>
+          <td>${r.can ? `<button data-craft="${escapeAttr(r.id)}">make</button>` : ""}
+              <button data-wiki-jump="recipes/${escapeAttr(r.id)}">what is it</button></td>
+        </tr>`).join("")}</table>`;
+      }).join("")}
+      <p class="dim">Esc closes.</p>`;
+  };
 
   function renderLog(): void {
     if (!game) return;
@@ -206,6 +476,7 @@ export async function boot(): Promise<void> {
     $("begin").onclick = () => {
       const seedInput = ($("seed") as HTMLInputElement).value.trim();
       game = new Game(reg, seedInput || Date.now());
+      game.movementHint = movementHint(bindings);
       game.start(pickedBg, pickedSpecies);
       /*
        * The run, on the window, on purpose.
@@ -225,14 +496,6 @@ export async function boot(): Promise<void> {
     $("overlay-body").innerHTML = html;
   }
 
-  const helpHtml = () => `
-    <h2>Keys</h2>
-    ${controlsText().map((g) => `
-      <h3>${g.group}</h3>
-      <table>${g.rows.map(([k, w]) => `<tr><td class="key">${escapeHtml(k)}</td><td>${escapeHtml(w)}</td></tr>`).join("")}</table>
-    `).join("")}
-    <p class="dim">Walk into a creature to attack it. Walk onto a dungeon mouth or a staircase to use it.</p>
-    <p class="dim">Esc closes this.</p>`;
 
   const mapHtml = () => `<h2>${escapeHtml(game?.whereAmI ?? "")}</h2>
     <p class="dim">Only what you have seen. Red marks a dungeon you have found. Esc closes.</p>`;
@@ -319,7 +582,18 @@ export async function boot(): Promise<void> {
   // --- input --------------------------------------------------------------
 
   window.addEventListener("keydown", (e) => {
-    if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+    /*
+     * Typing in a text box is typing, except for Escape.
+     *
+     * The wiki's search box swallowed every key, Escape included, so once the
+     * cursor was in it there was no way out of the screen with the keyboard —
+     * you had to find the Close button. Escape now leaves the box first and is
+     * then handled normally, and every other key still reaches the box.
+     */
+    if ((e.target as HTMLElement)?.tagName === "INPUT") {
+      if (e.key !== "Escape") return;
+      (e.target as HTMLInputElement).blur();
+    }
     if (document.body.classList.contains("designer-open")) return;
 
     /*
@@ -348,20 +622,66 @@ export async function boot(): Promise<void> {
       return;
     }
 
-    const cmd = commandFor(e);
+    /*
+     * Rebinding swallows the keyboard.
+     *
+     * While the controls screen is waiting for a key, EVERY press is that key —
+     * including Escape, which someone will reasonably want to bind. Cancelling
+     * is the button next to the prompt, not a key, because any key reserved for
+     * cancelling is a key that can never be bound.
+     */
+    if (listening) {
+      e.preventDefault();
+      if (!isBindable(e)) return;
+      const { tookFrom } = rebind(bindings, listening, keyToken(e));
+      saveBindings(bindings);
+      if (tookFrom) game?.log(`That key no longer does "${tookFrom.what}".`, "warn");
+      listening = null;
+      render();
+      return;
+    }
+
+    const action = actionFor(e, bindings);
+    const cmd = action?.command;
     if (!cmd) return;
     e.preventDefault();
 
+    /*
+     * One key press backs out of one thing.
+     *
+     * A journey, then the right-click menu, then a screen: pressing Escape with
+     * a context menu open used to close it AND open the game menu in the same
+     * press, because both were handled in one pass.
+     */
+    if (travelTimer !== null) { stopTravel(); render(); return; }
+    if (context) { closeContext(); return; }
+
+    if (cmd.kind === "menu") {
+      // Escape backs out one layer at a time, and opens the menu from play.
+      if (screen === "controls" || screen === "save" || screen === "load" || screen === "wiki") {
+        setScreen(menuReturn === "menu" ? "menu" : menuReturn);
+      } else if (screen === "menu") {
+        setScreen(game && !game.over ? "play" : "class-select");
+      } else if (screen !== "play" && screen !== "class-select") {
+        setScreen(game ? "play" : "class-select");
+      } else {
+        menuReturn = screen;
+        setScreen("menu");
+      }
+      return;
+    }
     if (cmd.kind === "close") { if (screen !== "play") setScreen(game ? "play" : "class-select"); return; }
-    if (cmd.kind === "help") { setScreen(screen === "help" ? "play" : "help"); return; }
+    if (cmd.kind === "help") { menuReturn = "play"; setScreen(screen === "help" ? "play" : "help"); return; }
+    if (cmd.kind === "wiki") { menuReturn = screen === "wiki" ? "play" : screen; setScreen(screen === "wiki" ? "play" : "wiki"); return; }
     if (cmd.kind === "map") { setScreen(screen === "map" ? "play" : "map"); return; }
     if (cmd.kind === "pack") { setScreen(screen === "pack" ? "play" : "pack"); return; }
+    if (cmd.kind === "craft") { setScreen(screen === "craft" ? "play" : "craft"); return; }
     if (cmd.kind === "designer") { openDesigner(atlas, () => render()); return; }
 
     if (!game || screen !== "play" || game.over) return;
 
     switch (cmd.kind) {
-      case "move": game.move(cmd.dir.dx, cmd.dir.dy); break;
+      case "move": game.move(cmd.dx, cmd.dy); break;
       case "rest": game.rest(); break;
       case "pickup": game.pickUp(); break;
       case "ability": game.ability(cmd.id); break;
@@ -372,13 +692,138 @@ export async function boot(): Promise<void> {
         break;
       }
     }
-    if (game.over) setScreen("dead");
-    else if (game.pendingChoices) setScreen("levelup");
-    render();
+    afterCommand();
+  });
+
+  // --- the mouse ------------------------------------------------------------
+
+  canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (!game || screen !== "play" || game.over) return;
+    const at = tileAt(e);
+    if (!at) { closeContext(); return; }
+    context = { menu: menuAt(game, at.x, at.y), x: at.x, y: at.y, sx: e.clientX, sy: e.clientY };
+    renderContext();
+  });
+
+  /*
+   * Left-click walks there, which is the other half of "playable with a mouse".
+   *
+   * Clicking something adjacent does what you would expect — attack it, or work
+   * at it — rather than refusing to move into it, because a click on the goblin
+   * next to you obviously means the goblin.
+   */
+  canvas.addEventListener("click", (e) => {
+    if (!game || screen !== "play" || game.over) return;
+    if (context) { closeContext(); return; }
+    if (travelTimer !== null) { stopTravel(); render(); return; }
+    const at = tileAt(e);
+    if (!at) return;
+    const dx = at.x - game.player.pos.x, dy = at.y - game.player.pos.y;
+    if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+      if (!dx && !dy) game.rest();
+      else if (game.harvestable(at.x, at.y)) game.harvest(at.x, at.y);
+      else game.move(dx, dy);
+      afterCommand();
+      return;
+    }
+    if (game.travelTo(at.x, at.y)) startTravel();
   });
 
   document.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
+
+    // --- the right-click menu ---------------------------------------------
+    const ctx = t.closest<HTMLElement>("[data-ctx]");
+    if (ctx) { runContext(Number(ctx.dataset.ctx)); return; }
+    if (t.closest("[data-ctx-close]")) { closeContext(); return; }
+    // A click anywhere else dismisses it, the canvas included — which its own
+    // handler deals with, so this only has to catch the rest of the page.
+    if (context && !t.closest("#context") && t !== canvas) { closeContext(); }
+
+    // --- the menu ----------------------------------------------------------
+    const item = t.closest<HTMLElement>("[data-menu]");
+    if (item) {
+      switch (item.dataset.menu) {
+        case "resume": setScreen("play"); return;
+        case "controls": menuReturn = "menu"; listening = null; setScreen("controls"); return;
+        case "save": menuReturn = "menu"; setScreen("save"); return;
+        case "load": menuReturn = "menu"; setScreen("load"); return;
+        case "wiki": menuReturn = "menu"; setScreen("wiki"); return;
+        case "designer": openDesigner(atlas, () => render()); return;
+        case "abandon":
+          stopTravel();
+          game = null;
+          setScreen("class-select");
+          return;
+        case "defaults":
+          clearBindings();
+          bindings = loadBindings();
+          listening = null;
+          render();
+          return;
+        case "back":
+          listening = null;
+          setScreen(menuReturn);
+          return;
+      }
+    }
+
+    // --- rebinding ---------------------------------------------------------
+    const listen = t.closest<HTMLElement>("[data-listen]");
+    if (listen) { listening = listen.dataset.listen!; render(); return; }
+    if (t.closest("[data-listen-cancel]")) { listening = null; render(); return; }
+    const drop = t.closest<HTMLElement>("[data-unbind]");
+    if (drop) {
+      unbind(bindings, drop.dataset.unbind!, drop.dataset.key!);
+      saveBindings(bindings);
+      render();
+      return;
+    }
+
+    // --- saves -------------------------------------------------------------
+    const doSave = t.closest<HTMLElement>("[data-save]");
+    if (doSave && game) {
+      const res = writeSlot(Number(doSave.dataset.save), game.toSave());
+      game.log(res.message, res.ok ? "good" : "bad");
+      setScreen("play");
+      return;
+    }
+    const doLoad = t.closest<HTMLElement>("[data-load]");
+    if (doLoad) {
+      const file = readSlot(Number(doLoad.dataset.load));
+      if (!file) { render(); return; }
+      stopTravel();
+      game = loadGame(reg, file);
+      game.movementHint = movementHint(bindings);
+      (window as unknown as { turbz: unknown }).turbz = { game, reg, atlas, render };
+      game.log("Loaded.", "good");
+      setScreen("play");
+      resize();
+      return;
+    }
+    const erase = t.closest<HTMLElement>("[data-erase]");
+    if (erase) { deleteSlot(Number(erase.dataset.erase)); render(); return; }
+
+    // --- wiki --------------------------------------------------------------
+    const section = t.closest<HTMLElement>("[data-wiki-section]");
+    if (section) { wikiSection = section.dataset.wikiSection as WikiSection; wikiQuery = ""; render(); return; }
+    const open = t.closest<HTMLElement>("[data-wiki-open]");
+    if (open) { wikiOpen = open.dataset.wikiOpen!; render(); return; }
+    const jump = t.closest<HTMLElement>("[data-wiki-jump]");
+    if (jump) {
+      wikiOpen = jump.dataset.wikiJump!;
+      wikiSection = wikiOpen.split("/")[0] as WikiSection;
+      wikiQuery = "";
+      menuReturn = screen;
+      setScreen("wiki");
+      return;
+    }
+
+    // --- crafting ----------------------------------------------------------
+    const make = t.closest<HTMLElement>("[data-craft]");
+    if (make && game) { game.craft(make.dataset.craft!); render(); return; }
+
     if (game) {
       const wear = t.closest<HTMLElement>("[data-wear]");
       const off = t.closest<HTMLElement>("[data-off]");
@@ -395,11 +840,19 @@ export async function boot(): Promise<void> {
       setScreen("play");
       return;
     }
-    if (t.id === "again") { setScreen("class-select"); }
+    if (t.id === "again") { game = null; setScreen("class-select"); }
     if (t.id === "anyway") { setScreen("class-select"); }
     // Not closable while a choice is pending: dismissing it would freeze the
     // game with an unspent level and no way back to it.
     if (t.id === "close-overlay" && !game?.pendingChoices) { setScreen(game ? "play" : "class-select"); }
+  });
+
+  // Typing in the wiki search box filters as you go.
+  document.addEventListener("input", (e) => {
+    const box = e.target as HTMLInputElement;
+    if (box?.id !== "wiki-search") return;
+    wikiQuery = box.value;
+    render();
   });
 
   window.addEventListener("resize", resize);
@@ -454,4 +907,15 @@ async function markWebfont(): Promise<void> {
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
+}
+
+/**
+ * For a value going into an attribute.
+ *
+ * The same escaping as `escapeHtml`, named separately so it is obvious at the
+ * call site that the result is going inside quotes rather than between tags —
+ * an id with a quote in it would otherwise end the attribute early.
+ */
+function escapeAttr(s: string): string {
+  return escapeHtml(s);
 }

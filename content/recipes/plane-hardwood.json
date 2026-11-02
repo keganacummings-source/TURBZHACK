@@ -1,0 +1,16 @@
+{
+  "name": "Season Hardwood",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 3,
+  "needs": [
+    {
+      "item": "wood",
+      "amount": 4
+    }
+  ],
+  "makes": {
+    "item": "hardwood"
+  },
+  "about": "Pick the straight grain out of a pile of it."
+}

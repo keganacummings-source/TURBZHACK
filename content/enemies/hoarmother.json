@@ -1,0 +1,57 @@
+{
+  "name": "The Hoarmother",
+  "title": "The Hoarmother",
+  "sprite": "mon-hoarmother",
+  "about": "She has been out on the ice a very long time, and she is not lonely.",
+  "pools": {
+    "hp": 380,
+    "mana": 150
+  },
+  "armour": 10,
+  "speed": 95,
+  "ai": "caster",
+  "sight": 12,
+  "abilities": [
+    "chill-touch"
+  ],
+  "spells": [
+    "cone-of-cold",
+    "frost-bolt"
+  ],
+  "resist": {
+    "cold": 0.0,
+    "fire": 1.5
+  },
+  "stats": {
+    "accuracy": 92,
+    "evasion": 6
+  },
+  "biomes": [
+    "glacier",
+    "tundra"
+  ],
+  "region": {
+    "min": 3,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 1200,
+  "drops": [
+    {
+      "item": "rimehold",
+      "chance": 1.0
+    },
+    {
+      "item": "hoarmothers-tear",
+      "chance": 0.5
+    },
+    {
+      "item": "ring-of-ice",
+      "chance": 0.7
+    }
+  ]
+}

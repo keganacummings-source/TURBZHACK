@@ -1,0 +1,11 @@
+{
+  "name": "Forge",
+  "sprite": "t-forge",
+  "solid": true,
+  "opaque": false,
+  "station": "forge",
+  "biomes": [
+    "village",
+    "dungeon"
+  ]
+}

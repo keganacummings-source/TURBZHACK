@@ -1,0 +1,22 @@
+{
+  "name": "Set a Ring of Fire",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 6,
+  "needs": [
+    {
+      "item": "silver-ingot"
+    },
+    {
+      "item": "emberfruit",
+      "amount": 2
+    },
+    {
+      "item": "gemstone"
+    }
+  ],
+  "makes": {
+    "item": "ring-of-fire"
+  },
+  "about": "Heat held in a circle."
+}

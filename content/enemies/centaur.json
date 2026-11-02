@@ -25,5 +25,24 @@
   "xp": 66,
   "spells": [
     "arrow"
-  ]
+  ],
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.12,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  },
+  "says": [
+    "You are a long way from anywhere.",
+    "The hills remember more than you do.",
+    "Do not go east. Not this month."
+  ],
+  "stance": "neutral"
 }

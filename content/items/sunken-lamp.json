@@ -1,0 +1,12 @@
+{
+  "name": "Sunken Lamp",
+  "sprite": "itm-amulet",
+  "slot": "amulet",
+  "about": "It lit something, once, a long way down.",
+  "focus": 8,
+  "resist": {
+    "pure": 0.6
+  },
+  "unique": true,
+  "source": "Dropped by the Hollow Choir, or by Sallowdeep."
+}

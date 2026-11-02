@@ -28,5 +28,9 @@
   ],
   "resist": {
     "pure": 0.5
+  },
+  "region": {
+    "min": 2,
+    "max": 5
   }
 }

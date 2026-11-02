@@ -25,5 +25,9 @@
   "xp": 42,
   "resist": {
     "poison": 0
+  },
+  "region": {
+    "min": 1,
+    "max": 4
   }
 }

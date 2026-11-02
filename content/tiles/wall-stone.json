@@ -6,5 +6,21 @@
     "highland",
     "dungeon"
   ],
-  "sprite": "t-wall-stone"
+  "sprite": "t-wall-stone",
+  "harvest": {
+    "skill": "mining",
+    "turns": 5,
+    "tool": "pickaxe",
+    "becomes": "stone",
+    "yields": [
+      {
+        "item": "stone-block",
+        "chance": 1.0
+      },
+      {
+        "item": "iron-ore",
+        "chance": 0.2
+      }
+    ]
+  }
 }

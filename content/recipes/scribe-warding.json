@@ -1,0 +1,19 @@
+{
+  "name": "Scribe Warding",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 4,
+  "needs": [
+    {
+      "item": "glowcap",
+      "amount": 2
+    },
+    {
+      "item": "leather"
+    }
+  ],
+  "makes": {
+    "item": "scroll-of-warding"
+  },
+  "about": "The ink is the hard part."
+}

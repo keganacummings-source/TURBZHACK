@@ -84,8 +84,12 @@ TERRAIN = {
     # --- scenery (whole tiles, they fill their cell) ---------------------
     "t-tree": "dngn/trees/tree1.png",
     "t-tree-snow": "dngn/trees/tree_petrified1.png",
-    "t-mushroom": "dngn/trees/mangrove1.png",
+    "t-mushroom": "mon/fungi_plants/fungus3.png",
     "t-ore": "dngn/wall/crystal_wall01.png",
+    # --- crafting stations ----------------------------------------------
+    "t-campfire": "dngn/altars/makhleb_flame4.png",
+    "t-forge": "dngn/shops/shop_armour.png",
+    "t-bench": "dngn/shops/shop_general.png",
     # --- ways through ---------------------------------------------------
     "t-stairs-down": "dngn/gateways/stone_stairs_down.png",
     "t-stairs-up": "dngn/gateways/stone_stairs_up.png",
@@ -93,6 +97,20 @@ TERRAIN = {
 }
 
 OBJECTS = {
+    # --- tools and materials (gathering and crafting) -------------------
+    "wpn-pickaxe": "item/weapon/war_axe1.png",
+    "wpn-axe": "item/weapon/hand_axe1.png",
+    "itm-wood": "dngn/trees/tree_fall3.png",
+    "itm-ore": "item/misc/misc_stone.png",
+    "itm-gem": "item/gem/dungeon_found_whole.png",
+    "itm-ingot": "item/misc/misc_crystal.png",
+    "itm-stone": "item/weapon/ranged/stone.png",
+    "itm-hide": "item/armour/animal_skin1.png",
+    "itm-mushroom": "mon/fungi_plants/fungus1.png",
+    "itm-herb": "item/food/grape.png",
+    "itm-dust": "item/misc/misc_phial.png",
+    "itm-meal": "item/food/bread_ration.png",
+
     # ---- weapons ------------------------------------------------------
     "wpn-dagger": "item/weapon/dagger.png",
     "wpn-sword": "item/weapon/short_sword1.png",
@@ -164,6 +182,22 @@ SPECIES = {
 }
 
 # --- the bestiary (mon/) -------------------------------------------------
+#
+# World bosses.
+#
+# Crawl's uniques, because a boss wants a silhouette nobody else in the game
+# has. They are imported the same way as any other creature; the separate dict
+# only exists so it is obvious which sprites are spoken for.
+#
+BOSS_ART = {
+    "mon-ashmaw": "mon/unique/serpent_of_hell-geh.png",
+    "mon-hoarmother": "mon/unique/antaeus.png",
+    "mon-sallowdeep": "mon/unique/tiamat_green.png",
+    "mon-hollow-choir": "mon/unique/mnoleg.png",
+    "mon-stonefather-urn": "mon/humanoids/giants/stone_giant.png",
+    "mon-mother-of-dust": "mon/unique/khufu.png",
+}
+
 MONSTERS = {
     # beasts
     "mon-rat": "mon/animals/rat.png",
@@ -330,7 +364,7 @@ def main(src: str, dest: str) -> None:
     os.makedirs(dest, exist_ok=True)
     made, missing, rows = [], [], []
 
-    for group, whole in ((TERRAIN, True), (OBJECTS, False), (SPECIES, False), (MONSTERS, False)):
+    for group, whole in ((TERRAIN, True), (OBJECTS, False), (SPECIES, False), (MONSTERS, False), (BOSS_ART, False)):
         for name, rel in group.items():
             path = os.path.join(src, rel)
             if not os.path.exists(path):

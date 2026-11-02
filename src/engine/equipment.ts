@@ -27,6 +27,21 @@ import type { DamageKind } from "./types.ts";
  * twice on purpose — two hands, two rings — which the UI shows as "ring" and
  * "ring 2" and which costs nothing here.
  */
+/**
+ * Slots that are not worn: something you carry, use up, or build with.
+ *
+ * Listed once here because three different files used to each have their own
+ * copy of this array, and adding "material" for the crafting materials meant
+ * finding all three — the registry rejected them, the starting kit tried to
+ * equip them, and the pack screen offered a "wear" button for a lump of ore.
+ */
+export const CARRIED_SLOTS = ["potion", "scroll", "misc", "material", "food"] as const;
+
+/** Can this be put on, as opposed to merely carried? */
+export function isWearable(slot: string | undefined): boolean {
+  return !!slot && !(CARRIED_SLOTS as readonly string[]).includes(slot);
+}
+
 export const SLOTS = [
   "weapon", "offhand", "body", "head", "hands", "feet", "cloak", "ring", "ring2", "amulet",
 ] as const;
@@ -219,5 +234,16 @@ export function describe(item: ItemDef): string {
     bits.push(mult === 0 ? `immune to ${kind}` : `${kind} x${mult}`);
   }
   if (item.casts) bits.push(`casts ${item.casts}`);
+  if (item.tool) bits.push(`${item.tool} tool`);
+  /*
+   * A material has no effect, and that is correct.
+   *
+   * Ore does nothing until it is smelted. Saying "no effect" about it in the
+   * pack would read as a bug rather than as a fact, so materials describe what
+   * they are instead — and the test that every item describes itself as
+   * SOMETHING stays meaningful for the things that really have been left blank.
+   */
+  if (!bits.length && item.slot === "material") return "crafting material";
+  if (!bits.length && item.slot === "food") return "food";
   return bits.join(" · ") || "no effect";
 }

@@ -1,0 +1,16 @@
+{
+  "name": "Smelt Iron",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "iron-ore",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "iron-ingot"
+  },
+  "about": "Ore in, slag off, a bar out."
+}

@@ -25,5 +25,18 @@
   "xp": 210,
   "resist": {
     "poison": 0
+  },
+  "region": {
+    "min": 3,
+    "max": 5
+  },
+  "tameable": {
+    "chance": 0.05,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
   }
 }

@@ -1,0 +1,7 @@
+{
+  "name": "Leather",
+  "sprite": "itm-hide",
+  "slot": "material",
+  "about": "Scraped and dried.",
+  "stack": true
+}

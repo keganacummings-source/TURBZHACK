@@ -1,0 +1,22 @@
+{
+  "name": "Set a Ring of Ice",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 6,
+  "needs": [
+    {
+      "item": "silver-ingot"
+    },
+    {
+      "item": "frostleaf",
+      "amount": 2
+    },
+    {
+      "item": "gemstone"
+    }
+  ],
+  "makes": {
+    "item": "ring-of-ice"
+  },
+  "about": "Cold held in a circle."
+}

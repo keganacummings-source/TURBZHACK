@@ -25,5 +25,9 @@
   "spells": [
     "hex-bolt",
     "mend"
-  ]
+  ],
+  "region": {
+    "min": 1,
+    "max": 4
+  }
 }

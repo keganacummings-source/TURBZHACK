@@ -6,5 +6,21 @@
     "forest",
     "plains"
   ],
-  "sprite": "t-tree"
+  "sprite": "t-tree",
+  "harvest": {
+    "skill": "woodcutting",
+    "turns": 3,
+    "tool": "hatchet",
+    "yields": [
+      {
+        "item": "wood",
+        "chance": 1.0,
+        "amount": 2
+      },
+      {
+        "item": "hardwood",
+        "chance": 0.25
+      }
+    ]
+  }
 }

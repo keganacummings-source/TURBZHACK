@@ -130,3 +130,18 @@ test("the things you walk on are opaque, so the map has no gaps", () => {
     assert.equal(coverage(px), 1, `content/tiles/${id}.json has see-through ground`);
   }
 });
+
+test("scenery is a cut-out, so it needs something drawn behind it", () => {
+  // The complaint this comes from: trees standing in black squares. A solid
+  // scenery tile is a cut-out by design — the fix is the floor layer in Level,
+  // and this is what notices if one of these ever becomes a full-bleed tile
+  // (which would hide the ground) or if the floor layer is dropped.
+  for (const id of ["tree", "tree-snow", "mushroom"]) {
+    const def = reg.tiles.get(id);
+    assert.ok(def, `content/tiles/${id}.json is gone`);
+    const px = decodePng(readFileSync(join(ART, `${def!.sprite ?? id}.png`)));
+    const covered = coverage(px);
+    assert.ok(covered < 0.95, `${id} fills its cell, so no ground can show around it`);
+    assert.ok(covered > 0.15, `${id} is nearly empty`);
+  }
+});

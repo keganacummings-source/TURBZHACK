@@ -1,0 +1,19 @@
+{
+  "name": "Forge a Short Sword",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 4,
+  "needs": [
+    {
+      "item": "iron-ingot",
+      "amount": 2
+    },
+    {
+      "item": "wood"
+    }
+  ],
+  "makes": {
+    "item": "short-sword"
+  },
+  "about": "A blade, a tang, a grip."
+}

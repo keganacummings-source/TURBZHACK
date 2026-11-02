@@ -29,6 +29,19 @@ export class Level {
   readonly h: number;
   /** Index into the level's tile palette. */
   readonly tiles: Uint16Array;
+  /**
+   * What lies UNDER each tile, as another palette index.
+   *
+   * A tree is a cut-out sprite with transparent corners, so drawing it alone
+   * leaves the cell's background showing through and the tree appears to stand
+   * in a black hole. What should be under it depends on where it grew — snow in
+   * the taiga, grass in a forest — so the generator records the ground it
+   * replaced here and the renderer draws that first.
+   *
+   * It is only a drawing layer. Nothing about movement, sight or stepping on
+   * things consults it: a tree is solid whatever is beneath it.
+   */
+  readonly floor: Uint16Array;
   /** Tile kinds, indexed by the numbers in `tiles`. */
   readonly palette: TileKind[];
   /** Seen at least once: drawn dim when out of view, NetHack's remembered map. */
@@ -44,6 +57,7 @@ export class Level {
     this.w = w;
     this.h = h;
     this.tiles = new Uint16Array(w * h);
+    this.floor = new Uint16Array(w * h);
     this.known = new Uint8Array(w * h);
     this.visible = new Uint8Array(w * h);
     this.palette = palette;
@@ -65,9 +79,24 @@ export class Level {
     return this.palette[this.tiles[this.idx(x, y)]!];
   }
 
-  set(x: number, y: number, kindIndex: number): void {
+  /**
+   * Put a tile down. `under` is what should be drawn beneath it.
+   *
+   * When `under` is left out the tile is its own floor, which is right for
+   * ground: grass is drawn on grass. Scenery and walls pass the ground they are
+   * standing on, so the cut-out sprite has something to sit against.
+   */
+  set(x: number, y: number, kindIndex: number, under = kindIndex): void {
     if (!this.inBounds(x, y)) return;
-    this.tiles[this.idx(x, y)] = kindIndex;
+    const i = this.idx(x, y);
+    this.tiles[i] = kindIndex;
+    this.floor[i] = under;
+  }
+
+  /** What is drawn under the tile at a position. */
+  floorAt(x: number, y: number): TileKind | undefined {
+    if (!this.inBounds(x, y)) return undefined;
+    return this.palette[this.floor[this.idx(x, y)]!];
   }
 
   /** Off the map counts as solid, so nothing has to bounds-check before asking. */

@@ -22,5 +22,13 @@
     "max": 8
   },
   "weight": 16,
-  "xp": 26
+  "xp": 26,
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "says": [
+    "Not hungry. Yet.",
+    "Keep walking."
+  ]
 }

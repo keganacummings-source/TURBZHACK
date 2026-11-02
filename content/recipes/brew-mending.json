@@ -1,0 +1,19 @@
+{
+  "name": "Brew Mending",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 3,
+  "needs": [
+    {
+      "item": "bitterroot",
+      "amount": 2
+    },
+    {
+      "item": "cap-mushroom"
+    }
+  ],
+  "makes": {
+    "item": "potion-of-mending"
+  },
+  "about": "Bitter, and then less so."
+}

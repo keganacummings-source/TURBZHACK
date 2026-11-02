@@ -1,0 +1,7 @@
+{
+  "name": "Raw Hide",
+  "sprite": "itm-hide",
+  "slot": "material",
+  "about": "Still smells of its owner.",
+  "stack": true
+}

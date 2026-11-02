@@ -5,5 +5,17 @@
   "biomes": [
     "badlands"
   ],
-  "sprite": "t-wall-clay"
+  "sprite": "t-wall-clay",
+  "harvest": {
+    "skill": "mining",
+    "turns": 3,
+    "tool": "pickaxe",
+    "becomes": "clay",
+    "yields": [
+      {
+        "item": "stone-block",
+        "chance": 0.6
+      }
+    ]
+  }
 }

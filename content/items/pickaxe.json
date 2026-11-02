@@ -1,0 +1,15 @@
+{
+  "name": "Pickaxe",
+  "sprite": "wpn-pickaxe",
+  "slot": "weapon",
+  "about": "A tool that will do as a weapon, badly.",
+  "damage": 8,
+  "kind": "physical",
+  "accuracy": -4,
+  "tool": "mining",
+  "depth": {
+    "min": 0,
+    "max": 12
+  },
+  "weight_find": 6
+}

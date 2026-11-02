@@ -22,5 +22,13 @@
     "max": 11
   },
   "weight": 10,
-  "xp": 80
+  "xp": 80,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "says": [
+    "Big rock that way. Hit it if you like.",
+    "You are small."
+  ]
 }

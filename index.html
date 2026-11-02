@@ -30,6 +30,15 @@
     </div>
   </div>
 
+  <!--
+    The right-click menu.
+
+    A floating panel rather than something drawn on the canvas, so its entries
+    are real buttons: readable by a screen reader, tappable on a touchscreen,
+    and styled with the rest of the UI instead of hand-drawn in pixels.
+  -->
+  <div id="context" class="hidden"></div>
+
   <script type="module">
     import { boot } from "./dist/src/ui/app.js";
     boot().catch((err) => {

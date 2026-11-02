@@ -1,0 +1,23 @@
+{
+  "name": "Make a Crossbow",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 6,
+  "needs": [
+    {
+      "item": "hardwood",
+      "amount": 3
+    },
+    {
+      "item": "iron-ingot",
+      "amount": 2
+    },
+    {
+      "item": "leather"
+    }
+  ],
+  "makes": {
+    "item": "crossbow"
+  },
+  "about": "Fiddly, and then suddenly lethal."
+}

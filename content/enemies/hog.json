@@ -22,5 +22,18 @@
   },
   "weight": 16,
   "xp": 14,
-  "stance": "neutral"
+  "stance": "neutral",
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "tameable": {
+    "chance": 0.35,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
 }

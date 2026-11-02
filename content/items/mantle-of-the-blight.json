@@ -1,0 +1,13 @@
+{
+  "name": "Mantle of the Blight",
+  "sprite": "arm-cloak",
+  "slot": "cloak",
+  "about": "Woven from whatever the Blight is made of.",
+  "armour": 2,
+  "evasion": 8,
+  "resist": {
+    "pure": 0.25
+  },
+  "unique": true,
+  "source": "Dropped by the Hollow Choir in the Blight."
+}

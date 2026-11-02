@@ -1,0 +1,11 @@
+{
+  "name": "The Long Patience",
+  "sprite": "wpn-spear",
+  "slot": "weapon",
+  "about": "A spear that has waited longer than the hills.",
+  "damage": 19,
+  "kind": "physical",
+  "accuracy": 10,
+  "unique": true,
+  "source": "Dropped by Stonefather Urn in the Crags."
+}

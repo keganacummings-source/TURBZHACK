@@ -1,0 +1,7 @@
+{
+  "name": "Ash Salt",
+  "sprite": "itm-dust",
+  "slot": "material",
+  "about": "Scraped off a cold flow.",
+  "stack": true
+}

@@ -152,6 +152,33 @@ export type EnemyDef = ContentBase & {
   /** Where it is found: biome ids for the overworld, depths for dungeons. */
   biomes?: string[];
   depth?: { min?: number; max?: number };
+  /**
+   * How far from where you woke up this is found, as bands 0-5.
+   *
+   * Biome alone cannot carry difficulty, because the same biome runs from your
+   * doorstep to the edge of the map: a forest two steps from the start and a
+   * forest four hundred tiles away should not hold the same creatures. This is
+   * the other axis — 0 is the home region, 5 is the far edge — and together the
+   * two decide what you meet. Left out, a creature is found at any distance.
+   */
+  region?: { min?: number; max?: number };
+  /**
+   * A world boss: one of these exists in the world, in a lair of its own.
+   *
+   * It is placed when the continent is built rather than spawned by the normal
+   * population pass, so it is always in the same place for a given seed and
+   * killing it is permanent.
+   */
+  boss?: boolean;
+  /** What it is called in full, for a boss: "Ashmaw, the Cinder Wyrm". */
+  title?: string;
+  /**
+   * What it may leave behind, each with its own chance.
+   *
+   * Rolled independently per entry, so a creature can drop none, one, or all of
+   * its table. Chance is 0-1.
+   */
+  drops?: { item: string; chance: number }[];
   /** Relative commonness within its band. Default 10. */
   weight?: number;
   /** Experience for killing it. */
@@ -160,6 +187,16 @@ export type EnemyDef = ContentBase & {
   stats?: Partial<Record<"might" | "focus" | "accuracy" | "evasion", number>>;
   /** A sibling .js file: `onTurn`, `onHurt`, `onDeath`. */
   script?: string;
+  /**
+   * Whether this can be talked round into following you, and how hard it is.
+   *
+   * `chance` is the bare odds with nothing to offer it. Feeding it something
+   * from `food` improves them. A creature with no `tameable` block cannot be
+   * tamed at all, which is most of them — a wraith has nothing to bargain with.
+   */
+  tameable?: { chance: number; food?: string[] };
+  /** What a neutral creature says when you talk to it. */
+  says?: string[];
 };
 
 // ---------------------------------------------------------------------------
@@ -189,7 +226,45 @@ export type EnchantmentDef = ContentBase & {
 // Items — content/items/*.json
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Recipes — content/recipes/*.json
+// ---------------------------------------------------------------------------
+
+/**
+ * Turning what you gathered into something useful.
+ *
+ * A recipe is a station, a list of what goes in, and one thing that comes out.
+ * The station is what stops every craft being available everywhere: smelting
+ * needs a forge, cooking needs a fire, and alchemy needs a bench, so the
+ * materials in your pack are only half of it.
+ */
+export type RecipeDef = ContentBase & {
+  /** Where it can be made. "camp" is anywhere you can light a fire. */
+  station: "camp" | "forge" | "bench";
+  /** Which trade it belongs to, for grouping and for skill. */
+  craft: "smithing" | "cooking" | "alchemy" | "woodwork";
+  /** What it consumes. */
+  needs: { item: string; amount?: number }[];
+  /** What it produces. */
+  makes: { item: string; amount?: number };
+  /** Turns of work. */
+  turns?: number;
+};
+
 export type ItemDef = ContentBase & {
+  /**
+   * A named item: one exists, and only a boss or a table drops it.
+   *
+   * Unique items are kept out of the ordinary ground scatter, so finding one
+   * means something happened rather than that you walked far enough.
+   */
+  unique?: boolean;
+  /** For the wiki: where this comes from, in words. */
+  source?: string;
+  /** This is the tool for a trade, so carrying it makes that work faster. */
+  tool?: "mining" | "woodcutting" | "foraging";
+  /** Several of these stack in the pack rather than taking a line each. */
+  stack?: boolean;
   /**
    * Where it is worn. One of the slots in equipment.ts — weapon, offhand,
    * body, head, hands, feet, cloak, ring, amulet — or "shield", which is a
@@ -235,6 +310,33 @@ export type TileDef = ContentBase & {
   on?: string;
   /** Which biome palettes use it. */
   biomes?: string[];
+  /**
+   * What you get for working at it, and what it leaves behind.
+   *
+   * A tree is wood, an ore vein is ore, a great mushroom is food. The tile is
+   * replaced by `becomes` when it is used up — or, left out, by whatever was
+   * drawn underneath it, which is what makes a felled tree turn back into the
+   * grass it grew from without every tile having to say so.
+   */
+  /**
+   * This tile is a crafting station: stand next to it to use its recipes.
+   *
+   * On the tile rather than on the recipe because a station is a thing in the
+   * world you walk up to, and the renderer, the look panel and the crafting
+   * screen all need to agree on which tiles those are.
+   */
+  station?: "camp" | "forge" | "bench";
+  harvest?: {
+    /** Which skill this trains and which tool helps: mining, woodcutting, foraging. */
+    skill: "mining" | "woodcutting" | "foraging";
+    /** Turns of work. Each turn the world takes its turn too. */
+    turns?: number;
+    /** An item that must be carried or worn. Without it the work is slower. */
+    tool?: string;
+    /** What it leaves. Omit to leave the ground it was standing on. */
+    becomes?: string;
+    yields: { item: string; chance: number; amount?: number }[];
+  };
 };
 
 // ---------------------------------------------------------------------------
@@ -290,5 +392,6 @@ export type UpgradeDef = ContentBase & {
 /** Every kind of content file, by folder name. */
 export const CONTENT_KINDS = [
   "species", "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
+  "recipes",
 ] as const;
 export type ContentKind = (typeof CONTENT_KINDS)[number];

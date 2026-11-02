@@ -14,6 +14,7 @@
  */
 import type { Game } from "../game.ts";
 import { drawSprite, TILE, type Atlas } from "./atlas.ts";
+import { offsetOf, type Motion } from "./motion.ts";
 
 export type View = {
   /** Whole-number zoom; fractional scaling blurs pixel art. */
@@ -24,40 +25,84 @@ export type View = {
   /** Size of the drawing area in tiles. */
   cols: number;
   rows: number;
+  /**
+   * Sub-tile scroll, in pixels, to be subtracted from every draw.
+   *
+   * The camera has to stay on whole tiles — `camX + rx` is how a tile is looked
+   * up, and a fractional origin would read the wrong one — so the smooth part of
+   * the scroll lives here instead. The loop draws one extra row and column to
+   * cover the strip this shifts into view.
+   */
+  offX: number;
+  offY: number;
 };
 
-/** Work out the camera for a canvas size, centred on the player and clamped to the map. */
-export function viewFor(game: Game, canvas: HTMLCanvasElement, scale: number): View {
+/**
+ * Work out the camera for a canvas size, centred on the player and clamped to
+ * the map.
+ *
+ * `motion` and `now` are optional and only affect where the camera sits: the
+ * player's sliding position is used instead of their tile, so the world does not
+ * jump a whole tile underneath them halfway through their own step. Leave them
+ * out and the camera snaps, which is what the overview map and the tests want.
+ */
+export function viewFor(
+  game: Game, canvas: HTMLCanvasElement, scale: number, motion?: Motion, now = 0,
+): View {
   const cols = Math.max(1, Math.floor(canvas.width / (TILE * scale)));
   const rows = Math.max(1, Math.floor(canvas.height / (TILE * scale)));
   const level = game.level;
   // Centre on the player, then clamp so the camera never shows past the edge —
   // except on a map smaller than the view, where it is pinned at 0.
-  const camX = level.w <= cols ? 0 : Math.max(0, Math.min(level.w - cols, game.player.pos.x - (cols >> 1)));
-  const camY = level.h <= rows ? 0 : Math.max(0, Math.min(level.h - rows, game.player.pos.y - (rows >> 1)));
-  return { scale, camX, camY, cols, rows };
+  const slide = motion ? offsetOf(motion, game.player.id, now) : { dx: 0, dy: 0 };
+  const wantX = level.w <= cols ? 0 : clamp(game.player.pos.x + slide.dx - (cols >> 1), 0, level.w - cols);
+  const wantY = level.h <= rows ? 0 : clamp(game.player.pos.y + slide.dy - (rows >> 1), 0, level.h - rows);
+  const camX = Math.floor(wantX);
+  const camY = Math.floor(wantY);
+  const size = TILE * scale;
+  return {
+    scale, camX, camY, cols, rows,
+    offX: Math.round((wantX - camX) * size),
+    offY: Math.round((wantY - camY) * size),
+  };
 }
 
-export function draw(ctx: CanvasRenderingContext2D, game: Game, atlas: Atlas, view: View): void {
-  const { scale, camX, camY, cols, rows } = view;
+function clamp(v: number, low: number, high: number): number {
+  return Math.max(low, Math.min(high, v));
+}
+
+export function draw(
+  ctx: CanvasRenderingContext2D, game: Game, atlas: Atlas, view: View,
+  motion?: Motion, now = 0,
+): void {
+  const { scale, camX, camY, cols, rows, offX, offY } = view;
   const size = TILE * scale;
   const level = game.level;
+  // One extra row and column, because a sub-tile scroll pulls part of the next
+  // one into view and an un-drawn strip at the edge looks like a tear.
+  const spanX = cols + 1, spanY = rows + 1;
 
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#0b0a0e";
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  for (let ry = 0; ry < rows; ry++) {
-    for (let rx = 0; rx < cols; rx++) {
+  for (let ry = 0; ry < spanY; ry++) {
+    for (let rx = 0; rx < spanX; rx++) {
       const tx = camX + rx, ty = camY + ry;
       if (!level.inBounds(tx, ty)) continue;
       const i = level.idx(tx, ty);
       const seen = level.known[i];
       if (!seen) continue;
 
-      const px = rx * size, py = ry * size;
+      const px = rx * size - offX, py = ry * size - offY;
       const tile = level.palette[level.tiles[i]!];
-      drawSprite(ctx, atlas, tile?.sprite ?? "stone", px, py, scale);
+      // Ground first, then whatever stands on it. For plain ground the two are
+      // the same index and this is one extra array read, not a second draw.
+      const under = level.floor[i]!;
+      if (under !== level.tiles[i]) {
+        drawSprite(ctx, atlas, level.palette[under]?.sprite ?? "t-stone", px, py, scale);
+      }
+      drawSprite(ctx, atlas, tile?.sprite ?? "t-stone", px, py, scale);
 
       if (!level.visible[i]) {
         /*
@@ -80,17 +125,27 @@ export function draw(ctx: CanvasRenderingContext2D, game: Game, atlas: Atlas, vi
 
       // Creatures are only drawn where you can actually see them.
       const who = game.actorAt(tx, ty);
-      if (who) {
-        drawSprite(ctx, atlas, who.sprite, px, py, scale);
-        if (who !== game.player) drawHealthPip(ctx, who, px, py, size);
-        if (who.statuses.length) drawStatusPips(ctx, who, px, py, size, scale);
+      if (who && who !== game.player) {
+        const slide = motion ? offsetOf(motion, who.id, now) : { dx: 0, dy: 0 };
+        const sx = px + Math.round(slide.dx * size);
+        const sy = py + Math.round(slide.dy * size);
+        drawSprite(ctx, atlas, who.sprite, sx, sy, scale);
+        drawHealthPip(ctx, who, sx, sy, size);
+        if (who.statuses.length) drawStatusPips(ctx, who, sx, sy, size, scale);
+        // A companion gets a mark, so a tamed wolf is not mistaken for a wolf.
+        if (who.data["companion"]) {
+          ctx.fillStyle = "#8fc46a";
+          const r = Math.max(2, Math.round(scale));
+          ctx.fillRect(sx + size - r - 1, sy + size - r - 1, r, r);
+        }
       }
     }
   }
 
   // The player last, so nothing is ever drawn over them.
-  const pxl = (game.player.pos.x - camX) * size;
-  const pyl = (game.player.pos.y - camY) * size;
+  const pslide = motion ? offsetOf(motion, game.player.id, now) : { dx: 0, dy: 0 };
+  const pxl = Math.round((game.player.pos.x + pslide.dx - camX) * size) - offX;
+  const pyl = Math.round((game.player.pos.y + pslide.dy - camY) * size) - offY;
   if (game.player.pos.x >= camX && game.player.pos.y >= camY &&
       game.player.pos.x < camX + cols && game.player.pos.y < camY + rows) {
     drawSprite(ctx, atlas, game.player.sprite, pxl, pyl, scale);

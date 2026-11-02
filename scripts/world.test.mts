@@ -206,3 +206,26 @@ test("no biome is a single tile marooned in another one", () => {
   }
   assert.equal(marooned, 0, `${marooned} tiles are a biome all on their own`);
 });
+
+test("scenery stands on ground, and ground stands on itself", () => {
+  // Trees used to be drawn alone, which left them standing in black squares.
+  // Not every solid tile needs a floor: deep water and a cliff face ARE the
+  // ground, drawn edge to edge. What matters is that where a floor differs from
+  // the tile it is something you could otherwise have walked on, and that the
+  // cut-out scenery actually got one.
+  const c = generateContinent(31337, tiles);
+  const lv = c.level;
+  const CUTOUT = new Set(["tree", "tree-snow", "mushroom", "dungeon-door"]);
+  let stood = 0;
+  for (let i = 0; i < lv.tiles.length; i++) {
+    const kind = lv.palette[lv.tiles[i]!]!;
+    const under = lv.palette[lv.floor[i]!]!;
+    if (lv.floor[i] === lv.tiles[i]) {
+      assert.ok(!CUTOUT.has(kind.id), `${kind.id} has nothing drawn behind it`);
+      continue;
+    }
+    stood++;
+    assert.ok(!under.solid, `${kind.id} is standing on ${under.id}, which is not ground`);
+  }
+  assert.ok(stood > 100, `only ${stood} tiles in the whole continent stand on anything`);
+});

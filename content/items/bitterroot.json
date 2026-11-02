@@ -1,0 +1,7 @@
+{
+  "name": "Bitterroot",
+  "sprite": "itm-herb",
+  "slot": "material",
+  "about": "Tastes like a mistake. Works.",
+  "stack": true
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Forge a Shield",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 4,
+  "needs": [
+    {
+      "item": "iron-ingot"
+    },
+    {
+      "item": "hardwood",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "shield"
+  },
+  "about": "Wood takes the blow, iron takes the edge."
+}

@@ -24,5 +24,9 @@
   "resist": {
     "poison": 0,
     "physical": 0.6
+  },
+  "region": {
+    "min": 2,
+    "max": 5
   }
 }

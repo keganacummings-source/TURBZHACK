@@ -1,0 +1,54 @@
+{
+  "name": "Stonefather Urn",
+  "title": "Stonefather Urn",
+  "sprite": "mon-stonefather-urn",
+  "about": "A hill that got up, once, and has been thinking about it since.",
+  "pools": {
+    "hp": 520,
+    "mana": 0
+  },
+  "armour": 18,
+  "speed": 80,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "slam",
+    "slash"
+  ],
+  "resist": {
+    "physical": 0.6,
+    "pure": 1.4
+  },
+  "stats": {
+    "accuracy": 90,
+    "evasion": -8
+  },
+  "biomes": [
+    "highland",
+    "hills"
+  ],
+  "region": {
+    "min": 2,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 1100,
+  "drops": [
+    {
+      "item": "the-long-patience",
+      "chance": 1.0
+    },
+    {
+      "item": "urns-measure",
+      "chance": 0.5
+    },
+    {
+      "item": "plate-armour",
+      "chance": 0.7
+    }
+  ]
+}

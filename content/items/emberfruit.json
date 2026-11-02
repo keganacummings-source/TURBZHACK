@@ -1,0 +1,7 @@
+{
+  "name": "Emberfruit",
+  "sprite": "itm-herb",
+  "slot": "material",
+  "about": "Warm all the way through.",
+  "stack": true
+}

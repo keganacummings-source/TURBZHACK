@@ -1,0 +1,7 @@
+{
+  "name": "Glowcap",
+  "sprite": "itm-mushroom",
+  "slot": "material",
+  "about": "It is lit from inside and does not care who knows.",
+  "stack": true
+}

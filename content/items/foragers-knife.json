@@ -1,0 +1,15 @@
+{
+  "name": "Forager's Knife",
+  "sprite": "wpn-dagger",
+  "slot": "weapon",
+  "about": "Small, sharp, and mostly used on plants.",
+  "damage": 6,
+  "kind": "physical",
+  "accuracy": 2,
+  "tool": "foraging",
+  "depth": {
+    "min": 0,
+    "max": 12
+  },
+  "weight_find": 6
+}

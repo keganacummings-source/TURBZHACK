@@ -22,5 +22,18 @@
     "max": 3
   },
   "weight": 30,
-  "xp": 4
+  "xp": 4,
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "tameable": {
+    "chance": 0.45,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
 }

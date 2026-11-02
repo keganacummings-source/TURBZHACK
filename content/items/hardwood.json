@@ -1,0 +1,7 @@
+{
+  "name": "Hardwood",
+  "sprite": "itm-wood",
+  "slot": "material",
+  "about": "Dense, slow-grown, worth the arm.",
+  "stack": true
+}

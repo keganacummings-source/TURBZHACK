@@ -28,5 +28,9 @@
   "resist": {
     "shock": 0,
     "physical": 0.4
+  },
+  "region": {
+    "min": 2,
+    "max": 5
   }
 }

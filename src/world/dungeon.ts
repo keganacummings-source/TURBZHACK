@@ -15,6 +15,16 @@ import type { TileDef } from "../content/schema.ts";
 
 export type Room = { x: number; y: number; w: number; h: number };
 
+/**
+ * How deep every dungeon goes.
+ *
+ * A fixed depth rather than a per-dungeon one, so "ten floors and then the
+ * thing at the bottom" is a rule the player can learn once and rely on. What
+ * differs between dungeons is what lives in them and what the keeper is, which
+ * is the part worth being surprised by.
+ */
+export const DUNGEON_FLOORS = 10;
+
 export type Dungeon = {
   level: Level;
   rooms: Room[];
@@ -150,8 +160,17 @@ export function generateDungeon(
   const downRoom = spread.length > 1 ? spread[spread.length - 1]! : upRoom;
   const up = openSpotIn(level, upRoom, rng);
   const down = openSpotIn(level, downRoom, rng, up);
-  level.set(up.x, up.y, kind("stairs-up"));
-  level.set(down.x, down.y, kind("stairs-down"));
+  // Stairs are cut-outs standing on the room's floor, not replacing it.
+  level.set(up.x, up.y, kind("stairs-up"), FLOOR);
+  /*
+   * The bottom floor has no way further down.
+   *
+   * Every dungeon is DUNGEON_FLOORS deep and ends with its keeper, so a
+   * staircase on the last floor would be a promise the generator cannot keep —
+   * and a player who took it would arrive on a floor nothing had placed a boss
+   * on.
+   */
+  if (depth < DUNGEON_FLOORS) level.set(down.x, down.y, kind("stairs-down"), FLOOR);
 
   return { level, rooms, up, down };
 }

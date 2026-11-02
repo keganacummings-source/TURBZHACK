@@ -29,5 +29,9 @@
   "resist": {
     "fire": 0,
     "cold": 1.5
+  },
+  "region": {
+    "min": 3,
+    "max": 5
   }
 }

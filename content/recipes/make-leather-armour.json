@@ -1,0 +1,16 @@
+{
+  "name": "Make Leather Armour",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 4,
+  "needs": [
+    {
+      "item": "leather",
+      "amount": 4
+    }
+  ],
+  "makes": {
+    "item": "leather-armour"
+  },
+  "about": "Cut, punch, lace."
+}

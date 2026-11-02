@@ -25,5 +25,9 @@
     "poison": 0,
     "cold": 0,
     "fire": 2
+  },
+  "region": {
+    "min": 2,
+    "max": 5
   }
 }

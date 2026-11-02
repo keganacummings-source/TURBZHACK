@@ -25,5 +25,9 @@
     "poison": 0,
     "cold": 0,
     "physical": 0.75
+  },
+  "region": {
+    "min": 0,
+    "max": 3
   }
 }

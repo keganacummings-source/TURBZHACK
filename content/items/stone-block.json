@@ -1,0 +1,7 @@
+{
+  "name": "Stone Block",
+  "sprite": "itm-stone",
+  "slot": "material",
+  "about": "Dressed stone.",
+  "stack": true
+}

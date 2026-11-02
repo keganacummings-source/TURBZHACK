@@ -1,0 +1,19 @@
+{
+  "name": "Forge a War Axe",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 5,
+  "needs": [
+    {
+      "item": "iron-ingot",
+      "amount": 3
+    },
+    {
+      "item": "hardwood"
+    }
+  ],
+  "makes": {
+    "item": "war-axe"
+  },
+  "about": "Most of the work is the haft."
+}

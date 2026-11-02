@@ -24,5 +24,9 @@
   ],
   "resist": {
     "physical": 0.8
+  },
+  "region": {
+    "min": 1,
+    "max": 4
   }
 }

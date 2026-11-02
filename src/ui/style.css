@@ -310,3 +310,112 @@ table.sheet td:first-child { color: var(--dim); width: 76px; }
 }
 .begin:hover { background: var(--bone); }
 .webfont .begin { font-size: 18px; }
+
+/* --- the right-click menu ------------------------------------------------ */
+
+#context {
+  position: fixed; z-index: 40;
+  min-width: 240px; max-width: 340px;
+  background: var(--panel); border: 1px solid var(--kyo); border-radius: 4px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .55);
+  padding: 10px 12px;
+  /* The panel is placed by script after measuring, so it must not be able to
+     push the page wider while it is still at 0,0 being measured. */
+  max-height: 80vh; overflow-y: auto;
+}
+#context.hidden { display: none; }
+.ctx-head { display: flex; gap: 10px; align-items: flex-start; }
+.ctx-head img { image-rendering: pixelated; flex: 0 0 auto; }
+.ctx-head h3 { margin: 0 0 2px; color: var(--kyo); font-size: 9px; }
+.webfont .ctx-head h3 { font-size: 14px; }
+.ctx-head p { margin: 0; font-size: 11px; }
+.webfont .ctx-head p { font-size: 16px; }
+.ctx-close {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--dim); font: inherit; font-size: 16px; line-height: 1; padding: 0 2px;
+}
+.ctx-close:hover { color: var(--bone); }
+.ctx-facts { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px; }
+.webfont .ctx-facts { font-size: 16px; }
+.ctx-facts td { padding: 2px 0; vertical-align: top; }
+.ctx-facts td:first-child { color: var(--dim); width: 84px; }
+.ctx-actions { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.ctx-action {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  text-align: left; width: 100%; padding: 5px 7px; cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 3px;
+  color: var(--bone); font: inherit; font-size: 12px;
+}
+.webfont .ctx-action { font-size: 17px; }
+.ctx-action:hover { background: var(--panel-2); border-color: var(--kyo); }
+.ctx-action em { color: var(--dim); font-style: normal; font-size: 10px; white-space: nowrap; }
+.webfont .ctx-action em { font-size: 14px; }
+
+/* --- the game menu ------------------------------------------------------- */
+
+.menu { display: flex; flex-direction: column; gap: 4px; max-width: 320px; margin: 12px 0; }
+.menu-item {
+  text-align: left; padding: 8px 12px; cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 3px;
+  color: var(--bone); font: inherit; font-size: 13px; letter-spacing: .06em;
+}
+.webfont .menu-item { font-size: 18px; }
+.menu-item:hover { border-color: var(--kyo); color: var(--kyo); }
+.menu-warn:hover { border-color: var(--blood); color: var(--blood); }
+
+/* --- rebinding ----------------------------------------------------------- */
+
+table.binds { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+table.binds td { padding: 3px 6px 3px 0; vertical-align: middle; font-size: 12px; }
+.webfont table.binds td { font-size: 17px; }
+table.binds tr.listening { background: var(--panel-2); outline: 1px solid var(--kyo); }
+.bind-what { color: var(--bone); width: 230px; }
+.bind-keys { min-width: 180px; }
+.bind-add { text-align: right; }
+.keycap {
+  display: inline-block; margin: 1px 3px 1px 0; padding: 2px 7px; cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line-bright); border-radius: 3px;
+  color: var(--kyo); font: inherit; font-size: 11px;
+}
+.webfont .keycap { font-size: 16px; }
+.keycap:hover { border-color: var(--blood); color: var(--blood); }
+.listening-note { color: var(--kyo); }
+
+/* --- save slots ---------------------------------------------------------- */
+
+table.slots { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.webfont table.slots { font-size: 17px; }
+table.slots td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+
+/* --- the wiki ------------------------------------------------------------ */
+
+.wiki { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+.wiki-side { min-width: 0; }
+.wiki-search {
+  width: 100%; padding: 6px 8px; margin-bottom: 8px;
+  background: var(--ink); border: 1px solid var(--line); border-radius: 3px;
+  color: var(--bone); font: inherit; font-size: 13px;
+}
+.webfont .wiki-search { font-size: 18px; }
+.wiki-search:focus { outline: none; border-color: var(--kyo); }
+.wiki-tabs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 8px; }
+.wiki-tab {
+  padding: 3px 7px; cursor: pointer; background: none;
+  border: 1px solid var(--line); border-radius: 3px;
+  color: var(--dim); font: inherit; font-size: 10px;
+}
+.webfont .wiki-tab { font-size: 15px; }
+.wiki-tab:hover { color: var(--bone); }
+.wiki-tab.on { border-color: var(--kyo); color: var(--kyo); }
+.wiki-rows { max-height: 56vh; }
+.row-gap { display: inline-block; width: 20px; flex: 0 0 auto; }
+.wiki-page { min-width: 0; }
+.wiki-page h3 { margin-top: 14px; }
+.wiki-list { margin: 4px 0 0; padding-left: 18px; font-size: 12px; }
+.webfont .wiki-list { font-size: 17px; }
+.wiki-note { color: var(--kyo); font-size: 12px; }
+.webfont .wiki-note { font-size: 17px; }
+
+/* --- companions ---------------------------------------------------------- */
+
+.pip-companion { border-color: var(--good); color: var(--good); }

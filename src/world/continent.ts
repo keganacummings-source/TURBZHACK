@@ -75,7 +75,23 @@ export type Continent = {
   start: Pos;
   /** Dungeon entrances, in world tiles. */
   entrances: { pos: Pos; name: string; depth: number }[];
+  /**
+   * How far from the start each tile is, as a band 0-5.
+   *
+   * Biome says what the ground is; this says how far out you have come. The two
+   * together are what a spawn table matches on, because the same forest runs
+   * from the player's doorstep to the edge of the map and should not hold the
+   * same creatures at both ends.
+   */
+  region: Uint8Array;
+  /** World bosses: one lair each, fixed for this seed. */
+  lairs: { pos: Pos; enemy: string }[];
+  /** Camps: a fire, a forge and a bench, on flagstone. */
+  camps: { pos: Pos; name: string }[];
 };
+
+/** The most remote band. Band 0 is home. */
+export const REGION_BANDS = 5;
 
 // --- noise -----------------------------------------------------------------
 
@@ -260,7 +276,16 @@ export function generateContinent(seed: number, tiles: Map<string, TileDef>, w =
       const r = hash2(x, y, scatterSeed);
       if (b.patch && r < 0.12) id = b.patch;
       else if (b.block && b.density && r > 1 - b.density) id = b.block;
-      level.set(x, y, kind(id));
+      /*
+       * Scenery remembers the ground it grew out of.
+       *
+       * A tree is a cut-out sprite, so it needs something drawn behind it or it
+       * appears to stand in a hole. The ground it stands on is whatever this
+       * biome lays down, which is why a pine in the taiga ends up on snow and a
+       * tree in a forest ends up on grass without either being special-cased.
+       */
+      const under = id === b.ground ? id : b.ground;
+      level.set(x, y, kind(id), kind(under));
     }
   }
 
@@ -271,7 +296,146 @@ export function generateContinent(seed: number, tiles: Map<string, TileDef>, w =
   const start = findStart(level, biome, w, h);
   const entrances = placeEntrances(level, biome, w, h, kind("dungeon-door"), start, rng.fork("dungeons"));
 
-  return { seed, level, biome, start, entrances };
+  const region = measureRegions(level, start, w, h);
+  const camps = placeCamps(level, biome, w, h, start, kind, rng.fork("camps"));
+
+  return { seed, level, biome, start, entrances, region, lairs: [], camps };
+}
+
+/**
+ * Camps: somewhere to actually make things.
+ *
+ * A fire, a forge and a bench on a patch of flagstone. They exist because the
+ * gathering loop is pointless without somewhere to take the ore — and they are
+ * placed in the world rather than carried with you so that going out, filling
+ * your pack and coming back is a journey with a shape to it.
+ *
+ * The first one is put within easy reach of where you wake up. Without that, a
+ * seed could bury every forge four hundred tiles away and the whole crafting
+ * half of the game would be invisible for an hour.
+ */
+function placeCamps(
+  level: Level, biome: string[], w: number, h: number, start: Pos,
+  kind: (id: string) => number, rng: Rng,
+): { pos: Pos; name: string }[] {
+  const LIVEABLE = new Set(["plains", "forest", "savanna", "hills", "beach", "taiga", "downs"]);
+  const floor = kind("flagstone");
+  const pieces: [string, number, number][] = [
+    ["campfire", 0, 0],
+    ["forge", 2, 0],
+    ["workbench", -2, 0],
+  ];
+  const names = ["Dunmoor", "Tallow Rest", "The Pegs", "Candlewick", "Ashford", "Low Barrow", "Mirefoot"];
+  const out: { pos: Pos; name: string }[] = [];
+
+  const fits = (cx: number, cy: number, maxFromStart: number): boolean => {
+    if (Math.hypot(cx - start.x, cy - start.y) > maxFromStart) return false;
+    if (Math.hypot(cx - start.x, cy - start.y) < 6) return false;   // not on your doorstep
+    if (!LIVEABLE.has(biome[cy * w + cx] ?? "")) return false;
+    // A clear 7x3 so the three stations and the ground around them fit.
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -3; dx <= 3; dx++) {
+        if (!level.inBounds(cx + dx, cy + dy)) return false;
+        if (level.solid(cx + dx, cy + dy)) return false;
+      }
+    }
+    for (const c of out) if (Math.hypot(c.pos.x - cx, c.pos.y - cy) < 25) return false;
+    return true;
+  };
+
+  const build = (cx: number, cy: number) => {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -3; dx <= 3; dx++) level.set(cx + dx, cy + dy, floor, floor);
+    }
+    for (const [id, dx, dy] of pieces) level.set(cx + dx, cy + dy, kind(id), floor);
+    out.push({ pos: { x: cx, y: cy }, name: names[out.length % names.length]! });
+  };
+
+  // The first camp: near, so the crafting loop is findable. Then the rest,
+  // anywhere liveable, spread out.
+  for (const reach of [45, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9]) {
+    for (let t = 0; t < 3000; t++) {
+      const x = rng.int(w), y = rng.int(h);
+      if (!fits(x, y, reach)) continue;
+      build(x, y);
+      break;
+    }
+  }
+  return out;
+}
+
+/**
+ * Distance from the start, in bands.
+ *
+ * Measured as straight-line distance rather than by walking, because what this
+ * is for is "how deep into the world am I", and a bay you have to walk around
+ * is not somewhere the game should treat as dangerous. The scale is set by the
+ * furthest land tile from the start rather than by the map's diagonal, so a
+ * small continent still has a band 5 somewhere and its far creatures exist.
+ */
+function measureRegions(level: Level, start: Pos, w: number, h: number): Uint8Array {
+  const out = new Uint8Array(w * h);
+  let furthest = 1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (level.solid(x, y)) continue;
+      const d = Math.hypot(x - start.x, y - start.y);
+      if (d > furthest) furthest = d;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = Math.hypot(x - start.x, y - start.y) / furthest;
+      out[y * w + x] = Math.min(REGION_BANDS, Math.floor(d * (REGION_BANDS + 1)));
+    }
+  }
+  return out;
+}
+
+/**
+ * Give every world boss a lair.
+ *
+ * Done here, once, rather than in the population pass, so a boss is in the same
+ * place every time you load the seed and killing one is permanent. Each is put
+ * in a biome its own file lists, as far out as the map allows, and never within
+ * sight of where you woke up.
+ *
+ * A boss with nowhere to live is dropped rather than squeezed in somewhere
+ * wrong: a Cinder Wyrm on a seed with no Cinderland should not turn up in a
+ * meadow. The wiki says where each one lives, so an absence is explicable.
+ */
+export function placeLairs(
+  c: Continent,
+  bosses: { id: string; biomes?: string[]; region?: { min?: number; max?: number } }[],
+  rng: Rng,
+): void {
+  const w = c.level.w;
+  c.lairs = [];
+  const taken = new Set<number>();
+
+  for (const boss of bosses) {
+    const wants = new Set(boss.biomes ?? []);
+    const minBand = boss.region?.min ?? 3;
+    let best: { pos: Pos; score: number } | null = null;
+
+    // A bounded sample rather than a full scan: 4,000 tries over 38,400 tiles
+    // finds a good lair without making world generation visibly slower.
+    for (let t = 0; t < 4000; t++) {
+      const x = rng.int(c.level.w), y = rng.int(c.level.h);
+      const i = y * w + x;
+      if (taken.has(i)) continue;
+      if (c.level.solid(x, y)) continue;
+      if (wants.size && !wants.has(c.biome[i]!)) continue;
+      if (c.region[i]! < minBand) continue;
+      if (Math.hypot(x - c.start.x, y - c.start.y) < 40) continue;
+      const score = c.region[i]! * 1000 + rng.int(1000);
+      if (!best || score > best.score) best = { pos: { x, y }, score };
+    }
+
+    if (!best) continue;
+    taken.add(best.pos.y * w + best.pos.x);
+    c.lairs.push({ pos: best.pos, enemy: boss.id });
+  }
 }
 
 /** The biome for a patch of land, from its height above sea, warmth and wet. */
@@ -368,7 +532,7 @@ function carveRivers(level: Level, height: Float32Array, mass: Float32Array, w: 
     if (best < 0.55) continue;                     // not high enough to be a source
 
     for (let step = 0; step < 400; step++) {
-      level.set(x, y, waterKind);
+      level.set(x, y, waterKind);   // a river is ground, so it is its own floor
       let nx = x, ny = y, low = height[y * w + x]!;
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
@@ -442,6 +606,14 @@ function placeEntrances(
       Math.hypot(start.x, h - start.y),
       Math.hypot(w - start.x, h - start.y),
     );
+    /*
+     * How hard a dungeon is, not how deep it goes.
+     *
+     * Every dungeon is the same ten floors; what changes with distance is what
+     * lives in them. This number is the difficulty tier the floors are built at,
+     * so a dungeon on your doorstep and one at the edge of the map are the same
+     * shape and nothing like the same fight.
+     */
     const far = Math.hypot(x - start.x, y - start.y) / Math.max(1, reach);
     const depth = Math.max(1, Math.min(12, Math.round(1 + far * 13)));
     out.push({
@@ -449,7 +621,8 @@ function placeEntrances(
       name: `${names[out.length % names.length]} of ${BIOME_BY_ID.get(b)?.name ?? "the Reach"}`,
       depth,
     });
-    level.set(x, y, doorKind);
+    // The entrance keeps whatever ground was already here behind it.
+    level.set(x, y, doorKind, level.floor[y * level.w + x]!);
   }
   return out;
 }

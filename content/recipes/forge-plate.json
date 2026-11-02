@@ -1,0 +1,20 @@
+{
+  "name": "Forge Plate Armour",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 8,
+  "needs": [
+    {
+      "item": "iron-ingot",
+      "amount": 6
+    },
+    {
+      "item": "leather",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "plate-armour"
+  },
+  "about": "Weeks, compressed."
+}

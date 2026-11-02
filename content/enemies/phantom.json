@@ -25,5 +25,9 @@
   "resist": {
     "physical": 0.2,
     "pure": 1.75
+  },
+  "region": {
+    "min": 1,
+    "max": 4
   }
 }

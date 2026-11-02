@@ -23,6 +23,7 @@ import { isMain } from "./is-main.mjs";
  */
 const KINDS = [
   "species", "classes", "enemies", "spells", "abilities", "enchantments", "statuses", "tiles", "items", "upgrades",
+  "recipes",
 ];
 
 export function buildIndex(dir) {

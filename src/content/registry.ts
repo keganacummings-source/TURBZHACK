@@ -20,11 +20,13 @@
  *      the base game's goblin by shipping its own goblin.json, without anyone
  *      editing the original.
  */
+import { CARRIED_SLOTS } from "../engine/equipment.ts";
 import {
   CONTENT_KINDS,
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
   type EnemyDef, type ItemDef, type SpeciesDef, type SpellDef, type TileDef, type UpgradeDef,
 } from "./schema.ts";
+import type { RecipeDef } from "./schema.ts";
 import type { StatusDef } from "../engine/status.ts";
 
 /** Where a definition came from, so errors can point at a real file. */
@@ -53,6 +55,7 @@ export class Registry {
   readonly species = new Map<string, SpeciesDef>();
   readonly classes = new Map<string, ClassDef>();
   readonly enemies = new Map<string, EnemyDef>();
+  readonly recipes = new Map<string, RecipeDef>();
   readonly spells = new Map<string, SpellDef>();
   readonly abilities = new Map<string, AbilityDef>();
   readonly enchantments = new Map<string, EnchantmentDef>();
@@ -70,6 +73,7 @@ export class Registry {
       case "species": return this.species as never;
       case "classes": return this.classes as never;
       case "enemies": return this.enemies as never;
+      case "recipes": return this.recipes as never;
       case "spells": return this.spells as never;
       case "abilities": return this.abilities as never;
       case "enchantments": return this.enchantments as never;
@@ -166,12 +170,27 @@ export class Registry {
     for (const [id, e] of this.enemies) {
       for (const s of e.spells ?? []) ref(`enemies:${id}`, "spells", s, `"spells"`);
       for (const a of e.abilities ?? []) ref(`enemies:${id}`, "abilities", a, `"abilities"`);
+      for (const d of e.drops ?? []) ref(`enemies:${id}`, "items", d.item, `"drops"`);
     }
     for (const [id, s] of this.spells) {
       for (const st of s.applies ?? []) ref(`spells:${id}`, "statuses", st, `"applies"`);
     }
     for (const [id, a] of this.abilities) {
       for (const st of a.applies ?? []) ref(`abilities:${id}`, "statuses", st, `"applies"`);
+    }
+    for (const [id, t] of this.tiles) {
+      const h = t.harvest;
+      if (!h) continue;
+      if (h.tool) ref(`tiles:${id}`, "items", h.tool, `"harvest.tool"`);
+      if (h.becomes) ref(`tiles:${id}`, "tiles", h.becomes, `"harvest.becomes"`);
+      for (const y of h.yields ?? []) ref(`tiles:${id}`, "items", y.item, `"harvest.yields"`);
+    }
+    for (const [id, e] of this.enemies) {
+      for (const f of e.tameable?.food ?? []) ref(`enemies:${id}`, "items", f, `"tameable.food"`);
+    }
+    for (const [id, r] of this.recipes) {
+      for (const n of r.needs ?? []) ref(`recipes:${id}`, "items", n.item, `"needs"`);
+      if (r.makes?.item) ref(`recipes:${id}`, "items", r.makes.item, `"makes"`);
     }
     for (const [id, i] of this.items) {
       if (i.casts) ref(`items:${id}`, "spells", i.casts, `"casts"`);
@@ -289,11 +308,20 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       strList("spells");
       strList("abilities");
       strList("biomes");
+      checkBand(def, "region", 0, 5, out);
+      checkDrops(def, out);
       oneOf("ai", ["melee", "caster", "wander", "skittish"]);
       oneOf("stance", ["hostile", "neutral", "friendly"]);
       checkPools(def, out);
       checkResist(def, out);
       checkStats(def, out);
+      break;
+
+    case "recipes":
+      oneOf("station", ["camp", "forge", "bench"]);
+      oneOf("craft", ["smithing", "cooking", "alchemy", "woodwork"]);
+      num("turns", { min: 1 });
+      checkParts(def, out);
       break;
 
     case "statuses":
@@ -343,13 +371,14 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       if (def.slot !== undefined) {
         const slots = ["weapon", "offhand", "shield", "body", "head", "hands", "feet", "cloak", "ring", "amulet"];
         if (typeof def.slot !== "string") out.push(`"slot" must be a string`);
-        else if (!slots.includes(def.slot) && !["potion", "scroll", "misc"].includes(def.slot)) {
+        else if (!slots.includes(def.slot) && !(CARRIED_SLOTS as readonly string[]).includes(def.slot)) {
           out.push(`"slot" is "${def.slot}" — use one of ${slots.join(", ")}, or potion/scroll/misc for something only carried`);
         }
       }
       break;
 
     case "tiles":
+      oneOf("station", ["camp", "forge", "bench"]);
       num("cost", { min: 0 });
       strList("biomes");
       break;
@@ -376,6 +405,76 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
     }
   }
   return out;
+}
+
+/**
+ * A `{ min, max }` band, checked so a typo fails loudly.
+ *
+ * A band with min above max matches nothing, which in a spawn table means a
+ * creature that silently never appears anywhere — the worst kind of content
+ * bug, because the game looks like it is working.
+ */
+function checkBand(
+  def: Record<string, unknown>, field: string, low: number, high: number, out: string[],
+): void {
+  const band = def[field];
+  if (band === undefined) return;
+  if (typeof band !== "object" || band === null || Array.isArray(band)) {
+    out.push(`"${field}" must be an object like { "min": 1, "max": 3 }`);
+    return;
+  }
+  const { min, max } = band as { min?: unknown; max?: unknown };
+  for (const [name, value] of [["min", min], ["max", max]] as [string, unknown][]) {
+    if (value === undefined) continue;
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      out.push(`"${field}.${name}" must be a number`);
+    } else if (value < low || value > high) {
+      out.push(`"${field}.${name}" is ${value}, outside ${low}-${high}`);
+    }
+  }
+  if (typeof min === "number" && typeof max === "number" && min > max) {
+    out.push(`"${field}" has min ${min} above max ${max}, so it matches nothing`);
+  }
+}
+
+/** A drop table: every entry needs an item and a chance between 0 and 1. */
+function checkDrops(def: Record<string, unknown>, out: string[]): void {
+  const drops = def["drops"];
+  if (drops === undefined) return;
+  if (!Array.isArray(drops)) {
+    out.push(`"drops" must be a list of { "item": ..., "chance": ... }`);
+    return;
+  }
+  drops.forEach((entry, i) => {
+    if (typeof entry !== "object" || entry === null) {
+      out.push(`"drops[${i}]" is not an object`);
+      return;
+    }
+    const { item, chance } = entry as { item?: unknown; chance?: unknown };
+    if (typeof item !== "string" || !item) out.push(`"drops[${i}].item" must name an item`);
+    if (typeof chance !== "number" || !(chance > 0) || chance > 1) {
+      out.push(`"drops[${i}].chance" must be above 0 and at most 1, not ${String(chance)}`);
+    }
+  });
+}
+
+/** A recipe's inputs and output: both have to name real amounts of real items. */
+function checkParts(def: Record<string, unknown>, out: string[]): void {
+  const needs = def["needs"];
+  if (!Array.isArray(needs) || !needs.length) {
+    out.push(`"needs" must be a non-empty list of { "item": ..., "amount": ... }`);
+  } else {
+    needs.forEach((n, i) => {
+      const { item, amount } = (n ?? {}) as { item?: unknown; amount?: unknown };
+      if (typeof item !== "string" || !item) out.push(`"needs[${i}].item" must name an item`);
+      if (amount !== undefined && (typeof amount !== "number" || amount < 1)) {
+        out.push(`"needs[${i}].amount" must be at least 1`);
+      }
+    });
+  }
+  const makes = def["makes"] as { item?: unknown; amount?: unknown } | undefined;
+  if (!makes || typeof makes !== "object") out.push(`"makes" must be { "item": ..., "amount": ... }`);
+  else if (typeof makes.item !== "string" || !makes.item) out.push(`"makes.item" must name an item`);
 }
 
 function checkPools(def: Record<string, unknown>, out: string[]): void {

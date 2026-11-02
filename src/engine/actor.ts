@@ -136,6 +136,51 @@ export class Actor {
     this.data = { ...(init.data ?? {}) };
   }
 
+  /** Snapshot for a save file. */
+  toSave() {
+    return {
+      id: this.id, def: this.def, name: this.name, pos: { ...this.pos },
+      pools: { ...this.pools }, stance: this.stance, sprite: this.sprite,
+      isPlayer: this.isPlayer, spells: [...this.spells],
+      enchantments: [...this.enchantments],
+      armour: this.armour, resist: { ...this.resist }, stats: { ...this.stats },
+      baseStats: { ...this.baseStats }, baseArmour: this.baseArmour,
+      baseResist: { ...this.baseResist },
+      statuses: this.statuses.map((s) => ({ ...s })),
+      data: { ...this.data },
+      alive: this.alive, turnsSinceHurt: this.turnsSinceHurt,
+      energy: this.energy, speed: this.speed,
+    };
+  }
+
+  /**
+   * Rebuild one from a snapshot.
+   *
+   * The derived fields are assigned AFTER construction rather than passed in,
+   * because the constructor computes `baseStats` from `stats` — correct when a
+   * creature is born, wrong when it is being restored, since by then the two
+   * have diverged by whatever it is wearing.
+   */
+  static fromSave(save: ActorSave): Actor {
+    const a = new Actor({
+      id: save.id, def: save.def, name: save.name, pos: save.pos,
+      pools: save.pools, stance: save.stance, sprite: save.sprite,
+      isPlayer: save.isPlayer, spells: save.spells,
+      enchantments: save.enchantments, armour: save.armour,
+      resist: save.resist, stats: save.stats, data: save.data,
+    });
+    a.pools = { ...save.pools };
+    a.baseStats = { ...save.baseStats };
+    a.baseArmour = save.baseArmour;
+    a.baseResist = { ...save.baseResist };
+    a.statuses = save.statuses.map((s) => ({ ...s }));
+    a.alive = save.alive;
+    a.turnsSinceHurt = save.turnsSinceHurt;
+    a.energy = save.energy;
+    a.speed = save.speed;
+    return a;
+  }
+
   /** Clamp every pool into range. Called after anything touches them. */
   clampPools(): void {
     const p = this.pools;
@@ -216,3 +261,14 @@ export class Actor {
     return this.pools.hp - before;
   }
 }
+
+/**
+ * An actor, written down.
+ *
+ * Everything on an `Actor` is plain data — no references to other actors, no
+ * live level, no closures — so a save is the fields themselves rather than a
+ * rebuilt description. That is deliberate: a save that re-derived an actor from
+ * its content definition would quietly undo every level-up, enchantment and
+ * wound, because those live only on the instance.
+ */
+export type ActorSave = ReturnType<Actor["toSave"]>;

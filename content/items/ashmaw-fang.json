@@ -1,0 +1,11 @@
+{
+  "name": "Ashmaw's Fang",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "about": "Still warm. It does not cool.",
+  "damage": 26,
+  "kind": "fire",
+  "accuracy": 4,
+  "unique": true,
+  "source": "Dropped by Ashmaw, the Cinder Wyrm, in the Cinderland."
+}
