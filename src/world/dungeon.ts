@@ -31,6 +31,9 @@ export type Dungeon = {
   /** Where you arrive coming down, and where the stairs onward are. */
   up: Pos;
   down: Pos;
+  /** On the final floor only: where the keeper waits, and the sealed door home. */
+  boss?: Pos;
+  exit?: Pos;
 };
 
 export const DUNGEON_W = 80;
@@ -172,7 +175,46 @@ export function generateDungeon(
    */
   if (depth < DUNGEON_FLOORS) level.set(down.x, down.y, kind("stairs-down"), FLOOR);
 
-  return { level, rooms, up, down };
+  /*
+   * The final floor is a keeper's hall.
+   *
+   * The farthest room is widened into a proper arena, the keeper stands at its
+   * heart, and a door back to the surface is set into the far wall — sealed
+   * until the keeper falls (the game gates it on whether the keeper is dead, so
+   * it survives a save). Beating the keeper is then a shortcut home rather than
+   * a ten-floor climb back up, which is the reward for going all the way down.
+   */
+  let boss: Pos | undefined;
+  let exit: Pos | undefined;
+  if (depth >= DUNGEON_FLOORS) {
+    const arena = widenRoom(level, downRoom, FLOOR, w, h);
+    boss = centreOf(arena);
+    // The door sits a couple of tiles from the keeper, toward a wall, so the
+    // fight happens in front of it rather than on top of it.
+    const ex = Math.min(arena.x + arena.w - 2, boss.x + 2);
+    exit = { x: ex, y: boss.y };
+    level.set(exit.x, exit.y, kind("dungeon-exit"), FLOOR);
+  }
+
+  return { level, rooms, up, down, boss, exit };
+}
+
+/**
+ * Widen a room into a boss arena, in place.
+ *
+ * Grown around its centre and floored throughout. The surrounding stone is left
+ * as it is, so the corridor that already reaches this room's centre is never
+ * sealed off — the arena simply opens out around where you arrive.
+ */
+function widenRoom(level: Level, room: Room, floor: number, w: number, h: number): Room {
+  const cx = room.x + (room.w >> 1), cy = room.y + (room.h >> 1);
+  const halfW = Math.max(5, (room.w >> 1) + 1), halfH = Math.max(4, (room.h >> 1) + 1);
+  const x0 = Math.max(2, cx - halfW), x1 = Math.min(w - 3, cx + halfW);
+  const y0 = Math.max(2, cy - halfH), y1 = Math.min(h - 3, cy + halfH);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) level.set(x, y, floor);
+  }
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
 /** A straight run of floor, either horizontal or vertical. */

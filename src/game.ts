@@ -767,9 +767,20 @@ export class Game {
     const rng = this.rng.fork(`keeper:${this.place.entrance}`);
     const def = pool[rng.int(pool.length)]!;
     const floor = this.floor(this.place.entrance, depth);
-    const spot = this.farthestOpenFrom(floor.up);
-    if (!spot) return;
+    // The keeper stands in its hall, by the sealed door, so the fight is where
+    // the way out is. Falls back to the far end if a floor somehow has no arena.
+    const spot = floor.boss ?? this.farthestOpenFrom(floor.up);
+    if (!spot || actorAt(this.actors, spot.x, spot.y)) {
+      const alt = this.farthestOpenFrom(floor.up);
+      if (!alt) return;
+      return this.spawnKeeper(def, alt, key);
+    }
+    this.spawnKeeper(def, spot, key);
+  }
 
+  /** Build and place the keeper, scaled up to be worth the descent. */
+  private spawnKeeper(def: EnemyDef, spot: Pos, key: string): void {
+    if (this.place.kind !== "dungeon") return;
     const keeper = this.makeActor(String(def.id), def, spot);
     const dungeon = this.continent.entrances[this.place.entrance];
     keeper.name = `${def.name ?? def.id}, Keeper of ${dungeon?.name ?? "the Deep"}`;
@@ -894,10 +905,30 @@ export class Game {
       const next = this.place.depth + 1;
       const d = this.floor(this.place.entrance, next);
       this.enterLevel({ kind: "dungeon", entrance: this.place.entrance, depth: next }, d.up);
-      this.log(`You descend to floor ${next}.`, "good");
+      if (next >= DUNGEON_FLOORS) {
+        const done = this.bossesKilled.has(`keeper:${this.place.entrance}`);
+        this.log(done
+          ? "The keeper's hall. Its door to the surface stands open."
+          : "The keeper's hall. A sealed door waits at the far end.", done ? "good" : "warn");
+      } else {
+        this.log(`You descend to floor ${next}.`, "good");
+      }
       const was = this.deepestIn.get(this.place.entrance) ?? 0;
       if (next > was) this.deepestIn.set(this.place.entrance, next);
       this.noteProgress("delve", String(this.place.entrance), next);
+      return true;
+    }
+    if (t.on === "dungeon-exit" && this.place.kind === "dungeon") {
+      // The keeper's door home. Sealed until the keeper is dead — and that is
+      // kept in `bossesKilled`, which is saved, so it stays open across reloads.
+      const key = `keeper:${this.place.entrance}`;
+      if (!this.bossesKilled.has(key)) {
+        this.log("The door will not open. Something still holds this place.", "warn");
+        return false;
+      }
+      const e = this.continent.entrances[this.place.entrance];
+      this.enterLevel({ kind: "overworld" }, e?.pos ?? this.continent.start);
+      this.log("The door opens onto daylight, and you climb out.", "good");
       return true;
     }
     if (t.on === "stairs-up" && this.place.kind === "dungeon") {
@@ -1010,9 +1041,21 @@ export class Game {
     };
   }
 
+  /**
+   * Everyone who was on the map when this turn began.
+   *
+   * Captured before the world moves, because the turn scheduler drops the dead
+   * from the live list the instant their tick ends — so by the time loot and
+   * kills are tallied, a creature the player just felled is already gone from
+   * `actors`. Tallying from this snapshot instead means a death is never missed,
+   * whatever order things happened to resolve in.
+   */
+  private roster: Actor[] | null = null;
+
   /** Let the world have its turn, then look around again. */
   private finishTurn(result: ActionResult): void {
     if (this.over) return;
+    this.roster = [...this.actors];
     const ai: AiCtx = {
       ...this.actionCtx,
       rng: this.rng,
@@ -1080,7 +1123,9 @@ export class Game {
    * it, and the wiki can state a real percentage per item.
    */
   private dropLoot(): void {
-    for (const a of this.actors) {
+    // The turn's roster, so a creature pruned the moment it died is still tallied.
+    const roster = this.roster ?? this.actors;
+    for (const a of roster) {
       if (a.alive || a.isPlayer || a.data["looted"]) continue;
       a.data["looted"] = true;
       const def = this.reg.enemies.get(a.def);
@@ -1151,13 +1196,13 @@ export class Game {
 
     // A boss stays dead: its lair is part of the seed, so without this it would
     // be waiting again the next time you came back to the overworld.
-    for (const a of this.actors) {
+    for (const a of roster) {
       if (a.alive || a.isPlayer) continue;
       if (this.reg.enemies.get(a.def)?.boss) this.bossesKilled.add(a.def);
       const keeper = a.data["keeper"];
       if (typeof keeper === "string") {
         this.bossesKilled.add(keeper);
-        this.log("The dungeon is quiet. Whatever held it is gone.", "good");
+        this.log("The keeper falls. Somewhere a door grinds open — the way back to the surface.", "good");
       }
     }
   }
