@@ -251,6 +251,11 @@ export type WeaponStats = {
   quality: QualityId;
   /** Spell power from the class, before anything the file itself adds. */
   focus: number;
+  /**
+   * How heavy the weapon feels to swing. Driven by material and class.
+   * Used for stamina cost so a maul cannot be spammed the way a dagger can.
+   */
+  weight: number;
 };
 
 /** What class an item's file says it is, defaulting sensibly. */
@@ -291,12 +296,25 @@ export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
    * The class still decides reach, speed, accuracy and which attribute it scales
    * off, which is where the character of a weapon actually lives.
    */
-  const material = inst?.material;
+  // Prefer the instance's material (crafted / found), then the file's default.
+  const materialId = (inst?.material ?? def.material) as MaterialId | undefined;
+  const material = materialId && (MATERIALS as readonly string[]).includes(materialId)
+    ? materialId
+    : undefined;
   const mat = material ? MATERIAL[material] : undefined;
   const quality = inst?.quality ?? "plain";
   const q = QUALITY[quality];
 
   const base = def.damage ?? Math.round(14 * info.damage);
+
+  /*
+   * Weight is what the stamina system reads. Material is the main lever; class
+   * scale and two-handedness push heavies further so a dagger stays cheap to
+   * swing and an axe or polearm burns stamina if you try to spam it.
+   */
+  const classWeight = info.scales === "heavy" ? 1.35 : 0.75;
+  const hands = info.twoHanded ? 1.25 : 1;
+  const weight = (mat?.weight ?? 1) * classWeight * hands * info.speed;
 
   return {
     class: cls,
@@ -309,6 +327,7 @@ export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
     material,
     quality,
     focus: info.focus ?? 0,
+    weight,
   };
 }
 
@@ -421,6 +440,24 @@ export function swingCost(stats: WeaponStats, attr: Attributes): number {
   const d = derive(attr);
   const quickness = 100 / Math.max(50, d.speed);
   return Math.max(0.33, Math.round(stats.speed * quickness * 100) / 100);
+}
+
+/**
+ * Stamina a swing costs.
+ *
+ * Weight-driven so light weapons (daggers, unarmed) can be used freely while
+ * heavy axes, maces and polearms burn through the pool if you try to spam them.
+ * That forces swapping weapon types mid-fight instead of locking one heavy
+ * weapon and never letting go.
+ *
+ * Unarmed stays free — fists are always available as a last resort. Numbers are
+ * tuned against STAMINA_PER_TURN (25) and a typical pool of ~100–150 so a heavy
+ * swing costs a meaningful fraction of a full bar.
+ */
+export function staminaCost(stats: WeaponStats): number {
+  if (stats.class === "unarmed") return 0;
+  // ~6–10 for light iron, ~18–28 for heavy steel / two-handers
+  return Math.max(4, Math.round(14 * stats.weight));
 }
 
 /** Which skill a class trains. One per class, so practice is a real choice. */

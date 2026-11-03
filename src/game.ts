@@ -21,7 +21,7 @@ import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
   MATERIAL, MATERIALS, WEAPON_CLASS, accuracyWith, classOf, damageWith, fullName, itemValue,
-  qualityFor, qualityRank, skillFor, swingCost, weaponStats,
+  qualityFor, qualityRank, skillFor, staminaCost, swingCost, weaponStats,
   type ItemInstance, type MaterialId,
 } from "./engine/weapons.ts";
 import { monsterTurn, type AiCtx } from "./engine/ai.ts";
@@ -1448,7 +1448,8 @@ export class Game {
       /*
        * Bare hands are still a weapon class, so Agility and unarmed practice
        * both count. Without this, punching was the one attack in the game that
-       * ignored the entire weapon system.
+       * ignored the entire weapon system. Unarmed stays stamina-free so fists
+       * are always a usable last resort.
        */
       const fists = weaponStats({ id: "punch", name: "Punch", damage: punch.damage } as ItemDef);
       return {
@@ -1456,6 +1457,7 @@ export class Game {
         damage: damageWith(fists, this.player.attributes, this.skillIn("unarmed")),
         range: 1,
         cost: 1,
+        stamina: 0,
       };
     }
 
@@ -1464,8 +1466,9 @@ export class Game {
      *
      * Built here rather than stored as a content file, because it is the
      * COMBINATION of a weapon, the hand that swings it and the practice behind
-     * it: the stamina cost stays the hand's, while the damage, the reach, the
-     * accuracy and the time it takes all come from the steel and the arm.
+     * it: damage, reach, accuracy, swing time and now stamina cost all come
+     * from the steel and the arm. Weight-driven stamina stops heavy weapons
+     * from being spammed and pushes players to swap types mid-fight.
      */
     const inst = this.instanceOf(this.worn.weapon!);
     const stats = weaponStats(held, inst);
@@ -1488,6 +1491,7 @@ export class Game {
       kind: affix.bonusKind ?? load.weapon.kind,
       range: stats.reach,
       cost: swingCost(stats, this.player.attributes),
+      stamina: staminaCost(stats),
       applies: applies.length ? [...new Set(applies)] : undefined,
       // Procs from everything worn, so a ring of the tempest arcs lightning just
       // as a sword would. The weapon's own are already in here, via its slot.
@@ -1678,6 +1682,8 @@ export class Game {
       lines.push(["Damage", `${damageWith(stats, this.player.attributes, this.skillIn(stats.class)) + affix.bonusDamage} ${affix.bonusKind ?? "physical"}`]);
       lines.push(["Reach", `${stats.reach} square${stats.reach === 1 ? "" : "s"}`]);
       lines.push(["Swing", `${swingCost(stats, this.player.attributes).toFixed(2)} turns`]);
+      const stam = staminaCost(stats);
+      if (stam > 0) lines.push(["Stamina", `${stam} per swing`]);
       if (stats.twoHanded) lines.push(["Hands", "two"]);
     } else {
       if (def.armour) lines.push(["Armour", `+${def.armour}`]);
