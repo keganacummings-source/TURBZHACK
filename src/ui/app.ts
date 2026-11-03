@@ -238,13 +238,29 @@ export async function boot(): Promise<void> {
 
     const prog = game.progress;
     const companions = game.actors.filter((a) => a.alive && a.data["companion"]);
+    /*
+     * The party panel: each companion with a health bar and how it feels about
+     * you. A pet that follows you into a fight needs to be legible at a glance —
+     * is it hurt, is it hungry, is it about to leave — without opening a screen.
+     */
     const party = companions.length
-      ? `<div class="hud-row">${companions.map((c) => {
-          const st = companionState(c, game!.turn);
-          const hungry = companionHunger(c, game!.turn) > 0.5 ? " ·hungry" : "";
-          return `<span class="pip pip-companion" title="${escapeHtml(companionBond(st.bond))}">${
-            escapeHtml(c.name.split(" ")[0] ?? c.name)} L${st.level} ${Math.round(c.pools.hp)}/${Math.round(c.pools.hpMax)}${hungry}</span>`;
-        }).join("")}</div>`
+      ? `<div class="party">
+          <div class="party-head">Companions</div>
+          ${companions.map((c) => {
+            const st = companionState(c, game!.turn);
+            const frac = c.pools.hp / Math.max(1, c.pools.hpMax);
+            const band = frac > 0.5 ? "hp-ok" : frac > 0.25 ? "hp-low" : "hp-crit";
+            const word = companionBond(st.bond);
+            const bondCls = "bond-" + word.replace(/[^a-z]+/g, "-");
+            const hungry = companionHunger(c, game!.turn) > 0.5
+              ? ` <span class="pet-flag">hungry</span>` : "";
+            return `<div class="pet">
+              <span class="pet-name">${escapeHtml(c.name.split(" ")[0] ?? c.name)}<em>L${st.level}</em></span>
+              <span class="pet-bar"><span class="pet-fill ${band}" style="width:${Math.round(frac * 100)}%"></span></span>
+              <span class="pet-bond ${bondCls}">${escapeHtml(word)}</span>${hungry}
+            </div>`;
+          }).join("")}
+        </div>`
       : "";
     const here = game.place.kind === "overworld" ? game.villageHere : null;
     const lines = game.questLines();

@@ -9,7 +9,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { loadRegistry } from "./lib/harness.mts";
-import { generateContinent, BIOME_BY_ID, CONTINENT_W, CONTINENT_H } from "../src/world/continent.ts";
+import { generateContinent, placeLairs, BIOME_BY_ID, CONTINENT_W, CONTINENT_H } from "../src/world/continent.ts";
+import { Rng } from "../src/engine/rng.ts";
 import { generateDungeon, centreOf } from "../src/world/dungeon.ts";
 import type { Level } from "../src/engine/grid.ts";
 import type { TileDef } from "../src/content/schema.ts";
@@ -98,6 +99,80 @@ test("dungeons get deeper the further out they are", () => {
   const far = c.entrances.reduce((a, b) =>
     Math.hypot(a.pos.x - c.start.x, a.pos.y - c.start.y) > Math.hypot(b.pos.x - c.start.x, b.pos.y - c.start.y) ? a : b);
   assert.ok(far.depth > near.depth, `nearest is depth ${near.depth}, furthest is depth ${far.depth}`);
+});
+
+test("every world boss gets a lair on every seed, in a biome it belongs to", () => {
+  // The whole point: a boss's drops are unobtainable without its lair, so a seed
+  // that grew no Cinderland must be GIVEN one rather than skipping the Wyrm.
+  const bosses = [...reg.enemies.values()]
+    .filter((e) => e.boss)
+    .map((e) => ({ id: String(e.id), biomes: e.biomes, region: e.region }));
+  assert.ok(bosses.length >= 4, "there should be several world bosses");
+
+  for (const seed of [1, 2, 7, 13, 99, 2026]) {
+    const c = generateContinent(seed, tiles);
+    placeLairs(c, bosses, new Rng(seed ^ 0x1a2b), tiles);
+    const W = c.level.w;
+    const placed = new Set(c.lairs.map((l) => l.enemy));
+    for (const b of bosses) {
+      assert.ok(placed.has(b.id), `seed ${seed}: ${b.id} got no lair`);
+      const lair = c.lairs.find((l) => l.enemy === b.id)!;
+      assert.equal(c.level.solid(lair.pos.x, lair.pos.y), false, `seed ${seed}: ${b.id}'s lair is inside a wall`);
+      if (b.biomes?.length) {
+        const here = c.biome[lair.pos.y * W + lair.pos.x]!;
+        assert.ok(b.biomes.includes(here), `seed ${seed}: ${b.id} lairs on ${here}, not one of ${b.biomes.join(", ")}`);
+      }
+    }
+  }
+});
+
+test("villages are proper walled towns with reachable workshops", () => {
+  for (const seed of [1, 3, 7, 2026]) {
+    const c = generateContinent(seed, tiles);
+    assert.ok(c.villages.length >= 1, `seed ${seed}: no villages at all`);
+    const open = reachable(c.level, c.start);
+
+    for (const v of c.villages) {
+      // It is enclosed: a ring of wall around the plot, not just a patch of floor.
+      let walls = 0;
+      for (let dy = -5; dy <= 5; dy++) {
+        for (let dx = -7; dx <= 7; dx++) {
+          if (c.level.at(v.pos.x + dx, v.pos.y + dy)?.id === "wall-wood") walls++;
+        }
+      }
+      assert.ok(walls >= 12, `${v.name} has only ${walls} wall tiles — not a walled town`);
+
+      // Its centre is open, and every one of its stations can be stood beside
+      // from there — a forge you cannot reach is not a forge.
+      assert.equal(c.level.solid(v.pos.x, v.pos.y), false, `${v.name}'s centre is blocked`);
+      for (let dy = -5; dy <= 5; dy++) {
+        for (let dx = -7; dx <= 7; dx++) {
+          const x = v.pos.x + dx, y = v.pos.y + dy;
+          const station = reg.tiles.get(c.level.at(x, y)?.id ?? "")?.station;
+          if (!station) continue;
+          let beside = false;
+          for (let ey = -1; ey <= 1 && !beside; ey++) {
+            for (let ex = -1; ex <= 1 && !beside; ex++) {
+              if (!c.level.solid(x + ex, y + ey) && open.has(c.level.idx(x + ex, y + ey))) beside = true;
+            }
+          }
+          assert.ok(beside, `${v.name}'s ${station} cannot be reached`);
+        }
+      }
+    }
+  }
+});
+
+test("you never wake up inside a town", () => {
+  for (const seed of [1, 2, 3, 5, 7, 13, 99, 2026]) {
+    const c = generateContinent(seed, tiles);
+    // No village wall lands on you or your immediate surroundings.
+    for (const v of c.villages) {
+      assert.ok(Math.hypot(v.pos.x - c.start.x, v.pos.y - c.start.y) > 7,
+        `seed ${seed}: ${v.name} is built on top of where you start`);
+    }
+    assert.equal(c.level.solid(c.start.x, c.start.y), false, `seed ${seed}: you start in a wall`);
+  }
 });
 
 test("the same seed always builds the same continent", () => {

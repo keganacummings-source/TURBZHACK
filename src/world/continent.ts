@@ -94,6 +94,40 @@ export type Continent = {
 /** The most remote band. Band 0 is home. */
 export const REGION_BANDS = 5;
 
+/**
+ * Half-extent of a town, walls included.
+ *
+ * A market town fills the full plot; a hamlet is one column narrower. The middle
+ * three rows (|dy| <= 1) are always left open as the plaza, which is where the
+ * villagers and the market stand, so the huts only ever occupy the top and
+ * bottom bands.
+ */
+export const TOWN_HX = 6;
+export const TOWN_HY = 4;
+
+/**
+ * Raise one hut: a 3x3 wooden box with its floor inside and a door onto the
+ * plaza. A workshop gets its station on the inner floor, reachable from the
+ * doorway; a house is simply left empty.
+ */
+function buildHut(
+  level: Level, hcx: number, hcy: number, townCy: number,
+  wall: number, floor: number, station: number | null,
+): void {
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = hcx + dx, y = hcy + dy;
+      if (!level.inBounds(x, y)) continue;
+      level.set(x, y, dx === 0 && dy === 0 ? floor : wall, floor);
+    }
+  }
+  // The door faces the plaza — toward the centre of town — so the street reaches it.
+  const doorDy = hcy < townCy ? 1 : -1;
+  level.set(hcx, hcy + doorDy, floor, floor);
+  // The workshop's tool sits on the inner floor; a house keeps the open floor.
+  if (station !== null) level.set(hcx, hcy, station, floor);
+}
+
 /** A settlement. What it does decides what it has and what it wants. */
 export type Village = {
   pos: Pos;
@@ -351,18 +385,31 @@ function placeVillages(
 
   const fits = (cx: number, cy: number, maxFromStart: number): VillageTrade | null => {
     if (Math.hypot(cx - start.x, cy - start.y) > maxFromStart) return null;
-    if (Math.hypot(cx - start.x, cy - start.y) < 6) return null;   // not on your doorstep
+    // Far enough that no part of the town — walls, huts or the road out — can
+    // land on where you wake up. The footprint reaches TOWN_HX from its centre,
+    // so the centre has to clear that plus a little breathing room.
+    if (Math.hypot(cx - start.x, cy - start.y) < TOWN_HX + 8) return null;
     const here = biome[cy * w + cx] ?? "";
     const trades = tradesFor(here);
     if (!trades.length) return null;
-    // A clear patch, so the whole settlement fits without being carved into rock.
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dx = -5; dx <= 5; dx++) {
+    /*
+     * Room for the town. A frontier settlement clears a few trees to raise its
+     * walls, so a handful of solid tiles in the plot is fine and they are simply
+     * built over; but a plot that is mostly rock or runs off the map is not a
+     * place for a town. The core around the centre must be open, so the plaza and
+     * the gates are never cut into a cliff.
+     */
+    let blocked = 0;
+    for (let dy = -TOWN_HY; dy <= TOWN_HY; dy++) {
+      for (let dx = -TOWN_HX; dx <= TOWN_HX; dx++) {
         if (!level.inBounds(cx + dx, cy + dy)) return null;
-        if (level.solid(cx + dx, cy + dy)) return null;
+        if (!level.solid(cx + dx, cy + dy)) continue;
+        if (Math.abs(dx) <= 2 && Math.abs(dy) <= 2) return null;   // core must be clear
+        blocked++;
       }
     }
-    for (const v of out) if (Math.hypot(v.pos.x - cx, v.pos.y - cy) < 30) return null;
+    if (blocked > 14) return null;                                  // mostly rock: not here
+    for (const v of out) if (Math.hypot(v.pos.x - cx, v.pos.y - cy) < 32) return null;
 
     /*
      * Prefer a trade the world does not have yet.
@@ -381,37 +428,71 @@ function placeVillages(
     return rarest[rng.int(rarest.length)]!;
   };
 
+  const dirt = kind("dirt");
+  const well = kind("water");
+
+  /**
+   * Raise an actual settlement, not a paved rectangle.
+   *
+   * A town is a walled enclosure with a gate on each side, a paved plaza down
+   * the middle where the market and the townsfolk stand, a well, and a row of
+   * huts along the top and bottom — some of them the trade's workshops, with the
+   * forge or bench inside and a door onto the street, the rest plain houses. A
+   * market town is larger and has more of everything. The middle band is always
+   * left open, because that is where `spotInVillage` stands the villagers and
+   * where the player meets them.
+   */
   const build = (cx: number, cy: number, trade: VillageTrade) => {
-    // The ground: a paved square, with a low wooden wall along the top and
-    // bottom so it reads as a place rather than as a patch of different floor.
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dx = -4; dx <= 4; dx++) level.set(cx + dx, cy + dy, floor, floor);
-    }
-    for (let dx = -4; dx <= 4; dx++) {
-      if (dx === 0) continue;                       // leave a gap to walk through
-      level.set(cx + dx, cy - 2, wall, floor);
-      level.set(cx + dx, cy + 2, wall, floor);
+    const big = trade === "market";
+    const hx = big ? TOWN_HX : TOWN_HX - 1;   // half width; the market fills the plot
+    const hy = TOWN_HY;                        // half height
+
+    // 1. Pave the plaza.
+    for (let dy = -hy; dy <= hy; dy++) {
+      for (let dx = -hx; dx <= hx; dx++) level.set(cx + dx, cy + dy, floor, floor);
     }
 
+    // 2. A wall around it, with a gate centred on each side.
+    for (let dx = -hx; dx <= hx; dx++) {
+      if (Math.abs(dx) > 1) { level.set(cx + dx, cy - hy, wall, floor); level.set(cx + dx, cy + hy, wall, floor); }
+    }
+    for (let dy = -hy; dy <= hy; dy++) {
+      if (Math.abs(dy) > 1) { level.set(cx - hx, cy + dy, wall, floor); level.set(cx + hx, cy + dy, wall, floor); }
+    }
+
+    // 3. A well, off to one side of the plaza so it never blocks the meeting
+    //    ground at the centre.
+    level.set(cx - hx + 2, cy, well, floor);
+
     /*
-     * Stations, chosen by trade.
+     * 4. Stations, chosen by trade.
      *
      * Every village has a fire — somewhere to cook is the least a place can be —
      * and the other two depend on what it does. A mining camp has a forge
      * because it has the ore; a herbalist has a bench because that is where the
-     * brewing happens. That is also the reason to visit a particular village
-     * rather than the nearest one.
+     * brewing happens. That is the reason to visit a particular village rather
+     * than the nearest one.
      */
     const stations: string[] = ["campfire"];
     if (trade === "smithing" || trade === "mining" || trade === "market") stations.push("forge");
     if (trade === "herbalism" || trade === "logging" || trade === "market") stations.push("workbench");
     if (stations.length < 2) stations.push(rng.next() < 0.5 ? "forge" : "workbench");
 
-    const spots: [number, number][] = [[-3, 0], [3, 0], [0, -1], [0, 1]];
-    stations.forEach((id, i) => {
-      const [dx, dy] = spots[i] ?? [0, 0];
-      level.set(cx + dx, cy + dy, kind(id), floor);
+    /*
+     * 5. Huts along the top and bottom bands. The first few hold the stations
+     * (a workshop with the tool inside and a door onto the plaza); the rest are
+     * houses. A hut is a 3x3 box, so it sits clear of the open middle band.
+     */
+    const row = big ? [-hx + 2, 0, hx - 2] : [-hx + 2, hx - 2];
+    const hutSpots: [number, number][] = [];
+    for (const dx of row) hutSpots.push([dx, -hy + 1], [dx, hy - 1]);
+    hutSpots.forEach(([hxc, hyc], i) => {
+      const station = stations[i];
+      buildHut(level, cx + hxc, cy + hyc, cy, wall, floor, station ? kind(station) : null);
     });
+
+    // 6. A short dirt approach out of the south gate, so the town has a road in.
+    for (let s = 1; s <= 4; s++) level.set(cx, cy + hy + s, dirt, dirt);
 
     out.push({
       pos: { x: cx, y: cy },
@@ -486,50 +567,159 @@ function measureRegions(level: Level, start: Pos, w: number, h: number): Uint8Ar
 }
 
 /**
- * Give every world boss a lair.
+ * Give every world boss a lair — every boss, on every seed.
  *
  * Done here, once, rather than in the population pass, so a boss is in the same
- * place every time you load the seed and killing one is permanent. Each is put
- * in a biome its own file lists, as far out as the map allows, and never within
- * sight of where you woke up.
+ * place every time you load the seed and killing one is permanent.
  *
- * A boss with nowhere to live is dropped rather than squeezed in somewhere
- * wrong: a Cinder Wyrm on a seed with no Cinderland should not turn up in a
- * meadow. The wiki says where each one lives, so an absence is explicable.
+ * The rule that matters most: a boss ALWAYS gets a lair, because its drops are
+ * the only source of the artefacts worth the run, and a seed that happens not to
+ * grow a Cinderland must not make Ashmaw's Fang unobtainable. So a boss is placed
+ * in a biome its file lists whenever the seed grew one — as far out as the map
+ * allows, never within sight of home — and when the seed grew none, the world is
+ * given a pocket of that biome, far out, with the boss in it. You still find the
+ * Cinder Wyrm on scorched ground; the ground was simply made for it.
  */
 export function placeLairs(
   c: Continent,
   bosses: { id: string; biomes?: string[]; region?: { min?: number; max?: number } }[],
   rng: Rng,
+  tiles?: Map<string, TileDef>,
 ): void {
   const w = c.level.w;
   c.lairs = [];
   const taken = new Set<number>();
 
   for (const boss of bosses) {
-    const wants = new Set(boss.biomes ?? []);
+    const wants = boss.biomes ?? [];
     const minBand = boss.region?.min ?? 3;
-    let best: { pos: Pos; score: number } | null = null;
 
-    // A bounded sample rather than a full scan: 4,000 tries over 38,400 tiles
-    // finds a good lair without making world generation visibly slower.
-    for (let t = 0; t < 4000; t++) {
-      const x = rng.int(c.level.w), y = rng.int(c.level.h);
-      const i = y * w + x;
-      if (taken.has(i)) continue;
-      if (c.level.solid(x, y)) continue;
-      if (wants.size && !wants.has(c.biome[i]!)) continue;
-      if (c.region[i]! < minBand) continue;
-      if (Math.hypot(x - c.start.x, y - c.start.y) < 40) continue;
-      const score = c.region[i]! * 1000 + rng.int(1000);
-      if (!best || score > best.score) best = { pos: { x, y }, score };
-    }
+    // In its own biome if the seed has one going spare; otherwise a pocket of it
+    // is carved far out, so the lair is themed either way and always exists.
+    const present = wants.filter((b) => biomePresent(c, b, taken));
+    const spot = (wants.length === 0 || present.length)
+      ? findLairSpot(c, new Set(present.length ? present : wants), minBand, taken, rng)
+      : (tiles ? carveLairPocket(c, wants[0]!, minBand, taken, rng, tiles) : null)
+        // No tiles to paint with, or no room to paint: take the best open ground.
+        ?? findLairSpot(c, new Set(), 0, taken, rng);
 
-    if (!best) continue;
-    taken.add(best.pos.y * w + best.pos.x);
-    c.lairs.push({ pos: best.pos, enemy: boss.id });
+    const where = spot ?? findLairSpot(c, new Set(), 0, taken, rng);
+    if (!where) continue;             // a map with no open land at all: impossible in practice
+    taken.add(where.y * w + where.x);
+    c.lairs.push({ pos: where, enemy: boss.id });
   }
 }
+
+/** Is there open, unclaimed ground of this biome, out of sight of home? */
+function biomePresent(c: Continent, biome: string, taken: Set<number>): boolean {
+  const w = c.level.w;
+  for (let i = 0; i < c.biome.length; i++) {
+    if (c.biome[i] !== biome || taken.has(i)) continue;
+    const x = i % w, y = (i / w) | 0;
+    if (c.level.solid(x, y)) continue;
+    if (Math.hypot(x - c.start.x, y - c.start.y) < 24) continue;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * The best open tile for a lair, preferring the right biome, then remoteness.
+ *
+ * Scored so the preference is total: a tile of the wanted biome always beats one
+ * that is not, a deep tile beats a shallow one, and distance from home breaks the
+ * rest. `wants` empty means any biome will do, which is the last-ditch call.
+ */
+function findLairSpot(
+  c: Continent, wants: Set<string>, minBand: number, taken: Set<number>, rng: Rng,
+): Pos | null {
+  const w = c.level.w;
+  let best: { pos: Pos; score: number } | null = null;
+  for (let t = 0; t < 6000; t++) {
+    const x = rng.int(c.level.w), y = rng.int(c.level.h);
+    const i = y * w + x;
+    if (taken.has(i) || c.level.solid(x, y)) continue;
+    const dist = Math.hypot(x - c.start.x, y - c.start.y);
+    if (dist < 16) continue;                               // never on your doorstep
+    const biomeOk = !wants.size || wants.has(c.biome[i]!);
+    const bandOk = c.region[i]! >= minBand;
+    const farOk = dist >= 40;
+    const score = (biomeOk ? 4000 : 0) + (bandOk ? 2000 : 0) + (farOk ? 1000 : 0)
+      + c.region[i]! * 100 + rng.int(100);
+    if (!best || score > best.score) best = { pos: { x, y }, score };
+  }
+  return best?.pos ?? null;
+}
+
+/**
+ * Carve a pocket of a biome far out, for a boss whose home the seed did not grow.
+ *
+ * A rough blob of the biome's own ground with its scenery scattered through it,
+ * big enough to read as a place when you arrive. The `biome` array is updated to
+ * match, so the lair names itself correctly and the right wildlife spawns around
+ * it. Placed far from home and from the other lairs, on whatever open ground is
+ * least like what the biome should be — so a patch of Cinderland does not land in
+ * the middle of a town.
+ */
+function carveLairPocket(
+  c: Continent, biomeId: string, minBand: number, taken: Set<number>, rng: Rng,
+  tiles: Map<string, TileDef>,
+): Pos | null {
+  const b = BIOME_BY_ID.get(biomeId);
+  if (!b) return null;
+  const w = c.level.w, h = c.level.h;
+
+  // A far, open, deep-ish centre with room around it.
+  let centre: Pos | null = null;
+  let bestScore = -1;
+  for (let t = 0; t < 6000; t++) {
+    const x = 6 + rng.int(w - 12), y = 6 + rng.int(h - 12);
+    const i = y * w + x;
+    if (taken.has(i) || c.level.solid(x, y)) continue;
+    const dist = Math.hypot(x - c.start.x, y - c.start.y);
+    if (dist < 40) continue;
+    // Not on water, and with a clear-ish surround so the pocket is walkable.
+    if (isWater(c.biome[i]!)) continue;
+    const score = c.region[i]! * 100 + dist + rng.int(50);
+    if (score > bestScore) { bestScore = score; centre = { x, y }; }
+  }
+  if (!centre) return null;
+
+  const kindOf = (id: string): number => {
+    const def = tiles.get(id);
+    return c.level.kindIndex({
+      id, name: def?.name ?? id, solid: def?.solid ?? false,
+      opaque: def?.opaque ?? false, sprite: def?.sprite ?? id, cost: def?.cost, on: def?.on,
+    });
+  };
+  const ground = kindOf(b.ground);
+  const patch = b.patch ? kindOf(b.patch) : ground;
+  const block = b.block ? kindOf(b.block) : ground;
+
+  const radius = 4;
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const x = centre.x + dx, y = centre.y + dy;
+      if (!c.level.inBounds(x, y)) continue;
+      // A soft round edge, and never paint over water or an existing structure.
+      if (Math.hypot(dx, dy) > radius + rng.next() * 0.6) continue;
+      const i = y * w + x;
+      if (isWater(c.biome[i]!)) continue;
+      const r = rng.next();
+      const near = Math.hypot(dx, dy) < radius - 1;
+      const id = near && b.block && r > 1 - (b.density ?? 0) ? block
+        : b.patch && r < 0.12 ? patch : ground;
+      const under = id === block ? ground : id;
+      c.level.set(x, y, id, under);
+      c.biome[i] = biomeId;
+    }
+  }
+  // The centre itself is kept walkable, so the boss is never sealed in rock.
+  c.level.set(centre.x, centre.y, ground, ground);
+  return centre;
+}
+
+const isWater = (b: string): boolean => b === "ocean" || b === "shallows" || b === "beach";
 
 /** The biome for a patch of land, from its height above sea, warmth and wet. */
 /**
