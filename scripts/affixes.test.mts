@@ -29,7 +29,7 @@ test("the affix table has prefixes and suffixes, all well-formed", () => {
     const does = effect.armour || effect.might || effect.bonusDamage || effect.evasion
       || effect.accuracy || effect.hpMax || effect.manaMax || effect.speed
       || Object.keys(effect.attributes).length || Object.keys(effect.resist).length
-      || effect.applies.length;
+      || effect.applies.length || effect.procs.length || effect.extraMove;
     assert.ok(does, `affix ${id} does nothing`);
   }
   assert.ok(prefixes >= 5 && suffixes >= 5, `${prefixes} prefixes, ${suffixes} suffixes`);

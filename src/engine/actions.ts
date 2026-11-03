@@ -14,7 +14,7 @@ import { applyDamage, rollToHit } from "./combat.ts";
 import { distance, hasLineOfSight, line, type Level } from "./grid.ts";
 import type { Rng } from "./rng.ts";
 import { applyStatus, type StatusDef } from "./status.ts";
-import type { AbilityDef, SpellDef } from "../content/schema.ts";
+import type { AbilityDef, ProcDef, SpellDef } from "../content/schema.ts";
 import type { ActionResult, DamageKind, Pos } from "./types.ts";
 
 /** Everything an action needs to reach. */
@@ -175,8 +175,123 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   });
   messages.push(...out.messages);
   messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, target, out.dealt));
+  if (def.procs?.length) {
+    messages.push(...fireProcs(def.procs, ctx, actor, target, out.dealt, (def.kind ?? "physical") as DamageKind));
+  }
 
   return { tookTurn: true, cost, messages };
+}
+
+/** Which side an actor fights for — the player and tamed pets against everything else. */
+function playerSide(a: Actor): boolean {
+  return !!a.isPlayer || !!a.data?.["companion"];
+}
+
+/**
+ * Is `a` a legitimate victim of `attacker`'s on-hit effect?
+ *
+ * The two must be on opposite sides, and when the player is swinging, only
+ * creatures that are actually hostile count — a chain-lightning sword must not
+ * arc into a villager standing behind the goblin you meant to hit.
+ */
+function procHostile(a: Actor, attacker: Actor): boolean {
+  if (!a.alive || a === attacker) return false;
+  if (playerSide(a) === playerSide(attacker)) return false;
+  return playerSide(attacker) ? a.stance === "hostile" : true;
+}
+
+/**
+ * Fire a weapon's on-hit effects after a landed blow.
+ *
+ * Kept wholly data-driven: the effect is read off the `ProcDef` the affix
+ * carried, so a new kind of enchantment is a content file, not a branch here —
+ * the same rule the rest of the engine lives by. `dealt` is the damage the main
+ * blow did, which lifesteal leeches from; `weaponKind` is the fallback element
+ * for a proc that does not name its own.
+ */
+function fireProcs(
+  procs: ProcDef[], ctx: ActionCtx, actor: Actor, target: Actor,
+  dealt: number, weaponKind: DamageKind,
+): NonNullable<ActionResult["messages"]> {
+  const out: NonNullable<ActionResult["messages"]> = [];
+  for (const p of procs) {
+    if ((p.chance ?? 1) < 1 && ctx.rng.next() > (p.chance ?? 1)) continue;
+    const kind = (p.dkind ?? weaponKind) as DamageKind;
+    const dmg = p.damage ?? 0;
+
+    switch (p.kind) {
+      case "lifesteal": {
+        const back = Math.max(1, Math.round(dealt * (p.leech ?? 0.2)));
+        const got = actor.heal(back);
+        if (got > 0) out.push({ text: say(p.say ?? "{caster} drain{s} life from the blow.", actor, target), tone: "magic" });
+        break;
+      }
+      case "execute": {
+        if (target.alive && target.pools.hp <= target.pools.hpMax * (p.threshold ?? 0.2)) {
+          const o = applyDamage(target, { amount: target.pools.hp + 1, kind: "pure", source: actor, label: p.say ?? "execution" });
+          out.push({ text: say(p.say ?? "{caster} finish{es} {target}.", actor, target), tone: "magic" });
+          out.push(...o.messages);
+        }
+        break;
+      }
+      case "knockback": {
+        shove(ctx, actor, target);
+        out.push({ text: say(p.say ?? "{target} is flung back.", actor, target), tone: "plain" });
+        break;
+      }
+      case "stun": {
+        out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, target, dmg || dealt));
+        if (p.say) out.push({ text: say(p.say, actor, target), tone: "magic" });
+        break;
+      }
+      case "chain": {
+        // Leap from the struck creature to the nearest others, in turn.
+        const jumps = p.jumps ?? 2;
+        let from = target;
+        const hit = new Set<string>([target.id]);
+        const caught: Actor[] = [];
+        for (let j = 0; j < jumps; j++) {
+          const next = ctx.actors
+            .filter((a) => procHostile(a, actor) && !hit.has(a.id) && distance(a.pos, from.pos) <= 3)
+            .sort((a, b) => distance(a.pos, from.pos) - distance(b.pos, from.pos))[0];
+          if (!next) break;
+          hit.add(next.id);
+          caught.push(next);
+          const o = applyDamage(next, { amount: dmg, kind, source: actor, label: p.say ?? "arc" });
+          out.push(...o.messages);
+          out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, next, dmg));
+          from = next;
+        }
+        if (caught.length) out.push({ text: say(p.say ?? "The strike arcs onward.", actor, target), tone: "magic" });
+        break;
+      }
+      case "burst":
+      case "cleave": {
+        const origin = p.kind === "cleave" ? actor.pos : target.pos;
+        const radius = p.kind === "cleave" ? 1 : (p.radius ?? 1);
+        const caught = ctx.actors.filter(
+          (a) => procHostile(a, actor) && a !== target && distance(a.pos, origin) <= radius);
+        for (const v of caught) {
+          const o = applyDamage(v, { amount: dmg, kind, source: actor, label: p.say ?? p.kind });
+          out.push(...o.messages);
+          out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, v, dmg));
+        }
+        if (caught.length && p.say) out.push({ text: say(p.say, actor, target), tone: "magic" });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/** Shove a creature one tile directly away from the attacker, if the tile is free. */
+function shove(ctx: ActionCtx, attacker: Actor, target: Actor): void {
+  const dx = Math.sign(target.pos.x - attacker.pos.x);
+  const dy = Math.sign(target.pos.y - attacker.pos.y);
+  if (!dx && !dy) return;
+  const nx = target.pos.x + dx, ny = target.pos.y + dy;
+  if (ctx.level.solid(nx, ny) || actorAt(ctx.actors, nx, ny)) return;
+  target.pos = { x: nx, y: ny };
 }
 
 /**

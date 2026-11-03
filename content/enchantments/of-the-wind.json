@@ -1,0 +1,10 @@
+{
+  "name": "of the Wind",
+  "place": "suffix",
+  "slots": ["feet"],
+  "tier": 3,
+  "weight": 4,
+  "extraMove": 0.5,
+  "modify": { "evasion": 5 },
+  "about": "Half your steps come free. You move through a fight twice as fast as it expects."
+}

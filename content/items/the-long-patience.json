@@ -2,13 +2,14 @@
   "name": "The Long Patience",
   "sprite": "wpn-spear",
   "slot": "weapon",
-  "about": "A spear that has waited longer than the hills.",
-  "damage": 18,
+  "about": "A spear that has waited longer than the hills. When it finally moves, it moves through everything.",
+  "damage": 20,
   "kind": "physical",
-  "accuracy": 10,
+  "accuracy": 12,
   "unique": true,
+  "enchantments": ["reaving", "of-reckoning"],
   "source": "Dropped by Stonefather Urn in the Crags.",
   "weaponClass": "polearm",
   "material": "meteoric",
-  "value": 2200
+  "value": 3400
 }

@@ -18,7 +18,7 @@ import { menuHtml, controlsHtml, savesHtml } from "./menu.ts";
 import { indexWiki, wikiHtml, type WikiSection } from "./wiki.ts";
 import { menuAt, type ContextMenu } from "./context.ts";
 import { marketHtml, questsHtml, talkHtml } from "./village.ts";
-import { ATTRIBUTES, ATTRIBUTE_INFO, explainPoint, type AttributeId } from "../engine/attributes.ts";
+import { ATTRIBUTES, ATTRIBUTE_BASE, ATTRIBUTE_INFO, derive, explainPoint, type AttributeId, type Attributes } from "../engine/attributes.ts";
 import { WEAPON_CLASS } from "../engine/weapons.ts";
 import { bondWord as companionBond, hunger as companionHunger, stateOf as companionState } from "../engine/companions.ts";
 import { newMotion, noteMoves, moving } from "../render/motion.ts";
@@ -75,6 +75,9 @@ export async function boot(): Promise<void> {
 
   /** Where to go back to when a sub-screen is closed. */
   let menuReturn: Screen = "play";
+
+  /** The item (handle or base id) whose full stats are open on the pack screen. */
+  let packDetail: string | null = null;
 
   /**
    * Save the run to the autosave slot.
@@ -630,12 +633,38 @@ export async function boot(): Promise<void> {
 
     const sp = reg.species.get(pickedSpecies);
     const bg = reg.classes.get(pickedBg);
-    // Mirrors the floor in Game.makeCharacter: two sets of penalties stack, and
-    // a negative pool on the sheet is a lie about what you are about to play.
-    const pool = (base: number, k: "hp" | "stamina" | "mana") =>
-      Math.max(k === "hp" ? 1 : 0, base + (sp?.pools?.[k] ?? 0) + (bg?.pools?.[k] ?? 0));
+
+    /*
+     * The attributes you actually start with: ten, plus the species' and the
+     * background's differences, which add. This is the same sum Game.makeCharacter
+     * does, so the sheet is a promise the run keeps rather than a flat 10/10/10.
+     */
+    const attrValue = (id: AttributeId) =>
+      ATTRIBUTE_BASE
+      + ((sp?.attributes as Record<string, number> | undefined)?.[id] ?? 0)
+      + ((bg?.attributes as Record<string, number> | undefined)?.[id] ?? 0);
+    const attrs = Object.fromEntries(ATTRIBUTES.map((id) => [id, attrValue(id)])) as Attributes;
+    const d = derive(attrs);
+
+    // Pools the way the game builds them: a base, plus the species' and
+    // background's own pool blocks (mods still work), plus what the attributes
+    // are worth. Endurance, Strength and Wits move these, so two builds no longer
+    // read as an identical 100/100/50 when they play nothing alike.
+    const pool = (base: number, k: "hp" | "stamina" | "mana", bonus: number) =>
+      Math.max(k === "hp" ? 1 : 0, base + (sp?.pools?.[k] ?? 0) + (bg?.pools?.[k] ?? 0) + bonus);
     const named = (ids: string[], from: Map<string, { name?: string }>) =>
       ids.map((i) => escapeHtml(from.get(i)?.name ?? i)).join(", ") || "\u2014";
+
+    // One cell per attribute, marking what the choice raised or lowered.
+    const attrRow = ATTRIBUTES.map((id) => {
+      const v = attrValue(id);
+      const delta = v - ATTRIBUTE_BASE;
+      const tone = delta > 0 ? "attr-up" : delta < 0 ? "attr-down" : "";
+      return `<span class="attr ${tone}" title="${escapeHtml(ATTRIBUTE_INFO[id].about)}">
+        <span class="attr-short">${ATTRIBUTE_INFO[id].short}</span>
+        <span class="attr-val">${v}</span>
+      </span>`;
+    }).join("");
 
     $("class-cards").innerHTML = `
       <div class="creation">
@@ -652,10 +681,11 @@ export async function boot(): Promise<void> {
           <div class="sheet-art">${sprite(pickedSpecies, sp?.sprite ?? `pc-${pickedSpecies}`)}</div>
           <p>${escapeHtml(sp?.blurb ?? sp?.about ?? "")}</p>
           <p class="dim">${escapeHtml(bg?.blurb ?? bg?.about ?? "")}</p>
+          <div class="attr-row">${attrRow}</div>
           <table class="sheet">
-            <tr><td>Health</td><td>${pool(100, "hp")}</td></tr>
-            <tr><td>Stamina</td><td>${pool(100, "stamina")}</td></tr>
-            <tr><td>Mana</td><td>${pool(50, "mana")}</td></tr>
+            <tr><td>Health</td><td>${pool(100, "hp", d.hpBonus)}</td></tr>
+            <tr><td>Stamina</td><td>${pool(100, "stamina", d.staminaBonus)}</td></tr>
+            <tr><td>Mana</td><td>${pool(50, "mana", d.manaBonus)}</td></tr>
             <tr><td>Spells</td><td>${named([...(sp?.spells ?? []), ...(bg?.spells ?? [])], reg.spells)}</td></tr>
             <tr><td>Kit</td><td>${named(bg?.items ?? [], reg.items)}</td></tr>
           </table>
@@ -742,13 +772,18 @@ export async function boot(): Promise<void> {
    */
   const packHtml = () => {
     if (!game) return "";
-    const items = reg.items;
+    // A detail panel for whatever item is open, if it is still here. A worn item
+    // taken off and dropped leaves nothing to show, so the panel closes itself.
+    const detailExists = packDetail !== null
+      && (SLOTS.some((s) => game!.worn[s] === packDetail) || game!.pack.includes(packDetail));
+    if (!detailExists) packDetail = null;
+
     const wornRows = SLOTS.map((slot) => {
       const id = game!.worn[slot];
       const item = id ? game!.itemDef(id) : undefined;
-      return `<tr>
+      return `<tr${id && id === packDetail ? ' class="row-open"' : ""}>
         <td class="dim">${SLOT_NAME[slot]}</td>
-        <td>${item ? escapeHtml(game!.displayName(id!)) : '<span class="dim">—</span>'}</td>
+        <td>${item ? `<button class="link" data-detail="${escapeHtml(id!)}">${escapeHtml(game!.displayName(id!))}</button>` : '<span class="dim">—</span>'}</td>
         <td class="choice-detail">${item ? escapeHtml(game!.describeItem(id!)) : ""}</td>
         <td>${item ? `<button data-off="${slot}">take off</button>` : ""}</td>
       </tr>`;
@@ -771,9 +806,9 @@ export async function boot(): Promise<void> {
           const inst = game!.instanceOf(id);
           const name = game!.displayName(id);
           const wearable = !!item.slot && !["potion", "scroll", "misc", "material", "food"].includes(item.slot);
-          return `<tr>
+          return `<tr${id === packDetail ? ' class="row-open"' : ""}>
             <td class="dim">${n > 1 && !inst ? `×${n}` : ""}</td>
-            <td>${escapeHtml(name)}</td>
+            <td><button class="link" data-detail="${escapeHtml(id)}">${escapeHtml(name)}</button></td>
             <td class="choice-detail">${escapeHtml(game!.describeItem(id))}</td>
             <td>
               ${wearable ? `<button data-wear="${id}">wear</button>` : ""}
@@ -788,7 +823,38 @@ export async function boot(): Promise<void> {
       <table class="pack-table">${wornRows}</table>
       <h2>Pack</h2>
       <table class="pack-table">${packRows}</table>
-      <p class="dim">i or Esc closes. g picks up what you are standing on.</p>`;
+      ${packDetail ? itemDetailHtml(packDetail) : ""}
+      <p class="dim">Click an item to see everything about it. i or Esc closes. g picks up what you are standing on.</p>`;
+  };
+
+  /**
+   * The full read-out for one item: its numbers in the player's hands, and every
+   * enchantment on it spelled out. This is the answer to "what does this actually
+   * do", which a one-line summary can never fully give for a piece with affixes.
+   */
+  const itemDetailHtml = (id: string) => {
+    if (!game) return "";
+    const d = game.itemDetail(id);
+    const stat = d.lines
+      .map(([k, v]) => `<tr><td class="dim">${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
+      .join("");
+    const affixes = d.affixes.length
+      ? `<h3>Enchantments</h3>` + d.affixes.map((a) => `
+          <div class="affix">
+            <span class="affix-name">${escapeHtml(a.name)}</span>
+            ${a.effect ? `<span class="affix-effect">${escapeHtml(a.effect)}</span>` : ""}
+            ${a.about ? `<p class="dim">${escapeHtml(a.about)}</p>` : ""}
+          </div>`).join("")
+      : "";
+    return `<div class="item-detail">
+      <button class="detail-close" data-detail-close="1">×</button>
+      <h2>${escapeHtml(d.name)}${d.unique ? ' <span class="unique-tag">unique</span>' : ""}</h2>
+      ${d.about ? `<p class="dim">${escapeHtml(d.about)}</p>` : ""}
+      <table class="detail-table">${stat}
+        <tr><td class="dim">Worth</td><td>${d.worth} coin</td></tr>
+      </table>
+      ${affixes}
+    </div>`;
   };
 
   const deadHtml = () => {
@@ -1140,6 +1206,14 @@ export async function boot(): Promise<void> {
     if (reforgeBtn && game) { game.reforge(reforgeBtn.dataset.reforge!, { item: "iron-ingot", amount: 1 }); render(); return; }
 
     if (game) {
+      const detail = t.closest<HTMLElement>("[data-detail]");
+      if (detail) {
+        const id = detail.dataset.detail!;
+        packDetail = packDetail === id ? null : id;
+        render();
+        return;
+      }
+      if (t.closest("[data-detail-close]")) { packDetail = null; render(); return; }
       const wear = t.closest<HTMLElement>("[data-wear]");
       const off = t.closest<HTMLElement>("[data-off]");
       const use = t.closest<HTMLElement>("[data-use]");

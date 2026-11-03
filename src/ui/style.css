@@ -249,6 +249,39 @@ body.designer-open { overflow: hidden; }
 .pack-table td { padding: 4px 10px 4px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
 .pack-table td:last-child { text-align: right; white-space: nowrap; }
 .pack-table button { font-size: 15px; padding: 2px 7px; margin-left: 4px; }
+/* An item name is a button that opens its detail panel — a link, not a box. */
+.pack-table button.link {
+  background: none; border: none; padding: 0; margin: 0;
+  color: var(--bone); font: inherit; cursor: pointer; text-align: left;
+  border-bottom: 1px dotted var(--line-bright);
+}
+.pack-table button.link:hover { color: var(--kyo); border-bottom-color: var(--kyo); }
+.pack-table tr.row-open { background: var(--panel-2); }
+
+/* --- item detail panel --------------------------------------------------- */
+.item-detail {
+  position: relative;
+  background: var(--panel-2); border: 2px solid var(--line-bright);
+  border-radius: var(--radius); padding: 12px 14px; margin: 6px 0 14px;
+}
+.item-detail h2 { margin-bottom: 8px; }
+.unique-tag {
+  font-size: 8px; color: var(--magic); border: 1px solid var(--magic);
+  border-radius: var(--radius); padding: 1px 5px; vertical-align: middle;
+}
+.detail-table { width: 100%; margin: 8px 0; }
+.detail-table td { padding: 2px 10px 2px 0; }
+.detail-table td.dim { width: 38%; }
+.detail-close {
+  position: absolute; top: 8px; right: 8px;
+  font-size: 15px; padding: 0 8px; line-height: 1.4;
+}
+.affix {
+  border-left: 2px solid var(--magic); padding: 2px 0 2px 10px; margin: 6px 0;
+}
+.affix-name { color: var(--magic); margin-right: 8px; }
+.affix-effect { color: var(--bone); font-size: 12px; }
+.affix p { margin: 2px 0 0; }
 
 /* VT323 sizes, applied only when the face actually loaded (see app.ts). */
 .webfont input,
@@ -299,6 +332,21 @@ body.designer-open { overflow: hidden; }
 .webfont .creation-sheet p { font-size: 17px; }
 .sheet-art { margin: 2px 0 10px; }
 .sheet-art img { width: 48px; height: 48px; image-rendering: pixelated; }
+/* The six attributes, as a compact row of cells, each marked up or down. */
+.attr-row { display: flex; gap: 5px; margin: 4px 0 6px; }
+.attr {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 4px 0; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel);
+}
+.attr-short { font-size: 8px; color: var(--dim); letter-spacing: .06em; }
+.webfont .attr-short { font-size: 12px; }
+.attr-val { font-size: 14px; color: var(--bone); }
+.webfont .attr-val { font-size: 17px; }
+.attr.attr-up { border-color: var(--good); }
+.attr.attr-up .attr-val { color: var(--good); }
+.attr.attr-down { border-color: var(--blood); }
+.attr.attr-down .attr-val { color: var(--bad); }
 table.sheet { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 12px; }
 .webfont table.sheet { font-size: 17px; }
 table.sheet td { padding: 3px 0; vertical-align: top; }

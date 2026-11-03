@@ -1,0 +1,12 @@
+{
+  "name": "Executioner's",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 3,
+  "weight": 3,
+  "bonusDamage": 3,
+  "procs": [
+    { "kind": "execute", "threshold": 0.22, "say": "A clean end." }
+  ],
+  "about": "It knows when a thing is already beaten, and finishes it."
+}

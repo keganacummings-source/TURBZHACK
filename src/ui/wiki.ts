@@ -12,17 +12,19 @@
  * every enemy whose drop table mentions it, and that is how it is found here.
  */
 import type { Registry } from "../content/registry.ts";
-import type { EnemyDef, ItemDef, RecipeDef, SpellDef, TileDef } from "../content/schema.ts";
+import type { EnchantmentDef, EnemyDef, ItemDef, ProcDef, RecipeDef, SpellDef, TileDef } from "../content/schema.ts";
 import { describe } from "../engine/equipment.ts";
+import { ATTRIBUTES, ATTRIBUTE_BASE, ATTRIBUTE_INFO, derive, type Attributes, type AttributeId } from "../engine/attributes.ts";
 
 const esc = (s: string): string =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
 
-export type WikiSection = "enemies" | "items" | "spells" | "species" | "classes" | "recipes" | "tiles";
+export type WikiSection = "enemies" | "items" | "enchantments" | "spells" | "species" | "classes" | "recipes" | "tiles";
 
 export const SECTIONS: { id: WikiSection; name: string }[] = [
   { id: "enemies", name: "Bestiary" },
   { id: "items", name: "Items" },
+  { id: "enchantments", name: "Enchantments" },
   { id: "recipes", name: "Recipes" },
   { id: "spells", name: "Spells" },
   { id: "species", name: "Species" },
@@ -54,6 +56,7 @@ export function indexWiki(reg: Registry): WikiEntry[] {
   };
   add("enemies", reg.enemies as never);
   add("items", reg.items as never);
+  add("enchantments", reg.enchantments as never);
   add("recipes", reg.recipes as never);
   add("spells", reg.spells as never);
   add("species", reg.species as never);
@@ -125,6 +128,49 @@ function recipesFor(reg: Registry, itemId: string): { makes: string[]; uses: str
   return { makes, uses };
 }
 
+/** One on-hit effect, in words. Mirrors the in-game detail panel. */
+function procWords(p: ProcDef): string {
+  const chance = (p.chance ?? 1) < 1 ? `${Math.round((p.chance ?? 1) * 100)}% on hit: ` : "on hit: ";
+  const dmg = p.damage ? `${p.damage} ${p.dkind ?? "matching"} ` : "";
+  switch (p.kind) {
+    case "chain": return `${chance}arcs ${dmg}to ${p.jumps ?? 2} more foes`;
+    case "burst": return `${chance}bursts ${dmg}around the target`;
+    case "cleave": return `${chance}cleaves ${dmg}all around you`;
+    case "lifesteal": return `heals ${Math.round((p.leech ?? 0.2) * 100)}% of damage dealt`;
+    case "execute": return `${chance}finishes foes under ${Math.round((p.threshold ?? 0.2) * 100)}% health`;
+    case "knockback": return `${chance}knocks the target back`;
+    case "stun": return `${chance}applies ${p.applies?.join(", ") ?? "a status"}`;
+    default: return "on hit: something happens";
+  }
+}
+
+/** Everything an enchantment does, spelled out from its own fields. */
+function enchantWords(reg: Registry, a: EnchantmentDef): string[] {
+  const out: string[] = [];
+  const m = a.modify ?? {};
+  const label: Record<string, string> = {
+    armour: "armour", might: "ability damage", focus: "spell damage",
+    accuracy: "% hit", evasion: "% dodge", hpMax: "health",
+    staminaMax: "stamina", manaMax: "mana", speed: "speed",
+  };
+  for (const [k, v] of Object.entries(m)) {
+    if (typeof v !== "number" || !v) continue;
+    out.push(`${v > 0 ? "+" : ""}${v} ${label[k] ?? k}`);
+  }
+  for (const [k, v] of Object.entries(a.attributes ?? {})) {
+    if (typeof v === "number" && v) out.push(`${v > 0 ? "+" : ""}${v} ${k}`);
+  }
+  if (a.bonusDamage) out.push(`+${a.bonusDamage} ${a.bonusKind ?? "physical"} on every hit`);
+  for (const s of a.applies ?? []) out.push(`attacks apply ${reg.statuses.get(s)?.name ?? s}`);
+  for (const [k, v] of Object.entries(a.resist ?? {})) {
+    if (typeof v !== "number") continue;
+    out.push(`${k} ${v === 0 ? "immunity" : v < 1 ? `${Math.round((1 - v) * 100)}% resisted` : `${Math.round((v - 1) * 100)}% more taken`}`);
+  }
+  if (a.extraMove) out.push(a.extraMove >= 1 ? "a free step every move" : `${Math.round(a.extraMove * 100)}% chance of a free step`);
+  for (const p of a.procs ?? []) out.push(procWords(p));
+  return out;
+}
+
 const facts = (rows: [string, string][]): string =>
   `<table class="sheet">${rows.filter(([, v]) => v).map(([k, v]) =>
     `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join("")}</table>`;
@@ -177,6 +223,12 @@ export function pageHtml(reg: Registry, section: WikiSection, id: string): strin
     const from = droppedBy(reg, id);
     const dug = harvestedFrom(reg, id);
     const { makes, uses } = recipesFor(reg, id);
+    // On-hit effects and bonuses that are part of the item itself (a named
+    // artifact's signature), rather than rolled onto a copy of it.
+    const baked = (it.enchantments ?? []).flatMap((eid) => {
+      const a = reg.enchantments.get(eid);
+      return a ? enchantWords(reg, a) : [];
+    });
     return `
       <h2>${esc(it.name ?? id)}</h2>
       ${it.sprite ? `<div class="sheet-art"><img src="assets/tiles16/${esc(it.sprite)}.png" alt=""></div>` : ""}
@@ -184,8 +236,11 @@ export function pageHtml(reg: Registry, section: WikiSection, id: string): strin
       ${facts([
         ["Slot", it.slot ?? "carried"],
         ["Effect", esc(describe(it))],
+        ["Weapon", it.slot === "weapon" && it.weaponClass ? `${it.weaponClass}${it.material ? `, ${it.material}` : ""}` : ""],
+        ["Worth", it.value ? `${it.value} coin` : ""],
         ["Found on floors", it.depth ? `${it.depth.min ?? 0}–${it.depth.max ?? 12}` : it.unique ? "never scattered" : "any"],
       ])}
+      ${baked.length ? `<h3>Enchantments</h3>${list(baked)}` : ""}
       ${it.unique ? `<p class="wiki-note">A named item. It is never found lying around.</p>` : ""}
       ${from.length ? `<h3>Dropped by</h3>${list(from)}` : ""}
       ${dug.length ? `<h3>Gathered from</h3>${list(dug)}` : ""}
@@ -193,6 +248,28 @@ export function pageHtml(reg: Registry, section: WikiSection, id: string): strin
       ${uses.length ? `<h3>Used in</h3>${list(uses)}` : ""}
       ${!from.length && !dug.length && !makes.length && !it.unique
         ? `<p class="dim">Found lying around.</p>` : ""}`;
+  }
+
+  if (section === "enchantments") {
+    const a = reg.enchantments.get(id) as EnchantmentDef | undefined;
+    if (!a) return `<p class="dim">No such enchantment.</p>`;
+    const where = (a.slots ?? []).length ? (a.slots ?? []).join(", ") : "anything you can wear or wield";
+    // Which named items carry this baked in — the artifacts worth hunting for it.
+    const baked: string[] = [];
+    for (const [iid, it] of reg.items as Map<string, ItemDef>) {
+      if ((it.enchantments ?? []).includes(id)) baked.push(it.name ?? iid);
+    }
+    return `
+      <h2>${esc(a.name ?? id)}</h2>
+      <p>${esc(a.about ?? "")}</p>
+      ${facts([
+        ["Kind", (a.place ?? "prefix") === "suffix" ? "suffix (of …)" : "prefix"],
+        ["Goes on", where],
+        ["Rarity", `tier ${a.tier ?? 1} — ${(a.tier ?? 1) >= 3 ? "rare, deep finds and bosses" : (a.tier ?? 1) === 2 ? "uncommon" : "common"}`],
+      ])}
+      <h3>What it does</h3>
+      ${list(enchantWords(reg, a))}
+      ${baked.length ? `<h3>Always on</h3>${list(baked)}` : ""}`;
   }
 
   if (section === "recipes") {
@@ -232,19 +309,44 @@ export function pageHtml(reg: Registry, section: WikiSection, id: string): strin
 
   if (section === "species" || section === "classes") {
     const map = section === "species" ? reg.species : reg.classes;
-    const d = map.get(id) as { name?: string; about?: string; sprite?: string; pools?: Record<string, number>; spells?: string[]; items?: string[] } | undefined;
+    const d = map.get(id) as {
+      name?: string; about?: string; sprite?: string;
+      pools?: Record<string, number>; attributes?: Record<string, number>;
+      spells?: string[]; items?: string[];
+    } | undefined;
     if (!d) return `<p class="dim">No such thing.</p>`;
+
+    /*
+     * A species or a background is only HALF a character — its attribute
+     * differences add to the other half's. So the page shows the shifts this one
+     * brings ("+2 Strength"), and the pools those shifts are worth on their own,
+     * rather than a flat 100/100/50 that is the same for everyone and true for
+     * no one.
+     */
+    const shifts = ATTRIBUTES
+      .map((a) => [a, d.attributes?.[a] ?? 0] as [AttributeId, number])
+      .filter(([, v]) => v)
+      .map(([a, v]) => `${v > 0 ? "+" : ""}${v} ${ATTRIBUTE_INFO[a].name}`);
+    const attrs = Object.fromEntries(
+      ATTRIBUTES.map((a) => [a, ATTRIBUTE_BASE + (d.attributes?.[a] ?? 0)]),
+    ) as Attributes;
+    const dv = derive(attrs);
+    const pool = (base: number, k: "hp" | "stamina" | "mana", bonus: number) =>
+      Math.max(k === "hp" ? 1 : 0, base + (d.pools?.[k] ?? 0) + bonus);
+
     return `
       <h2>${esc(d.name ?? id)}</h2>
       ${d.sprite ? `<div class="sheet-art"><img src="assets/tiles16/${esc(d.sprite)}.png" alt=""></div>` : ""}
       <p>${esc(d.about ?? "")}</p>
       ${facts([
-        ["Health", `${100 + (d.pools?.["hp"] ?? 0)}`],
-        ["Stamina", `${100 + (d.pools?.["stamina"] ?? 0)}`],
-        ["Mana", `${50 + (d.pools?.["mana"] ?? 0)}`],
+        ["Attributes", shifts.length ? shifts.join(", ") : "even across the board"],
+        ["Health", `${pool(100, "hp", dv.hpBonus)}${section === "species" ? " on its own" : ""}`],
+        ["Stamina", `${pool(100, "stamina", dv.staminaBonus)}`],
+        ["Mana", `${pool(50, "mana", dv.manaBonus)}`],
         ["Spells", (d.spells ?? []).map((s) => name(reg.spells as never, s)).join(", ")],
         ["Kit", (d.items ?? []).map((i) => name(reg.items as never, i)).join(", ")],
-      ])}`;
+      ])}
+      <p class="dim">A run adds a species and a background together, so your real numbers are these plus the other half.</p>`;
   }
 
   const t = reg.tiles.get(id);
