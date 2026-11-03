@@ -1,0 +1,11 @@
+{
+  "name": "of the Tempest",
+  "place": "suffix",
+  "slots": ["weapon"],
+  "tier": 3,
+  "weight": 3,
+  "procs": [
+    { "kind": "chain", "damage": 6, "dkind": "shock", "jumps": 3, "chance": 0.6 }
+  ],
+  "about": "Now and then a blow forgets its manners and leaps across the whole room."
+}

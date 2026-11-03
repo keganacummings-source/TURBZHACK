@@ -38,7 +38,7 @@ import {
 import {
   applyLoadout, describe, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
 } from "./engine/equipment.ts";
-import type { EnchantmentDef, ItemDef } from "./content/schema.ts";
+import type { EnchantmentDef, ItemDef, ProcDef } from "./content/schema.ts";
 import { BIOME_BY_ID, generateContinent, placeLairs, REGION_BANDS, type Continent, type Village } from "./world/continent.ts";
 import { DUNGEON_FLOORS, generateDungeon, type Dungeon } from "./world/dungeon.ts";
 import { AUTOSAVE_EVERY, SAVE_VERSION, decodeRuns, encodeRuns, type SaveFile } from "./engine/save.ts";
@@ -1400,6 +1400,9 @@ export class Game {
       range: stats.reach,
       cost: swingCost(stats, this.player.attributes),
       applies: applies.length ? [...new Set(applies)] : undefined,
+      // Procs from everything worn, so a ring of the tempest arcs lightning just
+      // as a sword would. The weapon's own are already in here, via its slot.
+      procs: load.procs.length ? load.procs : undefined,
       say: "{caster} strike{s} {target} with the " + stats.name.toLowerCase() + ".",
     };
   }
@@ -1556,6 +1559,101 @@ export class Game {
     for (const [k, m] of Object.entries(effect.resist)) if (typeof m === "number" && m < 1) bits.push(`${k} resisted`);
     const affixText = bits.length ? ` · ${bits.join(" · ")}` : "";
     return (base === "no effect" && bits.length ? bits.join(" · ") : base + affixText);
+  }
+
+  /**
+   * Everything about one item, for the detail panel.
+   *
+   * Pulled together in the engine rather than the UI because it is the one place
+   * that already knows how a weapon's numbers, a material, a quality and a stack
+   * of affixes combine — the UI only lays the result out.
+   */
+  itemDetail(itemId: string): {
+    name: string; slot?: string; worth: number;
+    lines: [string, string][]; affixes: { name: string; about: string; effect: string }[];
+    unique: boolean; about?: string;
+  } {
+    const def = this.itemDef(itemId);
+    const inst = this.instances.get(itemId);
+    if (!def) return { name: itemId, worth: 0, lines: [], affixes: [], unique: false };
+
+    const lines: [string, string][] = [];
+    if (inst?.quality && inst.quality !== "plain") lines.push(["Quality", inst.quality]);
+    if (inst?.material) lines.push(["Material", MATERIAL[inst.material]?.name ?? inst.material]);
+
+    // Weapons report their real swing, in the player's hands.
+    if (def.slot === "weapon") {
+      const stats = weaponStats(def, inst);
+      const affix = affixEffect([...(def.enchantments ?? []), ...(inst?.affixes ?? [])], this.reg.enchantments as Enchants);
+      lines.push(["Class", WEAPON_CLASS[stats.class]?.name ?? stats.class]);
+      lines.push(["Damage", `${damageWith(stats, this.player.attributes, this.skillIn(stats.class)) + affix.bonusDamage} ${affix.bonusKind ?? "physical"}`]);
+      lines.push(["Reach", `${stats.reach} square${stats.reach === 1 ? "" : "s"}`]);
+      lines.push(["Swing", `${swingCost(stats, this.player.attributes).toFixed(2)} turns`]);
+      if (stats.twoHanded) lines.push(["Hands", "two"]);
+    } else {
+      if (def.armour) lines.push(["Armour", `+${def.armour}`]);
+      if (def.evasion) lines.push(["Dodge", `${def.evasion > 0 ? "+" : ""}${def.evasion}%`]);
+      if (def.accuracy) lines.push(["Hit", `${def.accuracy > 0 ? "+" : ""}${def.accuracy}%`]);
+      if (def.might) lines.push(["Ability damage", `+${def.might}`]);
+      if (def.focus) lines.push(["Spell damage", `+${def.focus}`]);
+      for (const [k, m] of Object.entries(def.resist ?? {})) {
+        if (typeof m !== "number") continue;
+        lines.push(["Resist", `${k} ${m === 0 ? "immune" : m < 1 ? `${Math.round((1 - m) * 100)}% less` : `${Math.round((m - 1) * 100)}% more`}`]);
+      }
+      if (def.casts) lines.push(["Use", `casts ${this.reg.spells.get(def.casts)?.name ?? def.casts}${def.charges ? ` (${def.charges})` : ""}`]);
+    }
+    for (const [k, v] of Object.entries(def.requires ?? {})) {
+      if (typeof v === "number") lines.push(["Needs", `${v} ${k}`]);
+    }
+
+    const affixes = [...(def.enchantments ?? []), ...(inst?.affixes ?? [])]
+      .map((id) => {
+        const a = this.reg.enchantments.get(id);
+        if (!a) return null;
+        return { name: a.name ?? id, about: a.about ?? "", effect: this.affixEffectText(id) };
+      })
+      .filter((x): x is { name: string; about: string; effect: string } => !!x);
+
+    return {
+      name: this.displayName(itemId), slot: def.slot, worth: this.worthOf(itemId),
+      lines, affixes, unique: !!def.unique, about: def.about,
+    };
+  }
+
+  /** One affix's effect, in words, for the detail panel. */
+  private affixEffectText(id: string): string {
+    const eff = affixEffect([id], this.reg.enchantments as Enchants);
+    const bits: string[] = [];
+    if (eff.bonusDamage) bits.push(`+${eff.bonusDamage} ${eff.bonusKind ?? "physical"} on hit`);
+    for (const [k, v] of Object.entries(eff.attributes)) if (v) bits.push(`+${v} ${k}`);
+    if (eff.armour) bits.push(`+${eff.armour} armour`);
+    if (eff.evasion) bits.push(`${eff.evasion > 0 ? "+" : ""}${eff.evasion}% dodge`);
+    if (eff.accuracy) bits.push(`${eff.accuracy > 0 ? "+" : ""}${eff.accuracy}% hit`);
+    if (eff.hpMax) bits.push(`+${eff.hpMax} health`);
+    if (eff.staminaMax) bits.push(`+${eff.staminaMax} stamina`);
+    if (eff.manaMax) bits.push(`+${eff.manaMax} mana`);
+    if (eff.speed) bits.push(`+${eff.speed} speed`);
+    for (const [k, m] of Object.entries(eff.resist)) if (typeof m === "number" && m < 1) bits.push(`${k} resisted`);
+    for (const st of eff.applies) bits.push(`applies ${this.reg.statuses.get(st)?.name ?? st}`);
+    if (eff.extraMove) bits.push(eff.extraMove >= 1 ? "a free step every move" : `${Math.round(eff.extraMove * 100)}% chance of a free step`);
+    for (const p of eff.procs) bits.push(this.procText(p));
+    return bits.join(", ");
+  }
+
+  /** One on-hit effect, in words, for the detail panel. */
+  private procText(p: ProcDef): string {
+    const chance = (p.chance ?? 1) < 1 ? `${Math.round((p.chance ?? 1) * 100)}% on hit: ` : "on hit: ";
+    const dmg = p.damage ? `${p.damage} ${p.dkind ?? "matching"} ` : "";
+    switch (p.kind) {
+      case "chain": return `${chance}arcs ${dmg}to ${p.jumps ?? 2} more foes`;
+      case "burst": return `${chance}bursts ${dmg}around the target`;
+      case "cleave": return `${chance}cleaves ${dmg}all around you`;
+      case "lifesteal": return `heals ${Math.round((p.leech ?? 0.2) * 100)}% of damage dealt`;
+      case "execute": return `${chance}finishes foes under ${Math.round((p.threshold ?? 0.2) * 100)}% health`;
+      case "knockback": return `${chance}knocks the target back`;
+      case "stun": return `${chance}${p.applies?.map((s) => this.reg.statuses.get(s)?.name ?? s).join(", ") ?? "stuns"}`;
+      default: return "on hit: something happens";
+    }
   }
 
   /** The sprite, material tint and shimmer for drawing an item on the ground. */
@@ -1877,10 +1975,34 @@ export class Game {
     if (res.tookTurn) {
       for (const m of res.messages ?? []) this.log(m.text, m.tone);
       if (this.useTile()) { this.finishTurn({ tookTurn: true }); return; }
+      /*
+       * Boots of the wind: a plain step can be free, handing the player a
+       * second move before the world gets its turn. Only a real move counts —
+       * walking into a creature was an attack, and doubling an attack would be
+       * a different and far nastier item — and only one free step per move, so
+       * it reads as "sometimes you dart two squares" rather than a stampede.
+       */
+      const attacked = !!this.actorAt(this.player.pos.x + dx, this.player.pos.y + dy);
+      if (!attacked && !this.freeStep && this.rollExtraMove()) {
+        this.freeStep = true;
+        this.refreshFov();
+        this.log("You dart ahead on the wind.", "magic");
+        return;
+      }
+      this.freeStep = false;
       this.finishTurn({ tookTurn: true });
       return;
     }
     this.finishTurn(res);
+  }
+
+  /** True while the player is mid free-step, so a free move cannot chain forever. */
+  private freeStep = false;
+
+  /** Roll a boots-granted bonus step against the worn gear's chance. */
+  private rollExtraMove(): boolean {
+    const chance = (this.player.data["extraMove"] as number) ?? 0;
+    return chance > 0 && this.rng.next() < chance;
   }
 
   /** Stand still for a turn. */

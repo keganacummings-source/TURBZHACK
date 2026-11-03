@@ -1,0 +1,13 @@
+{
+  "name": "Cracking",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 3,
+  "weight": 4,
+  "bonusDamage": 3,
+  "bonusKind": "fire",
+  "procs": [
+    { "kind": "burst", "damage": 10, "dkind": "fire", "radius": 1, "applies": ["burning"], "statusTurns": 3, "say": "The lash cracks and fire bursts out." }
+  ],
+  "about": "It cracks like a whip and the air catches fire where it lands."
+}

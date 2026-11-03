@@ -110,8 +110,56 @@ export type ClassDef = ContentBase & {
  * The non-magical things anyone can do. Punch and kick are abilities, not
  * hardcoded verbs, so that "headbutt" is a file and not a patch.
  */
+/**
+ * An on-hit effect: something that happens when an attack lands, over and above
+ * the damage itself.
+ *
+ * This is what makes an enchantment more than a stat stick. A sword that arcs
+ * lightning to the next creature, a whip that cracks fire around whatever it
+ * strikes, an axe that cleaves everything it stands beside — all of them are one
+ * of these, carried by an affix and fired by the attack that rolls it.
+ *
+ * Every field after `kind` is optional and has a sensible default, so the
+ * shortest proc is `{ "kind": "lifesteal", "leech": 0.2 }`.
+ */
+export type ProcDef = {
+  /**
+   * What it does:
+   *   chain     — leaps to further nearby creatures, each for `damage`
+   *   burst     — hits everything within `radius` of the one struck
+   *   cleave    — hits everything adjacent to the attacker
+   *   lifesteal — heals the attacker for `leech` of the damage dealt
+   *   execute   — finishes a creature already under `threshold` of its health
+   *   knockback — shoves the struck creature a tile away
+   *   stun      — applies its statuses without extra damage
+   */
+  kind: "chain" | "burst" | "cleave" | "lifesteal" | "execute" | "knockback" | "stun";
+  /** 0-1 chance to fire on a landed hit. Default 1 (always). */
+  chance?: number;
+  /** Damage to each creature it catches. */
+  damage?: number;
+  /** The element of that damage. Default follows the weapon. */
+  dkind?: DamageKind;
+  /** chain: how many further creatures it leaps to. Default 2. */
+  jumps?: number;
+  /** burst: how far from the struck creature it reaches. Default 1. */
+  radius?: number;
+  /** Statuses laid on everything it catches. */
+  applies?: string[];
+  /** How long those statuses last. */
+  statusTurns?: number;
+  /** execute: finish anything already below this fraction of max health. */
+  threshold?: number;
+  /** lifesteal: fraction of damage dealt returned to the attacker. */
+  leech?: number;
+  /** A line for the log when it goes off. `{target}` and `{caster}` expand. */
+  say?: string;
+};
+
 export type AbilityDef = ContentBase & {
   damage: number;
+  /** On-hit effects, folded in from the weapon's affixes. */
+  procs?: ProcDef[];
   /**
    * Turns per use, 1 being the standard pace.
    *
@@ -251,6 +299,13 @@ export type EnchantmentDef = ContentBase & {
   bonusKind?: DamageKind;
   /** Statuses the bearer's attacks apply. */
   applies?: string[];
+  /** On-hit effects the bearer's attacks carry — chain lightning, cleave, leech. */
+  procs?: ProcDef[];
+  /**
+   * A chance, each time the bearer takes a plain step, of a second free step.
+   * Boots of the wind. 1 means every move is doubled; 0.5 means half of them.
+   */
+  extraMove?: number;
   /** How good it is: 1 common, 3 rare. Decides when it appears and what it adds. */
   tier?: number;
   /** Relative commonness within its tier. Default 10. */

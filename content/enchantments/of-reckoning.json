@@ -1,0 +1,11 @@
+{
+  "name": "of Reckoning",
+  "place": "suffix",
+  "slots": ["weapon"],
+  "tier": 2,
+  "weight": 6,
+  "procs": [
+    { "kind": "execute", "threshold": 0.14 }
+  ],
+  "about": "What is nearly dead does not survive the next swing."
+}

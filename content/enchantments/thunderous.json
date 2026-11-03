@@ -1,0 +1,13 @@
+{
+  "name": "Thunderous",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 2,
+  "weight": 6,
+  "bonusDamage": 2,
+  "bonusKind": "shock",
+  "procs": [
+    { "kind": "knockback", "chance": 0.5, "say": "The blow lands like a hammer and sends it reeling." }
+  ],
+  "about": "Half your blows send the struck thing staggering backward."
+}

@@ -390,10 +390,12 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("tier", { min: 1, max: 3 });
       num("weight", { min: 0 });
       num("bonusDamage", { min: 0 });
+      num("extraMove", { min: 0, max: 1 });
       strList("slots");
       strList("applies");
       checkAttributeMap(def, "attributes", out);
       checkResist(def, out);
+      checkProcs(def, out);
       break;
 
     case "statuses":
@@ -651,6 +653,34 @@ function checkResist(def: Record<string, unknown>, out: string[]): void {
       out.push(`"resist.${k}" is not a damage kind — use ${[...DAMAGE_KINDS].join(", ")}`);
     } else if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
       out.push(`"resist.${k}" must be a number at or above 0 (0 immune, 1 normal, 2 double)`);
+    }
+  }
+}
+
+const PROC_KINDS = new Set(["chain", "burst", "cleave", "lifesteal", "execute", "knockback", "stun"]);
+
+/** Check an enchantment's on-hit effects: each must name a known kind. */
+function checkProcs(def: Record<string, unknown>, out: string[]): void {
+  const p = def.procs;
+  if (p === undefined) return;
+  if (!Array.isArray(p)) {
+    out.push(`"procs" must be a list, like [{"kind": "chain", "damage": 8}]`);
+    return;
+  }
+  for (const raw of p) {
+    if (raw === null || typeof raw !== "object") {
+      out.push(`each entry in "procs" must be an object with a "kind"`);
+      continue;
+    }
+    const proc = raw as Record<string, unknown>;
+    if (!PROC_KINDS.has(String(proc.kind))) {
+      out.push(`"procs" has kind "${String(proc.kind)}" — use one of ${[...PROC_KINDS].join(", ")}`);
+    }
+    if (proc.dkind !== undefined && !DAMAGE_KINDS.has(String(proc.dkind))) {
+      out.push(`"procs" dkind "${String(proc.dkind)}" is not a damage kind`);
+    }
+    if (proc.chance !== undefined && (typeof proc.chance !== "number" || proc.chance < 0 || proc.chance > 1)) {
+      out.push(`"procs" chance must be between 0 and 1`);
     }
   }
 }

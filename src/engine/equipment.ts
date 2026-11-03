@@ -18,6 +18,7 @@
  */
 import type { Actor } from "./actor.ts";
 import type { ItemDef, EnchantmentDef } from "../content/schema.ts";
+import type { ProcDef } from "../content/schema.ts";
 import { derive, withAttributes, type AttributeId, type Attributes } from "./attributes.ts";
 import { affixEffect } from "./affixes.ts";
 
@@ -94,11 +95,15 @@ export type Loadout = {
   weapon: { damage: number; kind: DamageKind; name: string } | null;
   /** Statuses the wearer's attacks apply, from enchantments. */
   applies: string[];
+  /** On-hit effects from everything worn — chain lightning off a ring counts. */
+  procs: ProcDef[];
   /** Pools and speed added by affixes. */
   hpMax: number;
   staminaMax: number;
   manaMax: number;
   speed: number;
+  /** Chance of a free second step when moving, from boots and the like. */
+  extraMove: number;
   /** Attributes added by what is worn. */
   attributes: Partial<Attributes>;
   /**
@@ -115,8 +120,8 @@ export type Loadout = {
 
 const EMPTY: Loadout = {
   armour: 0, might: 0, focus: 0, accuracy: 0, evasion: 0,
-  hpMax: 0, staminaMax: 0, manaMax: 0, speed: 0,
-  resist: {}, weapon: null, applies: [], attributes: {}, armourLoad: 0, demands: {},
+  hpMax: 0, staminaMax: 0, manaMax: 0, speed: 0, extraMove: 0,
+  resist: {}, weapon: null, applies: [], procs: [], attributes: {}, armourLoad: 0, demands: {},
 };
 
 /**
@@ -141,7 +146,7 @@ export function loadoutOf(
    * baked into the empty loadout every character started from.
    */
   const out: Loadout = {
-    ...EMPTY, resist: {}, applies: [], attributes: {}, demands: {},
+    ...EMPTY, resist: {}, applies: [], procs: [], attributes: {}, demands: {},
   };
 
   for (const slot of SLOTS) {
@@ -200,6 +205,7 @@ export function loadoutOf(
     out.staminaMax += eff.staminaMax;
     out.manaMax += eff.manaMax;
     out.speed += eff.speed;
+    out.extraMove = Math.min(1, out.extraMove + eff.extraMove);
     for (const [k, v] of Object.entries(eff.attributes)) {
       if (typeof v !== "number") continue;
       out.attributes[k as AttributeId] = (out.attributes[k as AttributeId] ?? 0) + v;
@@ -209,6 +215,7 @@ export function loadoutOf(
       out.resist[k as DamageKind] = (out.resist[k as DamageKind] ?? 1) * mult;
     }
     for (const st of eff.applies) if (!out.applies.includes(st)) out.applies.push(st);
+    for (const p of eff.procs) out.procs.push(p);
   }
   return out;
 }
@@ -251,6 +258,8 @@ export function applyLoadout(actor: Actor, load: Loadout): void {
   setPool(actor.pools, "stamina", "staminaMax", actor.data["poolStamina"] as number ?? 0, d.staminaBonus + load.staminaMax);
   setPool(actor.pools, "mana", "manaMax", actor.data["poolMana"] as number ?? 0, d.manaBonus + load.manaMax);
   actor.speed = d.speed + load.speed;
+  // Boots of the wind and the like: read in the game loop after a plain step.
+  actor.data["extraMove"] = load.extraMove;
 
   actor.resist = { ...actor.baseResist };
   for (const [kind, mult] of Object.entries(load.resist)) {

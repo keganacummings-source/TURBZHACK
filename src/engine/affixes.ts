@@ -12,7 +12,7 @@
  * It takes the enchantment registry as an argument rather than importing a
  * Registry, so it stays pure and testable.
  */
-import type { EnchantmentDef, ItemDef } from "../content/schema.ts";
+import type { EnchantmentDef, ItemDef, ProcDef } from "../content/schema.ts";
 import type { Rng } from "./rng.ts";
 import type { AttributeId } from "./attributes.ts";
 import type { DamageKind } from "./types.ts";
@@ -118,6 +118,10 @@ export type AffixEffect = {
   bonusDamage: number;
   bonusKind?: DamageKind;
   applies: string[];
+  /** On-hit effects from every affix in the set, concatenated. */
+  procs: ProcDef[];
+  /** Chance of a free second step when moving, summed and capped at 1 below. */
+  extraMove: number;
 };
 
 export function affixEffect(ids: string[] | undefined, enchants: Enchants): AffixEffect {
@@ -125,6 +129,7 @@ export function affixEffect(ids: string[] | undefined, enchants: Enchants): Affi
     armour: 0, might: 0, focus: 0, accuracy: 0, evasion: 0,
     hpMax: 0, staminaMax: 0, manaMax: 0, speed: 0,
     attributes: {}, resist: {}, bonusDamage: 0, applies: [],
+    procs: [], extraMove: 0,
   };
   for (const id of ids ?? []) {
     const aff = enchants.get(id);
@@ -153,6 +158,8 @@ export function affixEffect(ids: string[] | undefined, enchants: Enchants): Affi
       e.bonusKind = aff.bonusKind ?? e.bonusKind;
     }
     for (const s of aff.applies ?? []) e.applies.push(s);
+    for (const p of aff.procs ?? []) e.procs.push(p);
+    e.extraMove = Math.min(1, e.extraMove + (aff.extraMove ?? 0));
   }
   return e;
 }
