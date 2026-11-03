@@ -850,18 +850,16 @@ export class Game {
    * that sword. Deeper floors get more of it and better of it, which is the
    * only reason to go down.
    */
-  private scatterLoot(rng: Rng, depth: number): void {
-    const level = this.level;
-    const key = this.levelKey;
-    const pool = [...this.reg.items.values()].filter((i) => {
-      /*
-       * Named items are never scattered, and neither are materials.
-       *
-       * A unique found lying in a field is not a named item, it is an item with
-       * a name — the whole point is that something had to be killed for it. And
-       * ore on the ground would undercut mining, which is where ore is supposed
-       * to come from.
-       */
+  /**
+   * The items that can be found or dropped at a given depth.
+   *
+   * Named items are never in here — a unique is something that had to be killed
+   * for, not something lying in a field — and neither are materials, which come
+   * from gathering so that ore on the ground never undercuts mining. The same
+   * pool feeds both the scatter and what a kill leaves behind.
+   */
+  private lootPool(depth: number): ItemDef[] {
+    return [...this.reg.items.values()].filter((i) => {
       if (i.unique) return false;
       if (i.slot === "material") return false;
       if ((i.weight_find ?? 10) <= 0) return false;
@@ -869,9 +867,23 @@ export class Game {
       const max = i.depth?.max ?? 99;
       return depth >= min && depth <= max;
     });
+  }
+
+  /**
+   * Leave a little gear lying about — a little.
+   *
+   * Loot is meant to come from kills, quests and trade; what is on the ground is
+   * the occasional lucky find, not the main supply. So the counts are low and
+   * each scattered piece rolls with generous luck, which is what makes stumbling
+   * on one feel like a find rather than litter.
+   */
+  private scatterLoot(rng: Rng, depth: number): void {
+    const level = this.level;
+    const key = this.levelKey;
+    const pool = this.lootPool(depth);
     if (!pool.length) return;
 
-    const want = this.place.kind === "overworld" ? 24 : 4 + Math.floor(depth * 1.2);
+    const want = this.place.kind === "overworld" ? 5 : 2 + Math.floor(depth * 0.35);
     for (let tries = 0, made = 0; tries < want * 40 && made < want; tries++) {
       const x = rng.int(level.w), y = rng.int(level.h);
       if (level.solid(x, y)) continue;
@@ -881,10 +893,35 @@ export class Game {
       if (!pick) continue;
       const itemId = this.mint(String(pick.id));
       this.loot.set(at, [itemId]);
-      // Found gear is unique. Deeper finds roll richer and can reach tier 3.
-      this.rollGear(itemId, { luck: 0.1 + depth * 0.03 + this.player.derived.gatherLuck, maxTier: depth >= 6 ? 3 : 2 });
+      // A ground find rolls richer than a dropped one — rare, so worth something.
+      this.rollGear(itemId, { luck: 0.3 + depth * 0.04 + this.player.derived.gatherLuck, maxTier: depth >= 6 ? 3 : 2 });
       made++;
     }
+  }
+
+  /**
+   * What an ordinary creature leaves when it falls.
+   *
+   * Bosses have hand-written hoards; everything else rolls here, so a kill is
+   * worth searching without every one of seventy creature files needing a drop
+   * table. The chance and the richness both climb with how dangerous the thing
+   * was — a rat seldom leaves anything, a far-country horror usually does — and
+   * what it leaves is drawn from the same pool the ground is seeded from.
+   */
+  private rollKillDrop(def: EnemyDef | undefined, pos: Pos, rng: Rng, tier: number): string[] {
+    const xp = def?.xp ?? 0;
+    const chance = Math.min(0.6, 0.1 + xp / 450);
+    if (rng.next() >= chance) return [];
+    const pool = this.lootPool(tier);
+    if (!pool.length) return [];
+    const pick = rng.weighted(pool, (i) => i.weight_find ?? 10);
+    if (!pick) return [];
+    const id = this.mint(String(pick.id));
+    this.rollGear(id, {
+      luck: 0.12 + xp / 500 + this.player.derived.gatherLuck,
+      maxTier: xp >= 150 ? 3 : 2,
+    });
+    return [id];
   }
 
   /** Walk into a dungeon entrance, or take stairs. */
@@ -1164,17 +1201,28 @@ export class Game {
         this.coin += purse;
         if (purse >= 40) this.log(`You find ${purse} coin on it.`, "good");
       }
-      const table = def?.drops ?? [];
-      if (!table.length) continue;
-
       // Forked per corpse, so what a creature drops cannot be rerolled by
       // reloading and killing it in a different order.
       const rng = this.rng.fork(`drop:${a.id}`);
+      const table = def?.drops ?? [];
       const got: string[] = [];
-      for (const entry of table) {
-        if (rng.next() >= entry.chance) continue;
-        if (!this.reg.items.has(entry.item)) continue;
-        got.push(this.mint(entry.item));
+      if (table.length) {
+        // A hand-written hoard (bosses): each entry its own independent chance.
+        for (const entry of table) {
+          if (rng.next() >= entry.chance) continue;
+          if (!this.reg.items.has(entry.item)) continue;
+          const id = this.mint(entry.item);
+          this.rollGear(id, def?.boss
+            ? { luck: 0.6, maxTier: 3, atLeast: 1 }
+            : { luck: 0.2 + (def?.xp ?? 0) / 500, maxTier: (def?.xp ?? 0) >= 150 ? 3 : 2 });
+          got.push(id);
+        }
+      } else if (!def?.boss) {
+        // Everything else rolls a default drop, scaled by how dangerous it was.
+        const tier = this.place.kind === "dungeon"
+          ? this.dangerOf(this.place)
+          : (this.continent.region[a.pos.y * this.continent.level.w + a.pos.x] ?? 0);
+        got.push(...this.rollKillDrop(def, a.pos, rng, tier));
       }
       if (!got.length) continue;
 
@@ -1182,13 +1230,8 @@ export class Game {
       const pile = this.loot.get(key) ?? [];
       pile.push(...got);
       this.loot.set(key, pile);
+      for (const id of got) this.noteProgress("gather", this.baseOf(id));
 
-      for (const id of got) {
-        this.rollGear(id, def?.boss
-          ? { luck: 0.6, maxTier: 3, atLeast: 1 }
-          : { luck: 0.2 + (def?.xp ?? 0) / 500, maxTier: (def?.xp ?? 0) >= 150 ? 3 : 2 });
-        this.noteProgress("gather", this.baseOf(id));
-      }
       const names = got.map((id) => this.displayName(id));
       if (def?.boss) this.log(`${a.name} falls, leaving ${names.join(" and ")}.`, "good");
       else this.log(`It drops ${names.join(" and ")}.`, "good");
