@@ -11,5 +11,6 @@
     "min": 6,
     "max": 12
   },
-  "weight_find": 5
+  "weight_find": 5,
+  "overlay": "ovl-body-plate"
 }

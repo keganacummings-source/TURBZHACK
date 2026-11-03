@@ -9,5 +9,6 @@
     "min": 2,
     "max": 12
   },
-  "weight_find": 10
+  "weight_find": 10,
+  "overlay": "ovl-cloak"
 }

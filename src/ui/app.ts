@@ -153,7 +153,11 @@ export async function boot(): Promise<void> {
     renderLog();
     renderContext();
     // Keep drawing while anything is part-way between tiles.
+    // Keep painting while something on screen is animating: a slide in progress,
+    // or an enchanted item glinting on the ground. Throttled to a gentle rate so
+    // the shimmer costs almost nothing when nothing else is happening.
     if (moving(motion)) queueFrame();
+    else if (shimmerInView()) scheduleShimmer();
   }
 
   /**
@@ -167,6 +171,29 @@ export async function boot(): Promise<void> {
     if (frameQueued) return;
     frameQueued = true;
     requestAnimationFrame(() => { frameQueued = false; render(); });
+  }
+
+  /** Is any enchanted item lying within the current view? */
+  function shimmerInView(): boolean {
+    if (!game || screen !== "play") return false;
+    const view = viewFor(game, canvas, scale, motion, performance.now());
+    for (let ry = 0; ry < view.rows + 1; ry++) {
+      for (let rx = 0; rx < view.cols + 1; rx++) {
+        const tx = view.camX + rx, ty = view.camY + ry;
+        if (!game.level.inBounds(tx, ty) || !game.level.visible[game.level.idx(tx, ty)]) continue;
+        const here = game.lootAt(tx, ty);
+        if (here.length && game.itemLook(here[0]!).shimmer > 0) return true;
+      }
+    }
+    return false;
+  }
+
+  /** A gentle repaint for the shimmer, at most one in flight. */
+  let shimmerQueued = false;
+  function scheduleShimmer(): void {
+    if (shimmerQueued) return;
+    shimmerQueued = true;
+    setTimeout(() => { shimmerQueued = false; if (screen === "play") render(); }, 90);
   }
 
   /**

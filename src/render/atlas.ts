@@ -17,10 +17,41 @@ export type Atlas = {
   missing: Set<string>;
   /** Where the PNGs live. */
   base: string;
+  /** Tinted copies, cached by `key|colour`, so a material tint is built once. */
+  tints: Map<string, HTMLCanvasElement>;
 };
 
 export function newAtlas(base = "assets/tiles16/"): Atlas {
-  return { images: new Map(), missing: new Set(), base };
+  return { images: new Map(), missing: new Set(), base, tints: new Map() };
+}
+
+/**
+ * A copy of a sprite tinted towards a colour, built once and cached.
+ *
+ * The tint is a multiply over the sprite's own pixels only — drawn on an
+ * offscreen canvas and masked by the sprite's alpha with "source-atop" — so the
+ * shape and shading survive and only the hue shifts. That is what lets an iron
+ * sword and a steel sword share one drawing and still read as different metals.
+ */
+export function tinted(atlas: Atlas, key: string, colour: string, strength = 0.5): HTMLCanvasElement | null {
+  const img = atlas.images.get(key);
+  if (!img) return null;
+  const cacheKey = `${key}|${colour}|${strength}`;
+  const had = atlas.tints.get(cacheKey);
+  if (had) return had;
+
+  const c = document.createElement("canvas");
+  c.width = TILE; c.height = TILE;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(img, 0, 0, TILE, TILE);
+  g.globalCompositeOperation = "source-atop";   // only where the sprite is
+  g.globalAlpha = strength;
+  g.fillStyle = colour;
+  g.fillRect(0, 0, TILE, TILE);
+  atlas.tints.set(cacheKey, c);
+  return c;
 }
 
 /**
@@ -61,10 +92,15 @@ export function drawSprite(
   x: number,
   y: number,
   scale = 1,
+  tint?: string,
 ): void {
   const img = atlas.images.get(key);
   const size = TILE * scale;
   if (img) {
+    if (tint) {
+      const t = tinted(atlas, key, tint);
+      if (t) { ctx.drawImage(t, x, y, size, size); return; }
+    }
     ctx.drawImage(img, x, y, size, size);
     return;
   }

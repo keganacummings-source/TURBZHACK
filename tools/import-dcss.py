@@ -262,7 +262,7 @@ MONSTERS = {
     "mon-acid-blob": "mon/amorphous/acid_blob.png",
     "mon-ooze": "mon/amorphous/rockslime.png",
     "mon-fire-elemental": "mon/nonliving/fire_elemental.png",
-    "mon-ice-beast": "mon/nonliving/jade_crystal_ice.png",
+    "mon-ice-beast": "mon/animals/ice_beast.png",
     "mon-air-elemental": "mon/nonliving/air_elemental.png",
     "mon-earth-elemental": "mon/nonliving/earth_elemental.png",
     "mon-gargoyle": "mon/nonliving/gargoyle.png",
@@ -353,6 +353,38 @@ def on_threshold(art: Image.Image, base_path: str) -> Image.Image:
     return base
 
 
+
+# Equipment overlays for the player paper-doll.
+#
+# These are Crawl's own player-tile overlays, the same art its paper-doll is
+# drawn from — and our player bases are the same base tiles, so an overlay
+# reduced the same way sits exactly where it should. Reduced whole (tile16), not
+# cropped, because their position within the 32x32 cell IS the information: a
+# helm is drawn up where the head is, boots down at the feet.
+OVERLAYS = {
+    # weapons, by class
+    "ovl-weapon-sword": "player/hand1/long_sword_slant.png",
+    "ovl-weapon-axe": "player/hand1/war_axe.png",
+    "ovl-weapon-dagger": "player/hand1/dagger.png",
+    "ovl-weapon-mace": "player/hand1/mace.png",
+    "ovl-weapon-polearm": "player/hand1/spear.png",
+    "ovl-weapon-staff": "player/hand1/quarterstaff.png",
+    "ovl-weapon-bow": "player/hand1/bow.png",
+    # body armour
+    "ovl-body-robe": "player/body/robe_black.png",
+    "ovl-body-leather": "player/body/leather_armour.png",
+    "ovl-body-mail": "player/body/chainmail.png",
+    "ovl-body-plate": "player/body/bplate_metal1.png",
+    # head
+    "ovl-head-helm": "player/head/fhelm_gray3.png",
+    "ovl-head-cap": "player/head/cap_black1.png",
+    # the rest
+    "ovl-cloak": "player/cloak/brown.png",
+    "ovl-feet": "player/boots/mesh_black.png",
+    "ovl-hands": "player/gloves/glove_black.png",
+    "ovl-shield": "player/hand2/kite_shield_kite1.png",
+}
+
 def main(src: str, dest: str) -> None:
     if not os.path.isdir(src):
         raise SystemExit(
@@ -364,7 +396,7 @@ def main(src: str, dest: str) -> None:
     os.makedirs(dest, exist_ok=True)
     made, missing, rows = [], [], []
 
-    for group, whole in ((TERRAIN, True), (OBJECTS, False), (SPECIES, False), (MONSTERS, False), (BOSS_ART, False)):
+    for group, whole in ((TERRAIN, True), (OBJECTS, False), (SPECIES, False), (MONSTERS, False), (BOSS_ART, False), (OVERLAYS, True)):
         for name, rel in group.items():
             path = os.path.join(src, rel)
             if not os.path.exists(path):

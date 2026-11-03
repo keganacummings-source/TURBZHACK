@@ -441,6 +441,15 @@ export type ItemDef = ContentBase & {
   /** What it is worth in coin, before material, quality or haggling. */
   value?: number;
   /**
+   * Which paper-doll overlay to draw on the player when this is worn.
+   *
+   * A sprite key like "ovl-body-plate". Weapons leave it out and the renderer
+   * picks the overlay from the weapon's class instead, so a new sword needs no
+   * art. Left out on a non-visible item (a ring, an amulet), which correctly
+   * shows nothing.
+   */
+  overlay?: string;
+  /**
    * Which attributes it demands, and what it gives.
    *
    * `requires` is a soft requirement: you can wear plate with eight Strength,
@@ -538,6 +547,17 @@ export type SpeciesDef = ContentBase & {
   abilities?: string[];
   /** How this body differs from the average of 10 in each attribute. */
   attributes?: Partial<Record<string, number>>;
+  /**
+   * The body plan, which decides what worn gear can be SHOWN on the sprite.
+   *
+   * "humanoid" (the default) wears everything visibly. "serpentine" (a naga)
+   * has no feet, so boots never show. "amorphous" (an octopode) has no shape to
+   * hang armour on, so only a weapon and something on the head appear. This is
+   * the "only where the race has a matching style it can reference" rule: gear
+   * with no matching place on the body is still worn and still works — it simply
+   * is not drawn, rather than drawn somewhere wrong.
+   */
+  build?: "humanoid" | "serpentine" | "amorphous";
   /** One line on the species-select screen. */
   blurb?: string;
   /** Lower is easier to play. Shown as a hint, nothing more. */

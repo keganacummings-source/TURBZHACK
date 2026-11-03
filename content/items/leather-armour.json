@@ -9,5 +9,6 @@
     "min": 1,
     "max": 10
   },
-  "weight_find": 13
+  "weight_find": 13,
+  "overlay": "ovl-body-leather"
 }

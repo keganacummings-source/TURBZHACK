@@ -82,5 +82,12 @@ export function spriteKeys(reg: Registry): string[] {
   for (const map of [reg.tiles, reg.enemies, reg.species, reg.items]) {
     for (const def of map.values()) if (def.sprite) keys.add(def.sprite);
   }
+  // Paper-doll overlays: an item's own overlay, plus one weapon overlay per
+  // class. These are not the sprite of any single item, so they are added by
+  // hand rather than swept up from a `sprite` field.
+  for (const def of reg.items.values()) if (def.overlay) keys.add(def.overlay);
+  for (const cls of ["sword", "axe", "dagger", "mace", "polearm", "staff", "bow"]) {
+    keys.add(`ovl-weapon-${cls}`);
+  }
   return [...keys];
 }

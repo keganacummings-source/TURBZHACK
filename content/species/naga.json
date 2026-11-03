@@ -18,5 +18,6 @@
     "wits": 1,
     "agility": -4,
     "presence": 1
-  }
+  },
+  "build": "serpentine"
 }

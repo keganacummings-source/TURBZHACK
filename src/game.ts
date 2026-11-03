@@ -20,7 +20,7 @@ import { affixEffect, affixNames, affixValueFactor, isEnchantable, rollAffixes, 
 import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
-  MATERIALS, WEAPON_CLASS, accuracyWith, classOf, damageWith, fullName, itemValue,
+  MATERIAL, MATERIALS, WEAPON_CLASS, accuracyWith, classOf, damageWith, fullName, itemValue,
   qualityFor, qualityRank, skillFor, swingCost, weaponStats,
   type ItemInstance, type MaterialId,
 } from "./engine/weapons.ts";
@@ -1556,6 +1556,66 @@ export class Game {
     for (const [k, m] of Object.entries(effect.resist)) if (typeof m === "number" && m < 1) bits.push(`${k} resisted`);
     const affixText = bits.length ? ` · ${bits.join(" · ")}` : "";
     return (base === "no effect" && bits.length ? bits.join(" · ") : base + affixText);
+  }
+
+  /** The sprite, material tint and shimmer for drawing an item on the ground. */
+  itemLook(itemId: string): { sprite: string; tint?: string; shimmer: number } {
+    const def = this.itemDef(itemId);
+    const inst = this.instances.get(itemId);
+    const sprite = def?.sprite ?? this.baseOf(itemId);
+    const mat = inst?.material;
+    const tint = mat ? MATERIAL[mat]?.colour : undefined;
+    // Shimmer strength rises with how special the piece is, so a rare drop
+    // glints harder than a common find and you can tell at a glance.
+    const affixes = inst?.affixes ?? [];
+    const tier = affixes.reduce((n, a) => n + (this.reg.enchantments.get(a)?.tier ?? 1), 0);
+    const quality = inst?.quality ? qualityRank(inst.quality) : 0;
+    return { sprite, tint, shimmer: Math.min(3, tier + (quality >= 3 ? 1 : 0) + (def?.unique ? 2 : 0)) };
+  }
+
+  /**
+   * The player's paper-doll: the base sprite plus overlays for worn gear.
+   *
+   * Returned bottom-to-top, so the renderer can draw them in order. Which
+   * overlays appear depends on the species' build — a naga shows no boots, an
+   * octopode only a weapon and a hat — which is the "only where the race has a
+   * matching style" rule. Gear with nowhere to sit is still worn and still
+   * works; it simply is not drawn.
+   */
+  playerLayers(): string[] {
+    const layers = [this.player.sprite];
+    const species = this.reg.species.get(this.speciesId);
+    const build = species?.build ?? "humanoid";
+
+    // Which slots this body can show, in draw order (feet first, weapon last).
+    const order: { slot: Slot; from: "overlay" | "weapon" }[] = [
+      { slot: "feet", from: "overlay" },
+      { slot: "body", from: "overlay" },
+      { slot: "cloak", from: "overlay" },
+      { slot: "hands", from: "overlay" },
+      { slot: "offhand", from: "overlay" },
+      { slot: "head", from: "overlay" },
+      { slot: "weapon", from: "weapon" },
+    ];
+    const allowed = new Set<Slot>(
+      build === "amorphous" ? ["weapon", "head"]
+      : build === "serpentine" ? ["weapon", "head", "body", "cloak", "hands", "offhand"]
+      : ["weapon", "head", "body", "cloak", "hands", "offhand", "feet"]);
+
+    for (const { slot, from } of order) {
+      if (!allowed.has(slot)) continue;
+      const wornId = this.worn[slot];
+      if (!wornId) continue;
+      const def = this.itemDef(wornId);
+      if (!def) continue;
+      if (from === "weapon") {
+        const cls = classOf(def);
+        if (cls !== "unarmed") layers.push(`ovl-weapon-${cls}`);
+      } else if (def.overlay) {
+        layers.push(def.overlay);
+      }
+    }
+    return layers;
   }
 
   /** The name to show for an item: affixes, quality and material included. */

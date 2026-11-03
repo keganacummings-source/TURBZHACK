@@ -186,3 +186,50 @@ test("gear found on the ground comes up unique when you look at it", () => {
   }
   if (equipment >= 10) assert.ok(affixed > 0, `none of ${equipment} found pieces had an affix`);
 });
+
+// ---------------------------------------------------------------------------
+// Rendering: the ground, and the paper-doll
+// ---------------------------------------------------------------------------
+
+test("a ground item resolves to a real sprite, tint and shimmer", () => {
+  const g = played();
+  const h = (g as unknown as { mint(s: string): string }).mint("war-axe");
+  g.instances.set(h, { item: h, material: "meteoric", quality: "plain", affixes: ["flaming", "of-the-titan"] });
+  const look = g.itemLook(h);
+  assert.equal(look.sprite, reg.items.get("war-axe")!.sprite, "a handled item lost its sprite");
+  assert.ok(look.tint, "a meteoric item has no material tint");
+  assert.ok(look.shimmer > 0, "an enchanted item does not shimmer");
+
+  // A plain stackable has a sprite and no shimmer.
+  const ore = g.itemLook("iron-ore");
+  assert.equal(ore.sprite, reg.items.get("iron-ore")!.sprite);
+  assert.equal(ore.shimmer, 0, "plain ore shimmers");
+});
+
+test("the player paper-doll shows worn gear, gated by the species' build", () => {
+  // Humanoid shows everything it wears.
+  const human = played("fighter", "human");
+  human.pack.push("plate-armour"); human.wear(human.handleOf("plate-armour")!);
+  human.pack.push("helm"); human.wear(human.handleOf("helm")!);
+  const layers = human.playerLayers();
+  assert.ok(layers[0] === human.player.sprite, "the base sprite is not the bottom layer");
+  assert.ok(layers.includes("ovl-body-plate"), "a human in plate shows no plate");
+  assert.ok(layers.includes("ovl-head-helm"), "a human in a helm shows no helm");
+  assert.ok(layers.some((l) => l.startsWith("ovl-weapon-")), "a human shows no weapon");
+
+  // An octopode shows a weapon and a hat, but never body armour or boots.
+  const octo = played("fighter", "octopode");
+  octo.pack.push("plate-armour"); octo.wear(octo.handleOf("plate-armour")!);
+  octo.pack.push("boots"); octo.wear(octo.handleOf("boots")!);
+  const octoLayers = octo.playerLayers();
+  assert.ok(!octoLayers.includes("ovl-body-plate"), "an octopode is wearing visible plate");
+  assert.ok(!octoLayers.includes("ovl-feet"), "an octopode has visible boots");
+
+  // A naga wears everything but boots.
+  const naga = played("fighter", "naga");
+  naga.pack.push("boots"); naga.wear(naga.handleOf("boots")!);
+  naga.pack.push("plate-armour"); naga.wear(naga.handleOf("plate-armour")!);
+  const nagaLayers = naga.playerLayers();
+  assert.ok(!nagaLayers.includes("ovl-feet"), "a naga has visible boots");
+  assert.ok(nagaLayers.includes("ovl-body-plate"), "a naga shows no body armour");
+});

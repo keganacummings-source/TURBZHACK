@@ -119,8 +119,9 @@ export function draw(
       // correct — you find out what it was standing on when it is dead.
       const here = game.lootAt(tx, ty);
       if (here.length) {
-        const item = game.reg.items.get(here[0]!);
-        drawSprite(ctx, atlas, item?.sprite ?? here[0]!, px, py, scale);
+        const look = game.itemLook(here[0]!);
+        drawSprite(ctx, atlas, look.sprite, px, py, scale, look.tint);
+        if (look.shimmer > 0) drawShimmer(ctx, px, py, size, look.shimmer, now);
       }
 
       // Creatures are only drawn where you can actually see them.
@@ -148,11 +149,37 @@ export function draw(
   const pyl = Math.round((game.player.pos.y + pslide.dy - camY) * size) - offY;
   if (game.player.pos.x >= camX && game.player.pos.y >= camY &&
       game.player.pos.x < camX + cols && game.player.pos.y < camY + rows) {
-    drawSprite(ctx, atlas, game.player.sprite, pxl, pyl, scale);
+    // The player is a paper-doll: base plus an overlay for each piece of worn
+    // gear the species can show.
+    for (const layer of game.playerLayers()) drawSprite(ctx, atlas, layer, pxl, pyl, scale);
     ctx.strokeStyle = "rgba(255,240,190,.75)";
     ctx.lineWidth = Math.max(1, Math.round(scale / 2));
     ctx.strokeRect(pxl + 0.5, pyl + 0.5, size - 1, size - 1);
   }
+}
+
+/**
+ * A glint on an enchanted item lying on the ground.
+ *
+ * A small sparkle that drifts with the clock, brighter for a richer piece, so a
+ * rare drop catches the eye without a legend. Drawn as a couple of bright
+ * pixels rather than a glow, which stays crisp at the game's hard-pixel scale.
+ */
+function drawShimmer(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, strength: number, now: number): void {
+  const colours = ["#ffe9a8", "#bfe3ff", "#e6b8ff", "#ffd0a0"];
+  const colour = colours[Math.min(colours.length - 1, strength - 1)] ?? "#ffe9a8";
+  // Two sparkles orbiting the item, offset in phase, fading in and out.
+  for (let i = 0; i < 2; i++) {
+    const t = now / 650 + i * Math.PI;
+    const a = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.7));
+    const cx = x + size / 2 + Math.cos(t) * size * 0.32;
+    const cy = y + size / 2 + Math.sin(t) * size * 0.32;
+    const r = Math.max(1, size * 0.06);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = colour;
+    ctx.fillRect(Math.round(cx - r), Math.round(cy - r), Math.round(r * 2), Math.round(r * 2));
+  }
+  ctx.globalAlpha = 1;
 }
 
 /** A thin bar over a wounded creature, so you can tell what is nearly dead. */

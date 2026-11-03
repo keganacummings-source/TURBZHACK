@@ -115,6 +115,8 @@ export const WEAPON_CLASS: Record<WeaponClass, WeaponClassInfo> = {
 
 export type MaterialInfo = {
   name: string;
+  /** A colour to tint the item's sprite, so metals read apart on the ground. */
+  colour: string;
   /** Multiplier on the class's damage. */
   damage: number;
   /** Added to armour, for armour made of it. */
@@ -144,31 +146,31 @@ export type MaterialId = (typeof MATERIALS)[number];
 
 export const MATERIAL: Record<MaterialId, MaterialInfo> = {
   wood: {
-    name: "Wooden", damage: 0.6, armour: 0.5, accuracy: 2, weight: 0.7, value: 1,
+    name: "Wooden", colour: "#6b4a2b", damage: 0.6, armour: 0.5, accuracy: 2, weight: 0.7, value: 1,
     about: "It is a stick with intent.",
   },
   bone: {
-    name: "Bone", damage: 0.75, armour: 0.7, accuracy: 3, weight: 0.6, value: 2,
+    name: "Bone", colour: "#e8e0c8", damage: 0.75, armour: 0.7, accuracy: 3, weight: 0.6, value: 2,
     about: "Light, sharp, and it was somebody's.",
   },
   copper: {
-    name: "Copper", damage: 0.85, armour: 0.8, accuracy: 0, weight: 1, value: 4,
+    name: "Copper", colour: "#b06a3c", damage: 0.85, armour: 0.8, accuracy: 0, weight: 1, value: 4,
     about: "Soft. It will hold an edge for about one fight.",
   },
   iron: {
-    name: "Iron", damage: 1, armour: 1, accuracy: 0, weight: 1, value: 8,
+    name: "Iron", colour: "#8a8f98", damage: 1, armour: 1, accuracy: 0, weight: 1, value: 8,
     about: "The standard against which the others are measured.",
   },
   steel: {
-    name: "Steel", damage: 1.25, armour: 1.3, accuracy: 2, weight: 0.95, value: 20,
+    name: "Steel", colour: "#aeb6c2", damage: 1.25, armour: 1.3, accuracy: 2, weight: 0.95, value: 20,
     about: "Iron, with the argument taken out of it.",
   },
   silver: {
-    name: "Silver", damage: 1.1, armour: 1.1, accuracy: 4, weight: 0.9, value: 45,
+    name: "Silver", colour: "#dfe6ee", damage: 1.1, armour: 1.1, accuracy: 4, weight: 0.9, value: 45,
     about: "Not the hardest. Some things mind it a great deal.",
   },
   meteoric: {
-    name: "Meteoric", damage: 1.5, armour: 1.5, accuracy: 5, weight: 0.8, value: 120,
+    name: "Meteoric", colour: "#7d5bd0", damage: 1.5, armour: 1.5, accuracy: 5, weight: 0.8, value: 120,
     about: "It arrived already finished. Working it is mostly listening.",
   },
 };

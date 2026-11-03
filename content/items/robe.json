@@ -9,5 +9,6 @@
     "min": 0,
     "max": 12
   },
-  "weight_find": 14
+  "weight_find": 14,
+  "overlay": "ovl-body-robe"
 }

@@ -16,5 +16,6 @@
     "wits": 1,
     "strength": -2,
     "endurance": -2
-  }
+  },
+  "build": "amorphous"
 }
