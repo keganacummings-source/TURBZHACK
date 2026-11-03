@@ -316,10 +316,20 @@ export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
   const hands = info.twoHanded ? 1.25 : 1;
   const weight = (mat?.weight ?? 1) * classWeight * hands * info.speed;
 
+  /*
+   * Only apply material and quality multipliers when the instance overrides the
+   * file's own defaults. A file that already names a material (e.g. "wood",
+   * "meteoric") has written its damage number knowing that material — applying
+   * the multiplier again double-counts. Multipliers are for crafted or lucky-
+   * found copies whose material differs from (or is unset in) the base file.
+   */
+  const applyMat = inst?.material != null ? mat : undefined;
+  const applyQuality = inst != null ? q : QUALITY["plain"];
+
   return {
     class: cls,
     name: fullName(def, inst),
-    damage: Math.max(1, Math.round(base * (mat?.damage ?? 1) * q.damage)),
+    damage: Math.max(1, Math.round(base * (applyMat?.damage ?? 1) * applyQuality.damage)),
     accuracy: (def.accuracy ?? 0) + info.accuracy + (mat?.accuracy ?? 0) + q.accuracy,
     speed: info.speed,
     reach: info.reach,
