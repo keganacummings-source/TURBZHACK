@@ -193,6 +193,7 @@ export class Game {
         .filter((e) => e.boss)
         .map((e) => ({ id: String(e.id), biomes: e.biomes, region: e.region })),
       this.rng.fork("lairs"),
+      reg.tiles as Map<string, TileDef>,
     );
   }
 

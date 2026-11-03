@@ -29,6 +29,11 @@ export function monsterTurn(actor: Actor, ctx: AiCtx): ActionResult {
   const sight = def?.sight ?? 8;
   const player = ctx.player;
 
+  // A tamed beast or a hired ally fights for you and keeps to your heel. It is
+  // the same kind of object as any monster — only the `companion` flag and the
+  // friendly stance tell it apart — so its whole behaviour lives here.
+  if (actor.data["companion"] === true) return companionTurn(actor, ctx, sight, mode);
+
   const dist = distance(actor.pos, player.pos);
   const canSee =
     player.alive &&
@@ -71,6 +76,11 @@ export function monsterTurn(actor: Actor, ctx: AiCtx): ActionResult {
 
 /** The best ability this actor can afford right now, against an adjacent target. */
 function attackPlayer(actor: Actor, ctx: AiCtx): ActionResult {
+  return attackTarget(actor, ctx, ctx.player);
+}
+
+/** Swing the hardest affordable ability at a given target. */
+function attackTarget(actor: Actor, ctx: AiCtx, target: Actor): ActionResult {
   const def = ctx.enemies.get(actor.def);
   const options = (def?.abilities ?? [])
     .map((id) => ctx.abilities.get(id))
@@ -79,11 +89,58 @@ function attackPlayer(actor: Actor, ctx: AiCtx): ActionResult {
     .filter((a) => (a.mana ?? 0) <= actor.pools.mana)
     .filter((a) => ready(ctx, actor, String(a.id ?? a.name)));
 
-  // Hardest hit it can pay for. Monsters do not hold anything in reserve.
+  // Hardest hit it can pay for. Creatures do not hold anything in reserve.
   options.sort((a, b) => b.damage - a.damage);
   const pick = options[0];
   if (!pick) return { tookTurn: true };     // nothing affordable: it catches its breath
-  return useAbility(ctx, actor, pick, ctx.player);
+  return useAbility(ctx, actor, pick, target);
+}
+
+/**
+ * A companion's turn: fight what threatens you, otherwise stay close.
+ *
+ * It engages the nearest hostile — but only one that is near YOU or right on top
+ * of it, so a pet never charges off across the map after something and strands
+ * itself. With nothing to fight, it closes to your heel and waits, a step or two
+ * back so it is not forever standing in the doorway you are trying to walk
+ * through.
+ */
+function companionTurn(actor: Actor, ctx: AiCtx, sight: number, mode: string): ActionResult {
+  const player = ctx.player;
+  const foe = nearestHostile(actor, ctx, sight);
+  if (foe) {
+    const toFoe = distance(actor.pos, foe.pos);
+    const foeToPlayer = distance(foe.pos, player.pos);
+    // Only worth engaging if the threat is close to the pack, not a distant
+    // wanderer: within reach of the pet, or within a short ring around you.
+    if (toFoe <= 1.5 || foeToPlayer <= 6) {
+      if (mode === "caster") {
+        const cast = bestSpell(actor, ctx, toFoe);
+        if (cast) return castSpell(ctx, actor, cast, foe);
+        if (toFoe <= 1.5) return attackTarget(actor, ctx, foe);
+        if (toFoe <= 3) return flee(actor, ctx);   // keep casting distance
+      }
+      if (toFoe <= 1.5) return attackTarget(actor, ctx, foe);
+      return stepTowardPos(actor, ctx, foe.pos);
+    }
+  }
+
+  // Nothing to fight: heel. Close the gap if you have drifted, else hold.
+  const toPlayer = distance(actor.pos, player.pos);
+  if (toPlayer > 2.5) return stepTowardPos(actor, ctx, player.pos);
+  return { tookTurn: true };
+}
+
+/** The nearest hostile creature within range, by straight-line distance. */
+function nearestHostile(actor: Actor, ctx: AiCtx, range: number): Actor | undefined {
+  let best: Actor | undefined;
+  let bestD = Infinity;
+  for (const a of ctx.actors) {
+    if (!a.alive || a.stance !== "hostile") continue;
+    const d = distance(actor.pos, a.pos);
+    if (d <= range && d < bestD) { best = a; bestD = d; }
+  }
+  return best;
 }
 
 /** The best spell this actor can afford and reach with. */
@@ -107,7 +164,11 @@ function bestSpell(actor: Actor, ctx: AiCtx, dist: number): SpellDef | undefined
  * a hundred wandering creatures at nothing.
  */
 function stepToward(actor: Actor, ctx: AiCtx, _unused: number): ActionResult {
-  const target = ctx.player.pos;
+  return stepTowardPos(actor, ctx, ctx.player.pos);
+}
+
+/** One step toward an arbitrary position, attacking into it if a foe is there. */
+function stepTowardPos(actor: Actor, ctx: AiCtx, target: { x: number; y: number }): ActionResult {
   const options = DIR_LIST
     .map((d) => ({ d, to: { x: actor.pos.x + d.dx, y: actor.pos.y + d.dy } }))
     .filter((o) => !ctx.level.solid(o.to.x, o.to.y))
