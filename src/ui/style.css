@@ -375,6 +375,51 @@ pre { white-space: pre-wrap; color: var(--warn); font-size: 12px; }
 }
 .webfont .overlay-close { font-size: 13px; }
 
+/* --- world map: a docked panel over the live map, not a cover over it ----- */
+#overlay.overlay-map {
+  background: none; backdrop-filter: none;
+  justify-content: flex-end; align-items: stretch; padding: 0;
+  pointer-events: none;
+}
+#overlay.overlay-map .overlay-panel {
+  pointer-events: auto;
+  width: min(360px, 92vw); height: 100vh; max-height: 100vh;
+  border-radius: 0; border: none; border-left: 1px solid var(--line-bright);
+  box-shadow: -14px 0 44px rgba(0, 0, 0, .55);
+}
+.map-filters { display: flex; flex-wrap: wrap; gap: var(--s1); margin: var(--s2) 0 var(--s3); }
+.map-filter {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 9px; font-size: 11px; color: var(--dim);
+  background: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+  cursor: pointer; box-shadow: none;
+}
+.webfont .map-filter { font-size: 15px; }
+.map-filter:hover { border-color: var(--line-bright); color: var(--bone); }
+.map-filter.on { color: var(--bone); border-color: var(--kyo); background: var(--panel-2); }
+.map-filter.on .map-dot { box-shadow: 0 0 0 2px rgba(236, 198, 89, .35); }
+.map-dot { width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+.map-select {
+  width: 100%; margin-bottom: var(--s3); padding: 6px 8px;
+  background: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+  color: var(--bone); font: inherit; font-size: 12px;
+}
+.webfont .map-select { font-size: 16px; }
+.map-select:focus { outline: none; border-color: var(--kyo); }
+.map-index { list-style: none; margin: var(--s1) 0 var(--s3); padding: 0; }
+.map-index li {
+  display: flex; align-items: baseline; gap: var(--s2);
+  padding: 3px 0; border-bottom: 1px solid var(--line); font-size: 12px;
+}
+.webfont .map-index li { font-size: 15px; }
+.map-feat-name { flex: 1 1 auto; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.map-feat-sub { flex: 0 0 auto; color: var(--dim); font-size: 10px; }
+.webfont .map-feat-sub { font-size: 13px; }
+.map-feat-dir { flex: 0 0 auto; color: var(--kyo); font-size: 10px; font-variant-numeric: tabular-nums; }
+.webfont .map-feat-dir { font-size: 13px; }
+.map-index li.map-done .map-feat-name { color: var(--faint); text-decoration: line-through; }
+.map-index li.map-done .map-feat-sub { color: var(--good); }
+
 /* =========================================================================
    Level-up choices
    ========================================================================= */

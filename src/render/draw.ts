@@ -221,6 +221,98 @@ function drawStatusPips(
  * Only what you have actually seen, which turns the map screen into a record of
  * where you have been rather than a free answer to where everything is.
  */
+/** A point of interest on the world map. */
+export type MapMarker = { x: number; y: number; color: string; ring?: boolean };
+
+/**
+ * The full world map.
+ *
+ * Draws the revealed terrain large, then the overlays the caller has worked out
+ * — habitat tinting, resource dots, and point markers — on top. Everything it is
+ * handed is already fog-gated by the caller, so this function never has to know
+ * what counts as "discovered"; it just paints what it is given. Returns the
+ * transform so the caller can place a legend or react to clicks in map space.
+ */
+export function drawWorldMap(
+  ctx: CanvasRenderingContext2D,
+  game: Game,
+  biomeColour: (id: string) => string,
+  opts: {
+    highlight?: Set<number>;
+    highlightColor?: string;
+    resourceTiles?: { x: number; y: number; color: string }[];
+    markers?: MapMarker[];
+  } = {},
+): { scale: number; offX: number; offY: number } {
+  const level = game.level;
+  const w = ctx.canvas.width, h = ctx.canvas.height;
+  const scale = Math.max(1, Math.floor(Math.min(w / level.w, h / level.h)));
+  const offX = Math.floor((w - level.w * scale) / 2);
+  const offY = Math.floor((h - level.h * scale) / 2);
+  const overworld = game.place.kind === "overworld";
+
+  ctx.fillStyle = "#0b0a0e";
+  ctx.fillRect(0, 0, w, h);
+
+  for (let y = 0; y < level.h; y++) {
+    for (let x = 0; x < level.w; x++) {
+      const i = level.idx(x, y);
+      if (!level.known[i]) continue;
+      const biome = overworld ? game.continent.biome[i]! : "dungeon";
+      ctx.fillStyle = overworld
+        ? biomeColour(biome)
+        : (level.solid(x, y) ? "#2a2730" : "#6d6678");
+      ctx.fillRect(offX + x * scale, offY + y * scale, scale, scale);
+    }
+  }
+
+  // Habitat tint: dim everything, then relight the tiles the quarry lives on.
+  if (opts.highlight && opts.highlight.size) {
+    ctx.fillStyle = "rgba(8,6,12,.62)";
+    ctx.fillRect(offX, offY, level.w * scale, level.h * scale);
+    ctx.fillStyle = opts.highlightColor ?? "#ff6a5a";
+    for (const i of opts.highlight) {
+      const x = i % level.w, y = (i / level.w) | 0;
+      ctx.fillRect(offX + x * scale, offY + y * scale, scale, scale);
+    }
+  }
+
+  // Resource dots.
+  for (const r of opts.resourceTiles ?? []) {
+    ctx.fillStyle = r.color;
+    const s = Math.max(1, scale - 1);
+    ctx.fillRect(offX + r.x * scale, offY + r.y * scale, s, s);
+  }
+
+  // Point markers, each a filled square with an outline so it reads at any zoom.
+  const m = Math.max(3, scale + 2);
+  for (const mk of opts.markers ?? []) {
+    const px = offX + mk.x * scale - ((m - scale) >> 1);
+    const py = offY + mk.y * scale - ((m - scale) >> 1);
+    ctx.fillStyle = "#0b0a0e";
+    ctx.fillRect(px - 1, py - 1, m + 2, m + 2);
+    ctx.fillStyle = mk.color;
+    ctx.fillRect(px, py, m, m);
+    if (mk.ring) {
+      ctx.strokeStyle = "#fff6d8";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 1.5, py - 1.5, m + 3, m + 3);
+    }
+  }
+
+  // You, last and brightest.
+  const pm = Math.max(3, scale + 2);
+  const ppx = offX + game.player.pos.x * scale - ((pm - scale) >> 1);
+  const ppy = offY + game.player.pos.y * scale - ((pm - scale) >> 1);
+  ctx.fillStyle = "#fff6d8";
+  ctx.fillRect(ppx, ppy, pm, pm);
+  ctx.strokeStyle = "#140e0c";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ppx - 0.5, ppy - 0.5, pm + 1, pm + 1);
+
+  return { scale, offX, offY };
+}
+
 export function drawOverview(ctx: CanvasRenderingContext2D, game: Game, biomeColour: (id: string) => string): void {
   const level = game.level;
   const w = ctx.canvas.width, h = ctx.canvas.height;

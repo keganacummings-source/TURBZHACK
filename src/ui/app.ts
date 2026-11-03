@@ -9,7 +9,8 @@
 import { Game } from "../game.ts";
 import { loadContent, spriteKeys } from "../content/load-web.ts";
 import { newAtlas, loadSprites, TILE, type Atlas } from "../render/atlas.ts";
-import { draw, drawOverview, viewFor } from "../render/draw.ts";
+import { draw, drawWorldMap, viewFor } from "../render/draw.ts";
+import { mapData, mapSidebarHtml, DEFAULT_MAP_FILTERS, type MapFilters } from "./worldmap.ts";
 import {
   actionFor, clearBindings, commandFor, isBindable, keyToken, loadBindings,
   movementHint, rebind, saveBindings, unbind, type Bindings,
@@ -79,6 +80,9 @@ export async function boot(): Promise<void> {
   /** The item (handle or base id) whose full stats are open on the pack screen. */
   let packDetail: string | null = null;
 
+  /** What the world map is currently showing. */
+  let mapFilters: MapFilters = { ...DEFAULT_MAP_FILTERS };
+
   /**
    * Save the run to the autosave slot.
    *
@@ -117,6 +121,9 @@ export async function boot(): Promise<void> {
     if (next === "class-select") $("class-select").classList.remove("hidden");
     // There is no closing a level-up: the choice has to be made.
     $("close-overlay").classList.toggle("hidden", next === "levelup");
+    // The map docks its panel to one side instead of covering the whole screen,
+    // so the map behind it stays visible.
+    $("overlay").classList.toggle("overlay-map", next === "map");
     // Every screen that is drawn INTO the overlay has to be listed here, or the
     // markup is built and then left hidden — which looks exactly like the game
     // having frozen, because for the level-up it also stops taking input.
@@ -135,7 +142,13 @@ export async function boot(): Promise<void> {
     if (screen === "wiki") { renderOverlay(wikiHtml(reg, wikiEntries, wikiSection, wikiQuery, wikiOpen)); restoreWikiFocus(); return; }
 
     if (screen === "class-select" || !game) { renderClassSelect(reg); return; }
-    if (screen === "map") { drawOverview(ctx, game, (id) => BIOME_BY_ID.get(id)?.colour ?? "#555"); renderOverlay(mapHtml()); return; }
+    if (screen === "map") {
+      const biomeColour = (id: string) => BIOME_BY_ID.get(id)?.colour ?? "#555";
+      drawWorldMap(ctx, game, biomeColour, mapData(game, reg, mapFilters));
+      renderOverlay(mapSidebarHtml(game, reg, mapFilters));
+      wireMapControls();
+      return;
+    }
     if (screen === "help") { renderOverlay(controlsHtml(bindings, listening)); }
     if (screen === "levelup") { renderOverlay(levelUpHtml()); }
     if (screen === "pack") { renderOverlay(packHtml()); }
@@ -206,6 +219,12 @@ export async function boot(): Promise<void> {
    * the live input element and with it the focus and the caret. Re-focusing and
    * re-placing the caret at the end is what makes typing in it feel like typing.
    */
+  /** Attach the map's creature picker, rebuilt with the panel on every render. */
+  function wireMapControls(): void {
+    const sel = document.getElementById("map-creature") as HTMLSelectElement | null;
+    if (sel) sel.onchange = () => { mapFilters = { ...mapFilters, creature: sel.value || null }; render(); };
+  }
+
   function restoreWikiFocus(): void {
     const box = document.getElementById("wiki-search") as HTMLInputElement | null;
     if (!box) return;
@@ -740,9 +759,6 @@ export async function boot(): Promise<void> {
   }
 
 
-  const mapHtml = () => `<h2>${escapeHtml(game?.whereAmI ?? "")}</h2>
-    <p class="dim">Only what you have seen. Red marks a dungeon you have found. Esc closes.</p>`;
-
   /**
    * The five.
    *
@@ -1075,6 +1091,17 @@ export async function boot(): Promise<void> {
     // A click anywhere else dismisses it, the canvas included — which its own
     // handler deals with, so this only has to catch the rest of the page.
     if (context && !t.closest("#context") && t !== canvas) { closeContext(); }
+
+    // --- the world map -----------------------------------------------------
+    const mf = t.closest<HTMLElement>("[data-mapfilter]");
+    if (mf) {
+      const k = mf.dataset.mapfilter as keyof MapFilters;
+      if (typeof mapFilters[k] === "boolean") {
+        mapFilters = { ...mapFilters, [k]: !mapFilters[k] };
+        render();
+      }
+      return;
+    }
 
     // --- the menu ----------------------------------------------------------
     const item = t.closest<HTMLElement>("[data-menu]");
