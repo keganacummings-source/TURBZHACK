@@ -2808,21 +2808,39 @@ export class Game {
     return true;
   }
 
-  /** Sell one of something. */
-  sell(index: number, itemId: string): boolean {
-    const def = this.reg.items.get(itemId);
-    if (!def) return false;
-    const at = this.pack.indexOf(itemId);
-    if (at < 0) { this.log(`You are not carrying any ${def.name}.`, "warn"); return false; }
+  /**
+   * What one carried item fetches here, with supply, demand and the piece's own
+   * quality all folded in.
+   *
+   * The market quotes a base good; a particular copy — meteoric, masterwork,
+   * enchanted — is worth more than the plain one the quote assumes, so the quote
+   * is scaled by how much better this instance is than a bare one.
+   */
+  private sellPriceOf(index: number, def: ItemDef, carried: string): number {
     const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
-    // An affixed piece is worth more than its base; the market pays accordingly.
-    const factor = affixValueFactor(this.instances.get(itemId)?.affixes, this.reg.enchantments as Enchants);
-    const price = Math.round(q.sell * factor);
+    const base = Math.max(1, itemValue(def));
+    const premium = this.worthOf(carried) / base;
+    return Math.max(1, Math.round(q.sell * premium));
+  }
+
+  /** Sell one of something — a stackable good, or one specific piece of gear. */
+  sell(index: number, itemId: string): boolean {
+    // The market lists goods by their base id, but a crafted or dropped piece is
+    // carried under a unique handle (short-sword#7), so match on the base and
+    // sell whichever copy is actually in the pack.
+    const base = this.baseOf(itemId);
+    const def = this.itemDef(itemId);
+    if (!def) return false;
+    const at = this.pack.findIndex((i) => this.baseOf(i) === base);
+    if (at < 0) { this.log(`You are not carrying any ${def.name}.`, "warn"); return false; }
+    const carried = this.pack[at]!;
+    const name = this.displayName(carried);        // before its instance is gone
+    const price = this.sellPriceOf(index, def, carried);
     this.pack.splice(at, 1);
-    this.instances.delete(itemId);
+    this.instances.delete(carried);
     this.coin += price;
-    trade(this.marketOf(index), itemId, 1, this.turn);
-    this.log(`You sell ${def.name} for ${price}.`, "good");
+    trade(this.marketOf(index), base, 1, this.turn);
+    this.log(`You sell ${name} for ${price}.`, "good");
     this.finishTurn({ tookTurn: true });
     return true;
   }
@@ -2836,18 +2854,23 @@ export class Game {
    */
   sellAll(index: number, itemId: string): void {
     let sold = 0, got = 0;
-    const def = this.reg.items.get(itemId);
+    const base = this.baseOf(itemId);
+    const def = this.itemDef(itemId);
     if (!def) return;
-    while (this.pack.includes(itemId)) {
-      const q = quote(this.marketOf(index), def, this.turn, this.haggleAt(index));
-      this.pack.splice(this.pack.indexOf(itemId), 1);
-      this.coin += q.sell;
-      got += q.sell;
-      trade(this.marketOf(index), itemId, 1, this.turn);
+    // Match on the base, so every copy — plain or uniquely handled — is sold,
+    // each priced on its own as the stock drifts.
+    for (let at = this.pack.findIndex((i) => this.baseOf(i) === base);
+         at >= 0 && sold <= 500;
+         at = this.pack.findIndex((i) => this.baseOf(i) === base)) {
+      const carried = this.pack[at]!;
+      got += this.sellPriceOf(index, def, carried);
+      this.pack.splice(at, 1);
+      this.instances.delete(carried);
+      trade(this.marketOf(index), base, 1, this.turn);
       sold++;
-      if (sold > 500) break;        // a guard, not a rule
     }
     if (sold) {
+      this.coin += got;
       this.log(`You sell ${sold} × ${def.name} for ${got}.`, "good");
       this.finishTurn({ tookTurn: true });
     }

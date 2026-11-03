@@ -195,6 +195,75 @@ test("selling a stack fills the market, so each one fetches less", () => {
   assert.ok(g.coin > 0, "selling twenty things earned nothing");
 });
 
+test("a crafted weapon with a unique handle can actually be sold", () => {
+  // The bug: the market lists gear by its base id, but the pack holds it under a
+  // unique handle (short-sword#7), so selling looked for the base id in the pack,
+  // found nothing, and refused — every piece of gear was unsellable.
+  const g = played();
+  const mint = (g as unknown as { mint(s: string): string }).mint.bind(g);
+  const handle = mint("short-sword");
+  g.instances.set(handle, { item: handle, material: "steel", quality: "fine", affixes: ["flaming"] });
+  g.pack.push(handle);
+  g.coin = 0;
+
+  // Selling by the BASE id, exactly as the market UI passes it.
+  const ok = g.sell(0, "short-sword");
+  assert.ok(ok, "a handled weapon could not be sold");
+  assert.ok(g.coin > 0, "selling the weapon earned nothing");
+  assert.ok(!g.pack.includes(handle), "the sold weapon is still in the pack");
+  assert.equal(g.instances.has(handle), false, "the sold weapon's instance was left behind");
+});
+
+test("a better piece sells for more than a plain one", () => {
+  const price = (mat: string, quality: string, affixes: string[]) => {
+    const g = played();
+    const mint = (g as unknown as { mint(s: string): string }).mint.bind(g);
+    const h = mint("short-sword");
+    g.instances.set(h, { item: h, material: mat, quality, affixes });
+    g.pack.push(h);
+    g.coin = 0;
+    g.sell(0, "short-sword");
+    return g.coin;
+  };
+  assert.ok(price("meteoric", "masterwork", ["flaming", "of-the-titan"]) > price("iron", "crude", []),
+    "a masterwork meteoric blade sold for no more than a crude iron one");
+});
+
+test("selling all of a kind clears handled copies too", () => {
+  const g = played();
+  const mint = (g as unknown as { mint(s: string): string }).mint.bind(g);
+  for (let i = 0; i < 3; i++) {
+    const h = mint("dagger");
+    g.instances.set(h, { item: h, material: "iron" });
+    g.pack.push(h);
+  }
+  g.sellAll(0, "dagger");
+  assert.equal(g.pack.filter((i) => g.baseOf(i) === "dagger").length, 0, "some daggers would not sell");
+});
+
+test("a quest offered by a villager can be accepted by its full id", () => {
+  // The bug: quest ids carry colons ("slay:3:wolf"), and the accept handler split
+  // on every colon and kept only the first piece, so the quest was never found.
+  // The id must be matched whole.
+  const g = played();
+  let found: { who: ReturnType<Game["villagersOf"]>[number]; id: string } | null = null;
+  for (let v = 0; v < g.continent.villages.length && !found; v++) {
+    for (const who of g.villagersOf(v)) {
+      const qs = g.questsFrom(who);
+      if (qs.length) { found = { who, id: qs[0]!.id }; break; }
+    }
+  }
+  assert.ok(found, "no villager anywhere offered a quest");
+  const { who, id } = found!;
+  assert.ok(id.includes(":"), "quest ids are expected to contain colons");
+  // The pre-colon prefix is not a usable id; the whole id is.
+  assert.equal(g.questsFrom(who).some((q) => q.id === id.split(":")[0]), false,
+    "the quest matched on its prefix alone — the split bug would pass");
+  const quest = g.questsFrom(who).find((q) => q.id === id)!;
+  assert.ok(g.acceptQuest(quest), "a real quest could not be accepted");
+  assert.ok(g.questLines().some((l) => l.quest.id === id), "the accepted quest is not in the log");
+});
+
 test("carrying a good from where it is cheap to where it is dear turns a profit", () => {
   /*
    * The actual loop the whole system exists for, played out: find two villages

@@ -1187,7 +1187,9 @@ export async function boot(): Promise<void> {
 
     const accept = t.closest<HTMLElement>("[data-accept]");
     if (accept && game) {
-      const [whoId, questId] = accept.dataset.accept!.split(":");
+      // The actor id has no colon, but a quest id does ("slay:3:wolf"), so split
+      // on the FIRST colon only — the rest is the quest id, verbatim.
+      const [whoId, questId] = splitFirst(accept.dataset.accept!);
       const who = game.actors.find((a) => a.id === whoId);
       const quest = who && game.questsFrom(who).find((q) => q.id === questId);
       if (quest) game.acceptQuest(quest);
@@ -1206,7 +1208,9 @@ export async function boot(): Promise<void> {
 
     const trainBtn = t.closest<HTMLElement>("[data-train]");
     if (trainBtn && game) {
-      const [whoId, skill] = trainBtn.dataset.train!.split(":");
+      // A skill id can itself contain a colon ("recipe:steel-ingot"), so keep
+      // everything after the actor id intact.
+      const [whoId, skill] = splitFirst(trainBtn.dataset.train!);
       const who = game.actors.find((a) => a.id === whoId);
       const npc = who && game.reg.npcs.get(String(who.data["npc"]));
       const offer = npc?.teaches?.find((x) => x.skill === skill);
@@ -1329,6 +1333,18 @@ async function markWebfont(): Promise<void> {
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
+}
+
+/**
+ * Split a `prefix:rest` data attribute on its FIRST colon only.
+ *
+ * Several ids packed into data attributes (quest ids, recipe skills) contain
+ * colons of their own, so a plain `.split(":")` loses everything past the second
+ * segment. The prefix here is always an actor id, which has none.
+ */
+function splitFirst(s: string): [string, string] {
+  const i = s.indexOf(":");
+  return i < 0 ? [s, ""] : [s.slice(0, i), s.slice(i + 1)];
 }
 
 /**
