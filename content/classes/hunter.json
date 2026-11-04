@@ -13,9 +13,6 @@
   "stats": {
     "accuracy": 7
   },
-  "spells": [
-    "arrow"
-  ],
   "attributes": {
     "agility": 2,
     "cunning": 2

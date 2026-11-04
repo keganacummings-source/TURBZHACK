@@ -2,7 +2,7 @@
   "name": "Plate Armour",
   "sprite": "arm-plate",
   "slot": "body",
-  "about": "You will not be hurt, and you will not be quick.",
+  "about": "You will not be hurt, and you will not last long doing it.",
   "armour": 12,
   "evasion": -10,
   "accuracy": -5,
@@ -12,5 +12,6 @@
     "max": 12
   },
   "weight_find": 5,
-  "overlay": "ovl-body-plate"
+  "overlay": "ovl-body-plate",
+  "staminaMax": -25
 }

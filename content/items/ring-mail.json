@@ -11,5 +11,6 @@
     "max": 12
   },
   "weight_find": 10,
-  "overlay": "ovl-body-mail"
+  "overlay": "ovl-body-mail",
+  "staminaMax": -12
 }

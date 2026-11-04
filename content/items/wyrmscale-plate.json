@@ -9,5 +9,6 @@
   },
   "evasion": -6,
   "unique": true,
-  "source": "Dropped by Ashmaw, the Cinder Wyrm."
+  "source": "Dropped by Ashmaw, the Cinder Wyrm.",
+  "staminaMax": -20
 }

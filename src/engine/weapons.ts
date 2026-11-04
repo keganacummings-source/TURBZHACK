@@ -502,7 +502,16 @@ export function swingStamina(
   stats: WeaponStats, attr: Attributes, skill = 0, required = 0,
 ): number {
   if (stats.weight <= 0) return 0;
-  const raw = Math.pow(stats.weight, 1.25) * 3.2;
+  /*
+   * Exponent raised from 1.25 → 1.35 and base multiplier from 3.2 → 4.0.
+   *
+   * With STAMINA_PER_TURN at 10 (down from 25), the curve needs to be steeper
+   * so that heavy weapons drain the pool fast and light weapons feel nearly
+   * free. A sword now drains ~3 stamina net per swing (~40 swings before
+   * winded), a greatsword ~16 net (~10 swings), a maul ~47 net (~3 swings).
+   * Resting a turn genuinely refills 10, so the choice to pause matters.
+   */
+  const raw = Math.pow(stats.weight, 1.35) * 4.0;
   const strong = Math.min(0.3, Math.max(0, attr.strength - 10) * 0.02);
   const practised = Math.min(0.25, Math.max(0, skill) * 0.01);
   const strained = Math.max(0, required - attr.strength) * 0.05;

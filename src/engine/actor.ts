@@ -17,8 +17,17 @@ export const BASE_POOLS: Pools = {
   mana: 50, manaMax: 50,
 };
 
-/** Stamina returned at the end of every turn, to everyone. */
-export const STAMINA_PER_TURN = 25;
+/**
+ * Stamina returned at the end of every turn, to everyone.
+ *
+ * Lowered from 25 so that weapons costing under 10 stamina per swing can drain
+ * the pool over a sustained fight. At 25 anything lighter than a mace had a
+ * zero net cost and stamina was not a real resource. At 10, daggers and staves
+ * regenerate faster than they spend (no drain on a quick fight), swords sit just
+ * above the line and drain slowly, and heavy weapons drain fast enough that
+ * resting a turn mid-fight is a genuine decision.
+ */
+export const STAMINA_PER_TURN = 10;
 
 /**
  * Turns an actor must go without being hurt before health starts coming back.

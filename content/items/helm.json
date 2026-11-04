@@ -10,5 +10,6 @@
     "max": 12
   },
   "weight_find": 9,
-  "overlay": "ovl-head-helm"
+  "overlay": "ovl-head-helm",
+  "staminaMax": -6
 }

@@ -13,5 +13,8 @@
     "min": 0,
     "max": 8
   },
-  "weight_find": 8
+  "weight_find": 8,
+  "spells": [
+    "drain"
+  ]
 }

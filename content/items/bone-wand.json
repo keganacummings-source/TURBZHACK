@@ -16,5 +16,9 @@
     "min": 3,
     "max": 12
   },
-  "weight_find": 5
+  "weight_find": 5,
+  "spells": [
+    "drain",
+    "wither"
+  ]
 }

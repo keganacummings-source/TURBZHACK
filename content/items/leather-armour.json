@@ -10,5 +10,6 @@
     "max": 10
   },
   "weight_find": 13,
-  "overlay": "ovl-body-leather"
+  "overlay": "ovl-body-leather",
+  "staminaMax": -4
 }

@@ -13,5 +13,9 @@
   "weight_find": 12,
   "weaponClass": "staff",
   "material": "wood",
-  "value": 140
+  "value": 140,
+  "spells": [
+    "hex-bolt",
+    "shock-bolt"
+  ]
 }

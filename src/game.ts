@@ -1718,6 +1718,7 @@ export class Game {
       if (stats.twoHanded) lines.push(["Hands", "two"]);
     } else {
       if (def.armour) lines.push(["Armour", `+${def.armour}`]);
+      if (def.staminaMax) lines.push(["Stamina max", `${def.staminaMax > 0 ? "+" : ""}${def.staminaMax}`]);
       if (def.evasion) lines.push(["Dodge", `${def.evasion > 0 ? "+" : ""}${def.evasion}%`]);
       if (def.accuracy) lines.push(["Hit", `${def.accuracy > 0 ? "+" : ""}${def.accuracy}%`]);
       if (def.might) lines.push(["Ability damage", `+${def.might}`]);

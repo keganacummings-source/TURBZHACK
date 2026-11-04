@@ -172,6 +172,11 @@ export function loadoutOf(
     out.focus += item.focus ?? 0;
     out.accuracy += item.accuracy ?? 0;
     out.evasion += item.evasion ?? 0;
+    // Armour (and heavy gear in general) can drain the stamina pool directly.
+    // A negative staminaMax on a piece of armour means wearing it makes you
+    // fatigue faster — plate armour has less headroom for sustained swings than
+    // leather even before the weapon cost is counted.
+    out.staminaMax += item.staminaMax ?? 0;
 
     for (const [kind, mult] of Object.entries(item.resist ?? {})) {
       if (typeof mult !== "number") continue;
@@ -367,6 +372,7 @@ export function describe(item: ItemDef): string {
   const bits: string[] = [];
   if (item.damage) bits.push(`${item.damage} ${item.kind ?? "physical"}`);
   if (item.armour) bits.push(`${item.armour > 0 ? "+" : ""}${item.armour} armour`);
+  if (item.staminaMax) bits.push(`${item.staminaMax > 0 ? "+" : ""}${item.staminaMax} stamina`);
   if (item.might) bits.push(`${item.might > 0 ? "+" : ""}${item.might} might`);
   if (item.focus) bits.push(`${item.focus > 0 ? "+" : ""}${item.focus} focus`);
   if (item.accuracy) bits.push(`${item.accuracy > 0 ? "+" : ""}${item.accuracy}% hit`);

@@ -10,5 +10,6 @@
     "max": 10
   },
   "weight_find": 12,
-  "overlay": "ovl-shield"
+  "overlay": "ovl-shield",
+  "staminaMax": -2
 }
