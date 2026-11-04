@@ -527,6 +527,13 @@ export type ItemDef = ContentBase & {
   /** Uses before it is gone. Absent means it is not consumed. */
   charges?: number;
   weight?: number;
+  /**
+   * Squares a weapon reaches, over its class's. A whip is a light weapon that
+   * hits two squares away; saying so here is the whole change.
+   */
+  reach?: number;
+  /** What using it is called in the log: "shoot", "lash". Defaults by class. */
+  verb?: string;
   /** How often it is found. Default 10; 0 means it is never generated. */
   weight_find?: number;
   /** Roughly how deep it starts appearing. */

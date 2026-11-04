@@ -49,7 +49,7 @@ Walk onto a dungeon mouth or a staircase to use it.
 
 | | |
 |---|---|
-| `z` | Punch — 5 damage, free |
+| `z` | Attack with what you hold, or punch (5 damage, free) bare-handed. Every weapon costs stamina per swing by weight: daggers barely any, mauls most of your bar. Out of breath, you throw a fist instead |
 | `x` | Kick — 10 damage, 25 stamina |
 | `c` | Staff strike — 8 damage, 10 stamina |
 | `i` | Pack and gear |

@@ -129,6 +129,11 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   if (distance(actor.pos, target.pos) > range) {
     return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${target.name} is out of reach.`, tone: "warn" }] : [] };
   }
+  // Anything that reaches past the next square needs a clear line: a bow
+  // does not shoot through the wall between you and the wolf.
+  if (range > 1 && distance(actor.pos, target.pos) > 1 && !hasLineOfSight(ctx.level, actor.pos, target.pos, range)) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `No clear shot at ${target.name}.`, tone: "warn" }] : [] };
+  }
   if (!ready(ctx, actor, id)) {
     return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${def.name} is not ready yet.`, tone: "warn" }] : [] };
   }
@@ -148,6 +153,9 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
   const cost = def.cost ?? 1;
   const messages: NonNullable<ActionResult["messages"]> = [];
   if (def.say) messages.push({ text: say(def.say, actor, target), tone: "plain" });
+  // Something loosed from across the room is drawn crossing it, hit or miss.
+  const shot = distance(actor.pos, target.pos) > 1
+    ? { from: { ...actor.pos }, to: { ...target.pos } } : undefined;
 
   /*
    * Abilities roll to hit; spells do not.
@@ -164,7 +172,7 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
       text: `${def.name} misses ${objectName(target)}.`,
       tone: actor.isPlayer ? "warn" : "plain",
     });
-    return { tookTurn: true, cost, messages };
+    return { tookTurn: true, cost, messages, shot };
   }
 
   const out = applyDamage(target, {
@@ -179,7 +187,7 @@ export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target
     messages.push(...fireProcs(def.procs, ctx, actor, target, out.dealt, (def.kind ?? "physical") as DamageKind));
   }
 
-  return { tookTurn: true, cost, messages };
+  return { tookTurn: true, cost, messages, shot };
 }
 
 /** Which side an actor fights for — the player and tamed pets against everything else. */

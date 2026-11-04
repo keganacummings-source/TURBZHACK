@@ -8,7 +8,7 @@
  */
 import { Actor, type ActorSave } from "./engine/actor.ts";
 import { Rng, seedFrom, seedName } from "./engine/rng.ts";
-import { computeFov, distance, type Level } from "./engine/grid.ts";
+import { computeFov, distance, hasLineOfSight, type Level } from "./engine/grid.ts";
 import { findPath } from "./engine/path.ts";
 import {
   BOND_START, bondWord, creditKill, feed, grow, hunger, isCompanion, stateOf,
@@ -21,7 +21,7 @@ import { TRADE } from "./world/economy.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, POINTS_PER_LEVEL, clampAttribute, type AttributeId } from "./engine/attributes.ts";
 import {
   MATERIAL, MATERIALS, WEAPON_CLASS, accuracyWith, classOf, damageWith, fullName, itemValue,
-  qualityFor, qualityRank, skillFor, staminaCost, swingCost, weaponStats,
+  qualityFor, qualityRank, skillFor, swingCost, swingStamina, swingVerbSay, weaponStats,
   type ItemInstance, type MaterialId,
 } from "./engine/weapons.ts";
 import { monsterTurn, type AiCtx } from "./engine/ai.ts";
@@ -1090,8 +1090,20 @@ export class Game {
   private roster: Actor[] | null = null;
 
   /** Let the world have its turn, then look around again. */
+  /**
+   * The last ranged attack the player made, for the renderer to draw in flight.
+   *
+   * `seq` is what changes, so the renderer can tell a new shot from the same
+   * one on the next frame without the engine knowing anything about clocks.
+   */
+  lastShot: { from: { x: number; y: number }; to: { x: number; y: number }; seq: number } | null = null;
+  private shotSeq = 0;
+
   private finishTurn(result: ActionResult): void {
     if (this.over) return;
+    if (result.tookTurn && result.shot) {
+      this.lastShot = { ...result.shot, seq: ++this.shotSeq };
+    }
     this.roster = [...this.actors];
     const ai: AiCtx = {
       ...this.actionCtx,
@@ -1434,6 +1446,40 @@ export class Game {
     applyLoadout(this.player, load);
   }
 
+  /**
+   * Bare hands, whatever is or is not in them.
+   *
+   * Bare hands are still a weapon class, so Agility and unarmed practice both
+   * count. Without this, punching was the one attack in the game that ignored
+   * the entire weapon system. It weighs nothing and so costs no stamina, which
+   * is what a winded fighter falls back on.
+   */
+  get fistAbility(): AbilityDef {
+    const punch = this.reg.abilities.get("punch")!;
+    const fists = weaponStats({ id: "punch", name: "Punch", damage: punch.damage } as ItemDef);
+    return {
+      ...punch,
+      damage: damageWith(fists, this.player.attributes, this.skillIn("unarmed")),
+      range: 1,
+      cost: 1,
+    };
+  }
+
+  /**
+   * The attack a swing will actually be, given how much breath is left.
+   *
+   * The weapon's, if it can be paid for; otherwise a fist, and `winded` says
+   * so, so the caller can say it and skip the weapon practice that a fist
+   * does not earn. Falling back rather than refusing means a tired fighter is
+   * weak instead of stuck — the pressure is to swap to something lighter, not
+   * to stand there pressing a key that does nothing.
+   */
+  meleeAttack(): { attack: AbilityDef; winded: AbilityDef | null } {
+    const weapon = this.weaponAbility;
+    if ((weapon.stamina ?? 0) <= this.player.pools.stamina) return { attack: weapon, winded: null };
+    return { attack: this.fistAbility, winded: weapon };
+  }
+
   /** The weapon in hand, or bare hands. */
   get weaponAbility(): AbilityDef {
     const load = loadoutOf(
@@ -1444,35 +1490,20 @@ export class Game {
     );
     const punch = this.reg.abilities.get("punch")!;
     const held = this.worn.weapon ? this.itemDef(this.worn.weapon) : undefined;
-    if (!held || !load.weapon) {
-      /*
-       * Bare hands are still a weapon class, so Agility and unarmed practice
-       * both count. Without this, punching was the one attack in the game that
-       * ignored the entire weapon system. Unarmed stays stamina-free so fists
-       * are always a usable last resort.
-       */
-      const fists = weaponStats({ id: "punch", name: "Punch", damage: punch.damage } as ItemDef);
-      return {
-        ...punch,
-        damage: damageWith(fists, this.player.attributes, this.skillIn("unarmed")),
-        range: 1,
-        cost: 1,
-        stamina: 0,
-      };
-    }
+    if (!held || !load.weapon) return this.fistAbility;
 
     /*
      * A wielded weapon becomes the attack you make by walking into things.
      *
      * Built here rather than stored as a content file, because it is the
      * COMBINATION of a weapon, the hand that swings it and the practice behind
-     * it: damage, reach, accuracy, swing time and now stamina cost all come
-     * from the steel and the arm. Weight-driven stamina stops heavy weapons
-     * from being spammed and pushes players to swap types mid-fight.
+     * it: the stamina cost stays the hand's, while the damage, the reach, the
+     * accuracy and the time it takes all come from the steel and the arm.
      */
     const inst = this.instanceOf(this.worn.weapon!);
     const stats = weaponStats(held, inst);
     const skill = this.skillIn(stats.class);
+    const tiring = swingStamina(stats, this.player.attributes, skill, held.requires?.["strength"] ?? 0);
     /*
      * An affix's bonus damage is part of the swing, not just a stat on the
      * character. A Flaming sword hits for its fire on top of the steel, and its
@@ -1491,12 +1522,12 @@ export class Game {
       kind: affix.bonusKind ?? load.weapon.kind,
       range: stats.reach,
       cost: swingCost(stats, this.player.attributes),
-      stamina: staminaCost(stats),
+      stamina: tiring,
       applies: applies.length ? [...new Set(applies)] : undefined,
       // Procs from everything worn, so a ring of the tempest arcs lightning just
       // as a sword would. The weapon's own are already in here, via its slot.
       procs: load.procs.length ? load.procs : undefined,
-      say: "{caster} strike{s} {target} with the " + stats.name.toLowerCase() + ".",
+      say: `{caster} ${swingVerbSay(held, stats.class)} {target} with the ${stats.name.toLowerCase()}.`,
     };
   }
 
@@ -1682,8 +1713,8 @@ export class Game {
       lines.push(["Damage", `${damageWith(stats, this.player.attributes, this.skillIn(stats.class)) + affix.bonusDamage} ${affix.bonusKind ?? "physical"}`]);
       lines.push(["Reach", `${stats.reach} square${stats.reach === 1 ? "" : "s"}`]);
       lines.push(["Swing", `${swingCost(stats, this.player.attributes).toFixed(2)} turns`]);
-      const stam = staminaCost(stats);
-      if (stam > 0) lines.push(["Stamina", `${stam} per swing`]);
+      lines.push(["Weight", `${stats.weight}`]);
+      lines.push(["Stamina", `${swingStamina(stats, this.player.attributes, this.skillIn(stats.class), def.requires?.["strength"] ?? 0)} a swing`]);
       if (stats.twoHanded) lines.push(["Hands", "two"]);
     } else {
       if (def.armour) lines.push(["Armour", `+${def.armour}`]);
@@ -2057,13 +2088,15 @@ export class Game {
   /** Walk, or attack whatever is in the way. */
   move(dx: number, dy: number): void {
     if (this.over || this.pendingChoices) return;
-    // Whatever is in your hand, or your fist if it is empty.
-    const attack = this.weaponAbility;
+    // Whatever is in your hand, or your fist if it is empty — or if you are
+    // too winded to lift what is in it.
+    const { attack, winded } = this.meleeAttack();
     const res = moveOrAttack(this.actionCtx, this.player, dx, dy, attack);
     if (res.tookTurn) this.noteArrival();
     // Walking into something is a swing, so it counts as practice too.
     if (res.tookTurn && this.actorAt(this.player.pos.x + dx, this.player.pos.y + dy)) {
-      this.practise(this.heldClass);
+      if (winded) this.log(this.windedMessage(winded), "warn");
+      else this.practise(this.heldClass);
     }
     // Stepping onto stairs or a dungeon mouth takes you through them at once,
     // so the map never needs a separate "use" key for the common case.
@@ -2143,12 +2176,21 @@ export class Game {
      * character with a masterwork blade would attack for 5 damage because they
      * pressed the attack key.
      */
-    const use = id === "punch" ? this.weaponAbility : def;
+    const melee = id === "punch" ? this.meleeAttack() : { attack: def, winded: null };
+    const use = melee.attack;
     const victim = target ?? this.nearestHostile(use.range ?? 1);
     if (!victim) { this.log("Nothing within reach.", "warn"); return; }
     const result = useAbility(this.actionCtx, this.player, use, victim);
-    if (result.tookTurn && id === "punch") this.practise(this.heldClass);
+    if (result.tookTurn && id === "punch") {
+      if (melee.winded) this.log(this.windedMessage(melee.winded), "warn");
+      else this.practise(this.heldClass);
+    }
     this.finishTurn(result);
+  }
+
+  /** What to say when the weapon was too much and a fist went out instead. */
+  private windedMessage(weapon: AbilityDef): string {
+    return `Too winded to swing the ${weapon.name ?? "weapon"} (${weapon.stamina} stamina, you have ${this.player.pools.stamina}) — you throw a fist instead. Rest, or swap to something lighter.`;
   }
 
   /** Cast one of the player's spells at the nearest hostile it can reach. */
@@ -2178,6 +2220,7 @@ export class Game {
       const d = distance(a.pos, this.player.pos);
       if (d > range) continue;
       if (!this.level.visible[this.level.idx(a.pos.x, a.pos.y)]) continue;
+      if (d > 1 && !hasLineOfSight(this.level, this.player.pos, a.pos, range)) continue;
       if (d < bd) { bd = d; best = a; }
     }
     return best;

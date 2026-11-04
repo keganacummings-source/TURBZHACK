@@ -14,7 +14,7 @@
  */
 import type { Game } from "../game.ts";
 import { drawSprite, TILE, type Atlas } from "./atlas.ts";
-import { offsetOf, type Motion } from "./motion.ts";
+import { offsetOf, shotsAt, type Motion } from "./motion.ts";
 
 export type View = {
   /** Whole-number zoom; fractional scaling blurs pixel art. */
@@ -155,6 +155,30 @@ export function draw(
     ctx.strokeStyle = "rgba(255,240,190,.75)";
     ctx.lineWidth = Math.max(1, Math.round(scale / 2));
     ctx.strokeRect(pxl + 0.5, pyl + 0.5, size - 1, size - 1);
+  }
+
+  // Arrows and bolts last of all: they fly over everything they cross.
+  if (motion) {
+    for (const s of shotsAt(motion, now)) {
+      const len = Math.hypot(s.dx, s.dy) || 1;
+      const ux = s.dx / len, uy = s.dy / len;
+      const cx = Math.round((s.x + 0.5 - camX) * size) - offX;
+      const cy = Math.round((s.y + 0.5 - camY) * size) - offY;
+      ctx.lineCap = "round";
+      // A short fading tail behind a bright head, so it reads as moving.
+      ctx.strokeStyle = "rgba(255,230,170,.35)";
+      ctx.lineWidth = Math.max(1, Math.round(scale));
+      ctx.beginPath();
+      ctx.moveTo(cx - ux * size * 0.7, cy - uy * size * 0.7);
+      ctx.lineTo(cx, cy);
+      ctx.stroke();
+      ctx.strokeStyle = "#fff3c4";
+      ctx.lineWidth = Math.max(1, Math.round(scale * 1.5));
+      ctx.beginPath();
+      ctx.moveTo(cx - ux * size * 0.3, cy - uy * size * 0.3);
+      ctx.lineTo(cx + ux * size * 0.15, cy + uy * size * 0.15);
+      ctx.stroke();
+    }
   }
 }
 

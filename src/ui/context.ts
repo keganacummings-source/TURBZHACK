@@ -13,7 +13,7 @@
  */
 import type { Game } from "../game.ts";
 import type { Actor } from "../engine/actor.ts";
-import { distance } from "../engine/grid.ts";
+import { distance, hasLineOfSight } from "../engine/grid.ts";
 import type { AbilityDef, SpellDef } from "../content/schema.ts";
 import { bondWord, hunger, isCompanion, stateOf } from "../engine/companions.ts";
 
@@ -121,16 +121,33 @@ export function menuAt(game: Game, x: number, y: number): ContextMenu {
     facts.push(["Standing on", tile?.name ?? "nothing"]);
 
     if (!who.isPlayer) {
-      if (who.stance === "hostile" && reach) {
+      /*
+       * Attacks are offered at the range each one actually has, not at arm's
+       * length. A bow offers its shot across the room and a kick only next
+       * door, and an attack that would be refused for want of a clear line is
+       * simply not listed — the same rule as everything else on this menu.
+       */
+      const fightable = who.stance === "hostile"
+        || (who.stance === "neutral" && !who.data["npc"] && !who.data["companion"]);
+      if (fightable) {
+        const gap = distance({ x, y }, game.player.pos);
         for (const id of game.playerAbilities) {
-          const ability = game.reg.abilities.get(id) as AbilityDef | undefined;
-          if (!ability) continue;
+          // "punch" is what a plain attack is sent as, and `ability` swaps the
+          // held weapon in for it — so the menu has to describe the weapon, not
+          // the fist it is named after, or it would quote 5 free damage for a
+          // swing that costs stamina.
+          const base = game.reg.abilities.get(id) as AbilityDef | undefined;
+          if (!base) continue;
+          const ability = id === "punch" ? game.weaponAbility : base;
+          const span = ability.range ?? 1;
+          if (gap > span) continue;
+          if (gap > 1 && !hasLineOfSight(game.level, game.player.pos, { x, y }, span)) continue;
           const cost = ability.stamina ?? 0;
           const can = game.player.pools.stamina >= cost;
           actions.push({
             kind: "attack", id, target: who.id,
             label: `${ability.name ?? id}`,
-            detail: `${ability.damage ?? 0} ${ability.kind ?? "physical"}${cost ? ` · ${cost} stamina` : " · free"}${can ? "" : " · not enough stamina"}`,
+            detail: `${ability.damage ?? 0} ${ability.kind ?? "physical"}${cost ? ` · ${cost} stamina` : " · free"}${can ? "" : id === "punch" ? " · too winded, throws a fist" : " · not enough stamina"}`,
           });
         }
       }

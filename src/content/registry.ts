@@ -438,6 +438,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("evasion");
       num("charges", { min: 0 });
       num("weight", { min: 0 });
+      num("reach", { min: 1 });
       num("weight_find", { min: 0 });
       num("value", { min: 0 });
       damageKind("kind");

@@ -58,6 +58,15 @@ export type WeaponClassInfo = {
    * file, because it is true of staves: holding one helps you cast.
    */
   focus?: number;
+  /**
+   * Weight per point of damage, for a weapon whose file does not state its own.
+   *
+   * Weight is what a swing costs in stamina (see `swingStamina`), so this is
+   * the number that makes a maul tiring and a dagger not. Per point of damage
+   * rather than flat per class, so a Club and a Maul — both maces — are not
+   * the same load. A file can always say `"weight"` itself and skip this.
+   */
+  heft: number;
   /** What it is good at, in words, for the sheet and the wiki. */
   about: string;
 };
@@ -74,37 +83,45 @@ export type WeaponClassInfo = {
 export const WEAPON_CLASS: Record<WeaponClass, WeaponClassInfo> = {
   unarmed: {
     name: "Unarmed", scales: "light", speed: 1, reach: 1, damage: 0.35, accuracy: 5,
+    heft: 0,
     about: "Always available, and always a last resort.",
   },
   dagger: {
     name: "Dagger", scales: "light", speed: 0.6, reach: 1, damage: 0.55, accuracy: 12,
+    heft: 0.12,
     about: "Fast and accurate. You will land everything and feel none of it.",
   },
   sword: {
     name: "Sword", scales: "light", speed: 1, reach: 1, damage: 1, accuracy: 5,
+    heft: 0.22,
     about: "No weakness and no particular strength, which is its strength.",
   },
   axe: {
     name: "Axe", scales: "heavy", speed: 1.2, reach: 1, damage: 1.3, accuracy: -4,
+    heft: 0.35,
     about: "Slow, heavy, and it does not care what you are wearing.",
   },
   mace: {
     name: "Mace", scales: "heavy", speed: 1.15, reach: 1, damage: 1.15, accuracy: -2,
+    heft: 0.4,
     about: "Blunt. Armour helps less than its wearer hoped.",
   },
   polearm: {
     name: "Polearm", scales: "heavy", speed: 1.25, reach: 2, damage: 1.2, accuracy: -6,
     twoHanded: true,
+    heft: 0.35,
     about: "Two squares of reach, and you strike first because of it.",
   },
   staff: {
     name: "Staff", scales: "light", speed: 1, reach: 1, damage: 0.6, accuracy: 0,
     twoHanded: true, focus: 6,
+    heft: 0.2,
     about: "A poor weapon and an excellent place to put a spell.",
   },
   bow: {
     name: "Bow", scales: "light", speed: 1.1, reach: 6, damage: 0.9, accuracy: -2,
     twoHanded: true,
+    heft: 0.15,
     about: "Reach that makes a fight a different problem entirely.",
   },
 };
@@ -251,12 +268,23 @@ export type WeaponStats = {
   quality: QualityId;
   /** Spell power from the class, before anything the file itself adds. */
   focus: number;
-  /**
-   * How heavy the weapon feels to swing. Driven by material and class.
-   * Used for stamina cost so a maul cannot be spammed the way a dagger can.
-   */
+  /** How heavy this particular weapon is, which is what a swing costs in stamina. */
   weight: number;
 };
+
+/** What using a class of weapon is called in the log, when its file does not say. */
+export const WEAPON_VERB: Record<WeaponClass, string> = {
+  unarmed: "punch", dagger: "stab", sword: "slash", axe: "chop", mace: "smash",
+  polearm: "thrust at", staff: "strike", bow: "shoot",
+};
+
+/** "{s}" or "{es}" for a verb, so the log reads right for you and for everyone else. */
+export function swingVerbSay(def: ItemDef | undefined, cls: WeaponClass): string {
+  const verb = def?.verb ?? WEAPON_VERB[cls];
+  const first = verb.split(" ")[0]!;
+  const rest = verb.slice(first.length);
+  return `${first}${/(s|sh|ch|x|z)$/.test(first) ? "{es}" : "{s}"}${rest}`;
+}
 
 /** What class an item's file says it is, defaulting sensibly. */
 export function classOf(def: ItemDef | undefined): WeaponClass {
@@ -296,49 +324,44 @@ export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
    * The class still decides reach, speed, accuracy and which attribute it scales
    * off, which is where the character of a weapon actually lives.
    */
-  // Prefer the instance's material (crafted / found), then the file's default.
-  const materialId = (inst?.material ?? def.material) as MaterialId | undefined;
-  const material = materialId && (MATERIALS as readonly string[]).includes(materialId)
-    ? materialId
-    : undefined;
+  const material = inst?.material;
   const mat = material ? MATERIAL[material] : undefined;
   const quality = inst?.quality ?? "plain";
   const q = QUALITY[quality];
 
   const base = def.damage ?? Math.round(14 * info.damage);
 
-  /*
-   * Weight is what the stamina system reads. Material is the main lever; class
-   * scale and two-handedness push heavies further so a dagger stays cheap to
-   * swing and an axe or polearm burns stamina if you try to spam it.
-   */
-  const classWeight = info.scales === "heavy" ? 1.35 : 0.75;
-  const hands = info.twoHanded ? 1.25 : 1;
-  const weight = (mat?.weight ?? 1) * classWeight * hands * info.speed;
-
-  /*
-   * Only apply material and quality multipliers when the instance overrides the
-   * file's own defaults. A file that already names a material (e.g. "wood",
-   * "meteoric") has written its damage number knowing that material — applying
-   * the multiplier again double-counts. Multipliers are for crafted or lucky-
-   * found copies whose material differs from (or is unset in) the base file.
-   */
-  const applyMat = inst?.material != null ? mat : undefined;
-  const applyQuality = inst != null ? q : QUALITY["plain"];
-
   return {
     class: cls,
     name: fullName(def, inst),
-    damage: Math.max(1, Math.round(base * (applyMat?.damage ?? 1) * applyQuality.damage)),
+    damage: Math.max(1, Math.round(base * (mat?.damage ?? 1) * q.damage)),
     accuracy: (def.accuracy ?? 0) + info.accuracy + (mat?.accuracy ?? 0) + q.accuracy,
     speed: info.speed,
-    reach: info.reach,
+    reach: def.reach ?? info.reach,
     twoHanded: !!info.twoHanded,
     material,
     quality,
     focus: info.focus ?? 0,
-    weight,
+    weight: weaponWeight(def, inst),
   };
+}
+
+/**
+ * How heavy a weapon is, in no unit in particular.
+ *
+ * The file's own `weight` wins when it has one — a Greatsword is a sword by
+ * class and nothing like a Short Sword to hold out at arm's length, and only
+ * its author can say so. Otherwise it is the damage times the class's heft,
+ * which puts a dagger near 1, a sword near 3, a mace near 6 and a maul near 9.
+ *
+ * Only a crafted copy's material moves it, for the same reason it only moves
+ * the damage: the file's number already knows what the file is made of.
+ */
+export function weaponWeight(def: ItemDef, inst?: ItemInstance): number {
+  const info = WEAPON_CLASS[classOf(def)];
+  const base = def.weight ?? (def.damage ?? Math.round(14 * info.damage)) * info.heft;
+  const mat = inst?.material ? MATERIAL[inst.material] : undefined;
+  return Math.max(0, Math.round(base * (mat?.weight ?? 1) * 10) / 10);
 }
 
 /**
@@ -453,21 +476,37 @@ export function swingCost(stats: WeaponStats, attr: Attributes): number {
 }
 
 /**
- * Stamina a swing costs.
+ * What one swing costs in stamina.
  *
- * Weight-driven so light weapons (daggers, unarmed) can be used freely while
- * heavy axes, maces and polearms burn through the pool if you try to spam them.
- * That forces swapping weapon types mid-fight instead of locking one heavy
- * weapon and never letting go.
+ * Steeper than linear in weight, on purpose. Stamina comes back at a flat
+ * `STAMINA_PER_TURN` a turn, so a weapon is sustainable exactly when its swing
+ * costs less than that times the turns the swing takes. Light weapons sit well
+ * under the line and can swing all day. Mid-weight ones sit about on it. The
+ * heaviest sit far over it, which is what makes the pool drain in a handful of
+ * blows — and why spamming a maul stops working about the fifth swing, where a
+ * linear curve would have let it run on for fifteen.
  *
- * Unarmed stays free — fists are always available as a last resort. Numbers are
- * tuned against STAMINA_PER_TURN (25) and a typical pool of ~100–150 so a heavy
- * swing costs a meaningful fraction of a full bar.
+ * Three things bring it down, none of which can bring it to nothing:
+ *   STRENGTH   2% per point over 10, to 30%. Heavy things are lighter to the
+ *              strong, which is half of what Strength is for.
+ *   PRACTICE   1% per point of skill in the class, to 25%. Technique is
+ *              efficiency, and it makes sticking with one weapon worth something
+ *              against the pull to keep swapping.
+ *   UNDER-QUALIFIED   5% more per point of Strength a weapon asks for that you
+ *              lack. You can lift the maul at 8 Strength; you will feel it.
+ *
+ * Unarmed weighs nothing and costs nothing: a fist is always the free option,
+ * which is what keeps being winded a problem and not a dead end.
  */
-export function staminaCost(stats: WeaponStats): number {
-  if (stats.class === "unarmed") return 0;
-  // ~6–10 for light iron, ~18–28 for heavy steel / two-handers
-  return Math.max(4, Math.round(14 * stats.weight));
+export function swingStamina(
+  stats: WeaponStats, attr: Attributes, skill = 0, required = 0,
+): number {
+  if (stats.weight <= 0) return 0;
+  const raw = Math.pow(stats.weight, 1.25) * 3.2;
+  const strong = Math.min(0.3, Math.max(0, attr.strength - 10) * 0.02);
+  const practised = Math.min(0.25, Math.max(0, skill) * 0.01);
+  const strained = Math.max(0, required - attr.strength) * 0.05;
+  return Math.max(1, Math.round(raw * (1 - strong - practised + strained)));
 }
 
 /** Which skill a class trains. One per class, so practice is a real choice. */

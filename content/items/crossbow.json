@@ -13,5 +13,6 @@
   "weight_find": 6,
   "weaponClass": "bow",
   "material": "iron",
-  "value": 180
+  "value": 180,
+  "verb": "fire at"
 }

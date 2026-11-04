@@ -14,5 +14,6 @@
   "weight_find": 8,
   "weaponClass": "sword",
   "material": "steel",
-  "value": 320
+  "value": 320,
+  "weight": 8
 }

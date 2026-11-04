@@ -98,6 +98,8 @@ export type ActionResult = {
    * Left out, it is 1.
    */
   cost?: number;
+  /** A ranged attack's flight, from where it was loosed to where it landed. */
+  shot?: { from: Pos; to: Pos };
   /** Lines to print. */
   messages?: { text: string; tone?: Message["tone"] }[];
 };

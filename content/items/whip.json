@@ -2,7 +2,7 @@
   "name": "Whip",
   "sprite": "wpn-whip",
   "slot": "weapon",
-  "about": "Light, fast, and it stings.",
+  "about": "Light, fast, and it stings from two squares away.",
   "damage": 9,
   "kind": "physical",
   "accuracy": 8,
@@ -13,5 +13,7 @@
   "weight_find": 10,
   "weaponClass": "dagger",
   "material": "bone",
-  "value": 55
+  "value": 55,
+  "reach": 2,
+  "verb": "lash"
 }

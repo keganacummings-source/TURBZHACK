@@ -17,14 +17,22 @@ export const SLIDE_MS = 110;
 
 type Slide = { fromX: number; fromY: number; toX: number; toY: number; started: number };
 
+/** How long an arrow or bolt takes to cross the screen. Quick: it is not a spell. */
+export const SHOT_MS = 170;
+
+type Shot = { fromX: number; fromY: number; toX: number; toY: number; started: number };
+
 export type Motion = {
+  shots: Shot[];
+  /** The last shot's `seq` that was started, so one shot is drawn once. */
+  shotSeen: number;
   slides: Map<string, Slide>;
   /** Where each actor was last seen, so a change can be noticed. */
   seen: Map<string, { x: number; y: number }>;
 };
 
 export function newMotion(): Motion {
-  return { slides: new Map(), seen: new Map() };
+  return { shots: [], shotSeen: 0, slides: new Map(), seen: new Map() };
 }
 
 /**
@@ -74,6 +82,37 @@ export function noteMoves(motion: Motion, actors: Actor[], now: number): void {
 }
 
 /**
+ * Start drawing the player's latest ranged attack, if it is a new one.
+ *
+ * The engine only says where it went from and to, and that it is the Nth shot;
+ * the flight itself is nothing but a picture and never affects the result.
+ */
+export function noteShot(
+  motion: Motion,
+  shot: { from: { x: number; y: number }; to: { x: number; y: number }; seq: number } | null,
+  now: number,
+): void {
+  motion.shots = motion.shots.filter((s) => now - s.started < SHOT_MS);
+  if (!shot || shot.seq === motion.shotSeen) return;
+  motion.shotSeen = shot.seq;
+  motion.shots.push({ fromX: shot.from.x, fromY: shot.from.y, toX: shot.to.x, toY: shot.to.y, started: now });
+}
+
+/** Where each shot in flight is, in tiles, with the way it is pointing. */
+export function shotsAt(motion: Motion, now: number): { x: number; y: number; dx: number; dy: number }[] {
+  const out: { x: number; y: number; dx: number; dy: number }[] = [];
+  for (const s of motion.shots) {
+    const t = (now - s.started) / SHOT_MS;
+    if (t < 0 || t >= 1) continue;
+    out.push({
+      x: s.fromX + (s.toX - s.fromX) * t, y: s.fromY + (s.toY - s.fromY) * t,
+      dx: s.toX - s.fromX, dy: s.toY - s.fromY,
+    });
+  }
+  return out;
+}
+
+/**
  * How far from its own tile to draw something, in tiles.
  *
  * Eased so the step has some weight at both ends instead of reading as a
@@ -95,5 +134,5 @@ export function offsetOf(motion: Motion, id: string, now: number): { dx: number;
 
 /** Is anything still moving? The app keeps drawing frames while this is true. */
 export function moving(motion: Motion): boolean {
-  return motion.slides.size > 0;
+  return motion.slides.size > 0 || motion.shots.length > 0;
 }

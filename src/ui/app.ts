@@ -22,7 +22,7 @@ import { marketHtml, questsHtml, talkHtml } from "./village.ts";
 import { ATTRIBUTES, ATTRIBUTE_BASE, ATTRIBUTE_INFO, derive, explainPoint, type AttributeId, type Attributes } from "../engine/attributes.ts";
 import { WEAPON_CLASS } from "../engine/weapons.ts";
 import { bondWord as companionBond, hunger as companionHunger, stateOf as companionState } from "../engine/companions.ts";
-import { newMotion, noteMoves, moving } from "../render/motion.ts";
+import { newMotion, noteMoves, noteShot, moving } from "../render/motion.ts";
 import { AUTOSAVE_EVERY, AUTOSAVE_SLOT, deleteSlot, mostRecentSave, readSlot, writeSlot } from "../engine/save.ts";
 import { loadGame } from "../game.ts";
 import { BIOME_BY_ID } from "../world/continent.ts";
@@ -164,6 +164,7 @@ export async function boot(): Promise<void> {
 
     const now = performance.now();
     noteMoves(motion, game.actors, now);
+    noteShot(motion, game.lastShot, now);
     draw(ctx, game, atlas, viewFor(game, canvas, scale, motion, now), motion, now);
     renderHud();
     renderLog();
@@ -297,6 +298,7 @@ export async function boot(): Promise<void> {
       ? learned.map(([k, v]) => `${k} ${v}`).join(" · ")
       : "no trades yet — right-click a tree or an ore vein";
 
+    const weaponNow = game.weaponAbility;
     $("hud").innerHTML = `
       <div class="hud-row hud-where">${game.whereAmI}</div>
       <div class="hud-row hud-level">Level ${prog.level}
@@ -308,7 +310,7 @@ export async function boot(): Promise<void> {
       ${bar("MP", p.pools.mana, p.pools.manaMax, "mp")}
       <div class="hud-row">${statuses || '<span class="dim">no effects</span>'}</div>
       <div class="hud-row slots">
-        <span class="slot">z Punch <em>free</em></span>
+        <span class="slot ${(weaponNow.stamina ?? 0) <= p.pools.stamina ? "" : "slot-off"}">z ${escapeHtml(weaponNow.stamina ? (weaponNow.name ?? "Swing") : "Punch")} <em>${weaponNow.stamina ? `${weaponNow.stamina}s` : "free"}</em></span>
         <span class="slot ${p.pools.stamina >= 25 ? "" : "slot-off"}">x Kick <em>25s</em></span>
         ${spells}
       </div>
@@ -606,7 +608,7 @@ export async function boot(): Promise<void> {
         <tr><td>Weapon</td><td>${escapeHtml(weapon.name ?? "Fists")} — ${WEAPON_CLASS[held as keyof typeof WEAPON_CLASS]?.name ?? held}</td></tr>
         <tr><td>Damage</td><td>${weapon.damage} ${weapon.kind ?? "physical"}</td></tr>
         <tr><td>Reach</td><td>${weapon.range ?? 1} square${(weapon.range ?? 1) === 1 ? "" : "s"}</td></tr>
-        <tr><td>Swing</td><td>${(weapon.cost ?? 1).toFixed(2)} turns</td></tr>
+        <tr><td>Swing</td><td>${(weapon.cost ?? 1).toFixed(2)} turns · ${weapon.stamina ? `${weapon.stamina} stamina` : "free"}</td></tr>
         <tr><td>Practice</td><td>${practice.length ? escapeHtml(practice.join(" · ")) : "none yet"}</td></tr>
       </table>
 
