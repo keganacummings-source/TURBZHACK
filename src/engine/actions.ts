@@ -13,7 +13,7 @@ import type { Actor } from "./actor.ts";
 import { applyDamage, rollToHit } from "./combat.ts";
 import { distance, hasLineOfSight, line, type Level } from "./grid.ts";
 import type { Rng } from "./rng.ts";
-import { applyStatus, type StatusDef } from "./status.ts";
+import { applyStatus, isRooted, type StatusDef } from "./status.ts";
 import type { AbilityDef, ProcDef, SpellDef } from "../content/schema.ts";
 import type { ActionResult, DamageKind, Pos } from "./types.ts";
 
@@ -100,6 +100,17 @@ export function moveOrAttack(
     }
     if (!defaultAttack) return { tookTurn: false };
     return useAbility(ctx, actor, defaultAttack, occupant);
+  }
+
+  // Rooted: the feet are held, but the arms are not — attacking the occupant
+  // of the next tile, above, still works. Anything that needs a step does not.
+  // A creature loses the turn rather than being told no, so a rooted monster
+  // that wants to close the distance stands and strains instead of the AI
+  // asking again forever; the player is told and keeps the turn.
+  if (isRooted(actor, ctx.statuses)) {
+    return actor.isPlayer
+      ? { tookTurn: false, messages: [{ text: "You are rooted in place! You can still fight and cast.", tone: "warn" }] }
+      : { tookTurn: true };
   }
 
   if (ctx.level.solid(nx, ny)) {
@@ -294,6 +305,7 @@ function fireProcs(
 
 /** Shove a creature one tile directly away from the attacker, if the tile is free. */
 function shove(ctx: ActionCtx, attacker: Actor, target: Actor): void {
+  if (isRooted(target, ctx.statuses)) return;      // it is held to the ground
   const dx = Math.sign(target.pos.x - attacker.pos.x);
   const dy = Math.sign(target.pos.y - attacker.pos.y);
   if (!dx && !dy) return;
@@ -349,6 +361,18 @@ export function castSpell(
       break;
   }
 
+  /*
+   * A spell that hurts does not hurt your own side.
+   *
+   * A beam or a blast takes in everything on the line or inside the radius, and
+   * without this that included you if you stood within the radius, your pets,
+   * and any villager who wandered into the line. Spells that help (heal, ward,
+   * haste) are left alone: they are meant to reach whoever they reach.
+   */
+  if ((shape === "beam" || shape === "burst") && def.damage && !def.heal) {
+    victims = victims.filter((a) => procHostile(a, actor));
+  }
+
   if (!victims.length) {
     return { tookTurn: false, messages: actor.isPlayer ? [{ text: "There is nothing there to aim at.", tone: "warn" }] : [] };
   }
@@ -367,6 +391,8 @@ export function castSpell(
   const messages: NonNullable<ActionResult["messages"]> = [];
   if (def.say) messages.push({ text: say(def.say, actor, victims[0]), tone: "magic" });
 
+  // Everything the spell actually does to a creature's health, for `leech`.
+  let totalDealt = 0;
   for (const v of victims) {
     if (def.heal) {
       const healed = v.heal(def.heal);
@@ -384,16 +410,125 @@ export function castSpell(
       });
       messages.push(...out.messages);
       dealt = out.dealt;
+      totalDealt += dealt;
     }
     messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, v, dealt || def.damage || 0));
+    messages.push(...rollInflicts(def, ctx, actor, v, dealt || def.damage || 0));
+  }
+
+  // Then on, to the next creature along.
+  if (def.bounce && shape === "actor" && victims[0]) {
+    const hops = bounceFrom(ctx, actor, def, victims[0]);
+    messages.push(...hops.messages);
+    totalDealt += hops.dealt;
+  }
+
+  // And whatever it took comes back.
+  if (def.leech && totalDealt > 0 && actor.alive) {
+    const got = actor.heal(Math.max(1, Math.round(totalDealt * def.leech)));
+    if (got > 0) {
+      messages.push({
+        text: actor.isPlayer ? `You drain ${got} health.` : `${actor.name} drains ${got} health.`,
+        tone: "good",
+      });
+    }
   }
   return { tookTurn: true, messages };
+}
+
+/**
+ * Roll a spell's `inflicts` against one creature.
+ *
+ * Each entry is its own coin, flipped per creature: a bolt that has a 40% chance
+ * to root and a 50% chance to burn can do both, either or neither, and a beam
+ * through three goblins flips all of it three times.
+ */
+function rollInflicts(
+  def: SpellDef, ctx: ActionCtx, source: Actor, target: Actor, power: number,
+): NonNullable<ActionResult["messages"]> {
+  const out: NonNullable<ActionResult["messages"]> = [];
+  if (!def.inflicts?.length) return out;
+  for (const f of def.inflicts) {
+    if (!target.alive) break;
+    if (!ctx.rng.chance(f.chance)) continue;
+    const sdef = ctx.statuses.get(f.status);
+    if (!sdef) continue;
+    out.push(...applyStatus(target, sdef, power, source, f.turns));
+  }
+  return out;
+}
+
+/**
+ * Carry a single-target spell on from the creature it struck.
+ *
+ * Each hop goes to the nearest OTHER creature the caster counts as an enemy,
+ * within `range` of the one just hit and in its line of sight, and never to one
+ * already struck by this casting. It does the first hit's damage times the
+ * falloff for every hop so far, and rolls its own statuses. Allies, pets and
+ * neutral villagers are skipped, so an arc never turns on the person who threw
+ * it. It stops early if nothing is near enough.
+ */
+function bounceFrom(
+  ctx: ActionCtx, actor: Actor, def: SpellDef, first: Actor,
+): { messages: NonNullable<ActionResult["messages"]>; dealt: number } {
+  const messages: NonNullable<ActionResult["messages"]> = [];
+  const b = def.bounce!;
+  const reach = b.range ?? 4;
+  const falloff = b.falloff ?? 0.75;
+  const hit = new Set<string>([first.id]);
+  let from = first;
+  let scale = 1;
+  let dealt = 0;
+
+  for (let hop = 0; hop < b.jumps; hop++) {
+    const next = ctx.actors
+      .filter((a) => procHostile(a, actor) && !hit.has(a.id)
+        && distance(a.pos, from.pos) <= reach
+        && hasLineOfSight(ctx.level, from.pos, a.pos, reach))
+      .sort((a, b2) => distance(a.pos, from.pos) - distance(b2.pos, from.pos))[0];
+    if (!next) break;
+
+    hit.add(next.id);
+    scale *= falloff;
+    messages.push({ text: `${def.name} arcs to ${objectName(next)}.`, tone: "magic" });
+
+    let landed = 0;
+    if (def.damage) {
+      const out = applyDamage(next, {
+        amount: Math.max(1, Math.round((def.damage + actor.stats.focus) * scale)),
+        kind: (def.kind ?? "pure") as DamageKind,
+        source: actor,
+        label: def.name,
+      });
+      messages.push(...out.messages);
+      landed = out.dealt;
+      dealt += landed;
+    }
+    messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, next, landed || def.damage || 0));
+    messages.push(...rollInflicts(def, ctx, actor, next, landed || def.damage || 0));
+    from = next;
+  }
+  return { messages, dealt };
 }
 
 /** Everything a beam passes through, stopping at the first wall. */
 function beamVictims(ctx: ActionCtx, actor: Actor, toward: Pos, range: number): Actor[] {
   const out: Actor[] = [];
-  const path = line(actor.pos, toward);
+  /*
+   * A beam runs out to its range, not just to the creature aimed at.
+   *
+   * `line` stops at the point it is given, which is the target, so a beam used
+   * to hit the nearest creature and anything in front of it and never reach what
+   * was standing behind — the opposite of "everything in a line out to range".
+   * Stretching the aim point out to the full range fixes that; the loop below
+   * still stops at the first wall.
+   */
+  const dx = toward.x - actor.pos.x, dy = toward.y - actor.pos.y;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  const end = steps === 0 || range <= steps
+    ? toward
+    : { x: actor.pos.x + Math.round((dx * range) / steps), y: actor.pos.y + Math.round((dy * range) / steps) };
+  const path = line(actor.pos, end);
   for (let i = 1; i < path.length; i++) {
     const p = path[i]!;
     if (distance(actor.pos, p) > range) break;

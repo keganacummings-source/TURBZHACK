@@ -86,6 +86,23 @@ export function levelForXp(xp: number): number {
  */
 export const PER_LEVEL = { hpMax: 6, staminaMax: 4, manaMax: 5 } as const;
 
+/**
+ * The highest spell tier a level can be offered: 1 at levels 1-3, 2 from 4, and
+ * so on up to 5. Exported so the level-up roll and the spell generator agree on
+ * what "within reach" means.
+ */
+export const maxSpellTier = (level: number): number =>
+  Math.max(1, Math.min(5, 1 + Math.floor((level - 1) / 3)));
+
+/**
+ * How many of an ordinary level's spell slots are held for generated spells.
+ *
+ * One of the two, so that the random spells are a regular part of the roll
+ * instead of something that turns up once the hand-written pool happens to run
+ * low. The other slot is drawn from everything, generated and written alike.
+ */
+export const GENERATED_SLOTS = 1;
+
 /** One of the five things on offer. */
 export type Choice =
   | { kind: "spell"; id: string; name: string; about: string; detail: string }
@@ -111,10 +128,16 @@ export function rollChoices(
   upgrades: Map<string, UpgradeDef>,
   rng: Rng,
   count = CHOICES,
+  /**
+   * Spells built by the generator for this roll, offered alongside the written
+   * ones. They are passed in rather than made here so that a caller with no
+   * interest in them — most of the tests — gets exactly the roll it always did.
+   */
+  generated: readonly SpellDef[] = [],
 ): Choice[] {
   const haveSpell = new Set(known);
   // Tier 1 at level 1-3, tier 2 from 4, tier 3 from 7, and so on.
-  const maxTier = Math.max(1, Math.min(5, 1 + Math.floor((level - 1) / 3)));
+  const maxTier = maxSpellTier(level);
   const upgradeTier = Math.max(1, Math.min(3, 1 + Math.floor((level - 1) / 6)));
 
   const asChoice = (u: UpgradeDef): Choice => ({
@@ -144,18 +167,21 @@ export function rollChoices(
     // handing the player a level with nothing on it.
   }
 
-  const spellPool: Choice[] = [...spells.values()]
-    .filter((s) => !haveSpell.has(String(s.id)))
+  const asSpellChoice = (s: SpellDef): Choice => ({
+    kind: "spell" as const,
+    id: String(s.id),
+    name: s.name ?? String(s.id),
+    about: s.about ?? "",
+    detail: spellDetail(s),
+  });
+  const offerable = (s: SpellDef) =>
+    !haveSpell.has(String(s.id)) &&
     // A spell only shows up once it is within reach: an offer you cannot cast
     // for ten levels is a wasted slot in the roll.
-    .filter((s) => (s.tier ?? 1) <= maxTier)
-    .map((s) => ({
-      kind: "spell" as const,
-      id: String(s.id),
-      name: s.name ?? String(s.id),
-      about: s.about ?? "",
-      detail: spellDetail(s),
-    }));
+    (s.tier ?? 1) <= maxTier;
+  const writtenPool: Choice[] = [...spells.values()].filter(offerable).map(asSpellChoice);
+  const generatedPool: Choice[] = generated.filter(offerable).map(asSpellChoice);
+  const spellPool: Choice[] = [...writtenPool, ...generatedPool];
 
   const upgradePool = [...upgrades.values()]
     .filter((u) => !u.talent)
@@ -194,8 +220,16 @@ export function rollChoices(
     : 0;
   const wantUpgrades = Math.min(spread.length, count - wantSpells);
 
+  // Generated spells get their own slot first, then the rest of the spell
+  // slots are drawn from everything left, written and generated alike.
+  const reserved = rng.shuffled(generatedPool).slice(0, Math.min(GENERATED_SLOTS, wantSpells));
+  const taken = new Set(reserved.map((c) => c.id));
+  const spellPicks = [
+    ...reserved,
+    ...rng.shuffled(spellPool.filter((c) => !taken.has(c.id))).slice(0, wantSpells - reserved.length),
+  ];
   const picked: Choice[] = [
-    ...rng.shuffled(spellPool).slice(0, wantSpells),
+    ...spellPicks,
     ...rng.shuffled(spread).slice(0, wantUpgrades),
   ];
 
@@ -224,6 +258,12 @@ export function spellDetail(s: SpellDef): string {
   else if (shape === "self") bits.push("on yourself");
   else bits.push(`range ${s.range ?? 1}`);
   if (s.applies?.length) bits.push(s.applies.join(", "));
+  // Chances read as "40% burning" so a gamble does not look like a certainty.
+  if (s.inflicts?.length) {
+    bits.push(s.inflicts.map((f) => `${Math.round(f.chance * 100)}% ${f.status}`).join(", "));
+  }
+  if (s.bounce) bits.push(`arcs to ${s.bounce.jumps} more`);
+  if (s.leech) bits.push(`${Math.round(s.leech * 100)}% leech`);
   if (s.cooldown) bits.push(`every ${s.cooldown + 1} turns`);
   return bits.join(" · ");
 }

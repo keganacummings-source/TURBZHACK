@@ -259,6 +259,98 @@ from level 1, and each further tier unlocks every three levels, so:
 Leave it out and it defaults to 1. A spell with a tier above 5 can never be
 offered at all, which `npm test` will tell you about.
 
+## Spells that only sometimes work
+
+Three fields on a spell make it a gamble, a chain or a leech. They are what the
+random spells below are built from, and they work in any spell file.
+
+```json
+{
+  "name": "Arcing Rooting Fire Bolt",
+  "mana": 17,
+  "damage": 16,
+  "kind": "fire",
+  "range": 7,
+  "target": "actor",
+  "inflicts": [
+    { "status": "burning", "chance": 0.45 },
+    { "status": "rooted",  "chance": 0.35 }
+  ],
+  "bounce": { "jumps": 2, "range": 4, "falloff": 0.75 },
+  "leech": 0.25
+}
+```
+
+- **`inflicts`** is a list of statuses that only MAY land. `applies` is the sure
+  thing; this is the gamble. Each entry is its own coin, flipped separately for
+  every creature the spell hits, so this one can burn, root, both or neither.
+  `chance` is 0 to 1 (`0.4` is forty per cent), and `turns` optionally overrides
+  how long the status lasts.
+- **`bounce`** carries a single-target spell on after it lands. Each hop goes to
+  the nearest *other* creature you count as an enemy, within `range` of the one
+  just struck and in its line of sight, never the same one twice, and does
+  `falloff` of the previous hop (`0.75` is a quarter weaker each time). Every
+  creature it reaches rolls its own statuses. It never turns on allies, pets or
+  neutral villagers, and it stops early if nothing is near enough.
+- **`leech`** is the fraction of ALL the damage the spell deals, hops included,
+  that comes back to the caster as health. It heals nothing if the spell did no
+  damage.
+
+A beam or a blast only ever hurts creatures that are enemies of whoever cast
+it, so your own blast no longer catches you, your pet or a villager. Spells that
+help (heal, ward, haste) are not filtered.
+
+### Rooted, and statuses that stop a turn
+
+A status can now say `"preventsMove": true`. A rooted creature cannot walk, but
+it can still fight whatever is next to it and still cast, which is what makes
+root different from stun: it pins a creature in place rather than taking its
+turn. `content/statuses/rooted.json` is the one that ships.
+
+`"preventsAction": true` (stunned, webbed, frozen) now holds a creature for
+every status that says it, not only frozen: the turn loop used to look for
+`frozen` by name, so stunned and webbed did nothing but print a message.
+
+## Random spells
+
+Every level-up offers a spell built on the spot, and you do not write a file for
+it. A generated spell is an *ID that names a recipe*, and the game works the
+spell out of the ID whenever it is asked for:
+
+```
+gen-fire-bolt-t3-s4k2-sig45-arc2-root35
+```
+
+| part | meaning |
+|---|---|
+| `fire` | the element: `fire`, `cold`, `shock`, `poison` or `arcane` |
+| `bolt` | the shape: `bolt` (one target), `lance` (a line), `burst` (a blast) |
+| `t3` | tier 1 to 5, which sets the damage and how many traits it carries |
+| `s4k2` | a little salt that moves the damage a few per cent |
+| `sig45` | chance of the element's own status (burning, chilled, stunned, poisoned, cursed) |
+| `arc2` | bounces to 2 further creatures (bolts only) |
+| `drain25` | 25% of the damage dealt comes back to you |
+| `root35` | a further status at that chance: `root` `bind` `stun` `chill` `hex` `wither` `burn` `venom` |
+
+That ID is "Arcing Rooting Fire Bolt". Nothing about it is stored: a save keeps
+the ID, as it does for any spell you know, and the spell is rebuilt from it on
+load. The same ID always makes the same spell. `rollSpells` and `rollRecipe` in
+`src/engine/spellgen.ts` are where the roll lives; the tables at the top of that
+file are where you add an element, a shape, or a trait, and tune the numbers.
+
+You can also hand one out yourself, anywhere a spell id goes:
+
+```json
+"spells": ["gen-poison-bolt-t2-s1a1-sig40-drain25"]
+```
+
+That is "Draining Poison Bolt". An item can `cast` one, and an enemy can know one.
+An ID that is not a well-formed recipe is simply "no such spell", and `npm test`
+runs a few hundred generated spells through the same validator as the files.
+
+Because the numbers are worked out from the ID, changing the tuning in
+`spellgen.ts` changes every generated spell at once, including ones in old saves.
+
 ## Writing a `say` line
 
 The player is called "You" and everything else is named, so one template has to

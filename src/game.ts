@@ -32,9 +32,10 @@ import type { ActionResult, Message, Pos } from "./engine/types.ts";
 import type { Registry } from "./content/registry.ts";
 import type { AbilityDef, ClassDef, EnemyDef, NpcDef, QuestDef, RecipeDef, SpeciesDef, SpellDef, TileDef, UpgradeDef } from "./content/schema.ts";
 import {
-  applyChoice, isMilestone, levelForXp, newPerks, rollChoices, xpForLevel,
+  applyChoice, isMilestone, levelForXp, maxSpellTier, newPerks, rollChoices, xpForLevel,
   PER_LEVEL, type Choice, type Perks,
 } from "./engine/progress.ts";
+import { rollSpells } from "./engine/spellgen.ts";
 import {
   applyLoadout, describe, equip, isWearable, loadoutOf, unequip, SLOTS, type Slot, type Worn,
 } from "./engine/equipment.ts";
@@ -54,6 +55,9 @@ export type Place =
 
 /** How many companions you can keep. More than this and nobody can tell them apart. */
 export const PARTY_LIMIT = 3;
+
+/** How many random spells are made for each level-up roll to choose from. */
+const GENERATED_CANDIDATES = 3;
 
 export class Game {
   readonly reg: Registry;
@@ -1354,6 +1358,10 @@ export class Game {
       this.reg.spells as Map<string, SpellDef>,
       this.reg.upgrades as Map<string, UpgradeDef>,
       this.rng.fork(`level:${level}:${attempt}`),
+      undefined,
+      // Random spells for this roll. Forked the same way, so the same level and
+      // reroll always offer the same ones: a roll still cannot be save-scummed.
+      rollSpells(this.rng.fork(`level:${level}:${attempt}:spells`), maxSpellTier(level), GENERATED_CANDIDATES),
     );
   }
 

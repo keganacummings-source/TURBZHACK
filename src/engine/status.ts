@@ -26,6 +26,13 @@ export type StatusDef = {
   /** The bearer cannot take its turn while this is on. */
   preventsAction?: boolean;
   /**
+   * The bearer cannot walk while this is on, but can still fight and cast.
+   *
+   * That is the difference from `preventsAction`: a rooted creature next to you
+   * hits you as hard as ever, it just cannot follow you or run away.
+   */
+  preventsMove?: boolean;
+  /**
    * Chance each turn that it ends early.
    *
    * Freeze uses this: 0.5 means an even chance of thawing every turn, so it
@@ -64,6 +71,16 @@ export type StatusTickResult = {
 };
 
 const fill = (text: string, actor: Actor) => text.replace(/\{name\}/g, actor.name);
+
+/** Is this actor under anything that stops it acting at all — stunned, webbed, frozen? */
+export function isHeld(actor: Actor, defs: Map<string, StatusDef>): boolean {
+  return actor.statuses.some((s) => s.turns > 0 && !!defs.get(s.id)?.preventsAction);
+}
+
+/** Is this actor under anything that stops it walking — rooted, say? */
+export function isRooted(actor: Actor, defs: Map<string, StatusDef>): boolean {
+  return actor.statuses.some((s) => s.turns > 0 && !!defs.get(s.id)?.preventsMove);
+}
 
 /**
  * Put a status on an actor.

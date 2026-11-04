@@ -15,7 +15,7 @@
 import type { Actor } from "./actor.ts";
 import type { Rng } from "./rng.ts";
 import type { Level } from "./grid.ts";
-import { tickStatuses, type StatusDef } from "./status.ts";
+import { isHeld, tickStatuses, type StatusDef } from "./status.ts";
 import type { ActionResult, Message } from "./types.ts";
 
 /** The energy it costs to act once. */
@@ -102,7 +102,9 @@ export function takeTurn(actor: Actor, ctx: TurnContext, decide: (a: Actor, c: T
   for (const m of ticked.messages) ctx.log(m.text, m.tone);
   if (ticked.killed || !actor.alive) return 1;
 
-  if (!actor.canAct) return 1;   // still frozen: the turn is spent standing there
+  // Frozen is built in; anything else that says `preventsAction` — stunned,
+  // webbed, whatever you write next — holds the bearer the same way.
+  if (!actor.canAct || isHeld(actor, ctx.statuses)) return 1;   // the turn is spent standing there
 
   const result = decide(actor, ctx);
   for (const m of result.messages ?? []) ctx.log(m.text, m.tone);

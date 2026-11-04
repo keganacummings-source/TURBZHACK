@@ -62,6 +62,27 @@ export type SpellDef = ContentBase & {
   applies?: string[];
   /** Turns of that status, if it should differ from the status's own default. */
   statusTurns?: number;
+  /**
+   * Statuses that only MAY land, each rolled separately for each creature hit.
+   *
+   * `applies` is the sure thing; this is the gamble. A spell with
+   * `{ "status": "burning", "chance": 0.4 }` sets about two in five of whatever
+   * it hits alight, and a beam through three goblins rolls three times.
+   */
+  inflicts?: { status: string; chance: number; turns?: number }[];
+  /**
+   * After the first target, leap on to more.
+   *
+   * Each hop goes to the nearest other hostile creature within `range` of the
+   * one just struck, one it can see, for `falloff` of the previous hop's damage
+   * (0.75 means a quarter weaker each time). Every creature it reaches rolls its
+   * own statuses. Only for `target: "actor"`.
+   */
+  bounce?: { jumps: number; range?: number; falloff?: number };
+  /** Fraction of ALL the damage this spell deals that comes back to the caster as health. */
+  leech?: number;
+  /** Set on spells built by the generator in engine/spellgen.ts, not by files. */
+  generated?: boolean;
   /** Health restored to the target. */
   heal?: number;
   /** Turns before it can be cast again. */
@@ -518,6 +539,8 @@ export type ItemDef = ContentBase & {
   focus?: number;
   accuracy?: number;
   evasion?: number;
+  /** Added to the wearer's maximum stamina while worn. */
+  staminaMax?: number;
   /** Multiplied into the wearer's resistances: 0 immune, 0.5 halved, 2 double. */
   resist?: Partial<Record<DamageKind, number>>;
   /** Enchantment ids baked into it. */

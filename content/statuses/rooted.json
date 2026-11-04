@@ -1,0 +1,12 @@
+{
+  "name": "Rooted",
+  "about": "Cannot move, but can still fight and cast. Breaks free fairly often.",
+  "turns": 4,
+  "preventsMove": true,
+  "breakChance": 0.2,
+  "messages": {
+    "applied": "Roots burst from the ground and bind {name}!",
+    "broke": "{name} tears free of the roots.",
+    "ended": "The roots around {name} wither away."
+  }
+}

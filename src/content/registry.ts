@@ -23,6 +23,7 @@
 import { CARRIED_SLOTS } from "../engine/equipment.ts";
 import { ATTRIBUTES } from "../engine/attributes.ts";
 import { MATERIALS, WEAPON_CLASSES } from "../engine/weapons.ts";
+import { SpellBook } from "../engine/spellgen.ts";
 import {
   CONTENT_KINDS,
   type AbilityDef, type ClassDef, type ContentKind, type EnchantmentDef,
@@ -60,7 +61,8 @@ export class Registry {
   readonly recipes = new Map<string, RecipeDef>();
   readonly npcs = new Map<string, NpcDef>();
   readonly quests = new Map<string, QuestDef>();
-  readonly spells = new Map<string, SpellDef>();
+  /** A SpellBook is a Map that can also build a generated spell from its id. */
+  readonly spells: Map<string, SpellDef> = new SpellBook();
   readonly abilities = new Map<string, AbilityDef>();
   readonly enchantments = new Map<string, EnchantmentDef>();
   readonly statuses = new Map<string, StatusDef>();
@@ -180,6 +182,7 @@ export class Registry {
     }
     for (const [id, s] of this.spells) {
       for (const st of s.applies ?? []) ref(`spells:${id}`, "statuses", st, `"applies"`);
+      for (const f of s.inflicts ?? []) ref(`spells:${id}`, "statuses", f.status, `"inflicts"`);
     }
     for (const [id, a] of this.abilities) {
       for (const st of a.applies ?? []) ref(`abilities:${id}`, "statuses", st, `"applies"`);
@@ -274,9 +277,12 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("cooldown", { min: 0 });
       num("statusTurns", { min: 1 });
       num("tier", { min: 1, max: 5 });
+      num("leech", { min: 0, max: 1 });
       damageKind("kind");
       oneOf("target", ["actor", "self", "beam", "burst"]);
       strList("applies");
+      checkInflicts(def, out);
+      checkBounce(def, out);
       if (def.mana === undefined) out.push(`"mana" is required — write 0 if it is free`);
       break;
 
@@ -401,6 +407,9 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
     case "statuses":
       num("turns", { min: 1 });
       num("breakChance", { min: 0, max: 1 });
+      for (const flag of ["preventsAction", "preventsMove"]) {
+        if (def[flag] !== undefined && typeof def[flag] !== "boolean") out.push(`"${flag}" must be true or false`);
+      }
       if (def.turns === undefined) out.push(`"turns" is required — how long does it last?`);
       if (def.tick !== undefined) {
         const t = def.tick;
@@ -436,6 +445,7 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
       num("focus");
       num("accuracy");
       num("evasion");
+      num("staminaMax");
       num("charges", { min: 0 });
       num("weight", { min: 0 });
       num("reach", { min: 1 });
@@ -497,6 +507,53 @@ function checkKind(kind: ContentKind, def: Record<string, unknown>): string[] {
     }
   }
   return out;
+}
+
+/**
+ * A spell's `inflicts` list: statuses that only sometimes land.
+ *
+ * A chance outside 0..1 is almost always a percentage written as a whole number
+ * (`40` meaning forty per cent), which would read as "always" and make the spell
+ * quietly twice as strong as intended, so it is reported rather than clamped.
+ */
+function checkInflicts(def: Record<string, unknown>, out: string[]): void {
+  const list = def.inflicts;
+  if (list === undefined) return;
+  if (!Array.isArray(list)) {
+    out.push(`"inflicts" must be a list like [{"status": "burning", "chance": 0.4}]`);
+    return;
+  }
+  list.forEach((entry, i) => {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+      out.push(`"inflicts[${i}]" must be an object like {"status": "burning", "chance": 0.4}`);
+      return;
+    }
+    const e = entry as Record<string, unknown>;
+    if (typeof e.status !== "string" || !e.status) out.push(`"inflicts[${i}].status" must be a status id`);
+    if (typeof e.chance !== "number" || !Number.isFinite(e.chance) || e.chance < 0 || e.chance > 1) {
+      out.push(`"inflicts[${i}].chance" must be between 0 and 1 (0.4 means 40%)`);
+    }
+    if (e.turns !== undefined && (typeof e.turns !== "number" || !(e.turns >= 1))) {
+      out.push(`"inflicts[${i}].turns" must be a number of turns, at least 1`);
+    }
+  });
+}
+
+/** A spell's `bounce`: how many hops, how far, and how much weaker each is. */
+function checkBounce(def: Record<string, unknown>, out: string[]): void {
+  const b = def.bounce;
+  if (b === undefined) return;
+  if (b === null || typeof b !== "object" || Array.isArray(b)) {
+    out.push(`"bounce" must be an object like {"jumps": 2, "range": 4, "falloff": 0.75}`);
+    return;
+  }
+  const { jumps, range, falloff } = b as Record<string, unknown>;
+  if (typeof jumps !== "number" || !Number.isInteger(jumps) || jumps < 1) out.push(`"bounce.jumps" must be a whole number, at least 1`);
+  if (range !== undefined && (typeof range !== "number" || !(range >= 1))) out.push(`"bounce.range" must be a number of tiles, at least 1`);
+  if (falloff !== undefined && (typeof falloff !== "number" || !(falloff > 0 && falloff <= 1))) {
+    out.push(`"bounce.falloff" must be above 0 and at most 1 (0.75 means a quarter weaker each hop)`);
+  }
+  if (def.target !== undefined && def.target !== "actor") out.push(`"bounce" only works on "target": "actor"`);
 }
 
 /**

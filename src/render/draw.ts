@@ -227,6 +227,7 @@ function drawStatusPips(
     burning: "#ff8a3a",
     frozen: "#8fd6ff",
     chilled: "#b7dcee",
+    rooted: "#8a6b3c",
   };
   const r = Math.max(1, Math.round(scale));
   let i = 0;

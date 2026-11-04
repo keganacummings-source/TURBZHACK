@@ -119,6 +119,7 @@
     "zombie"
   ],
   "spells": [
+    "arrow",
     "blink",
     "chain-arc",
     "cone-of-cold",
@@ -208,6 +209,7 @@
     "frozen",
     "hasted",
     "poisoned",
+    "rooted",
     "stunned",
     "warded",
     "webbed",
