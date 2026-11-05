@@ -13,6 +13,7 @@ import {
   priceOf, stockWord, type VillageTrade,
 } from "../world/economy.ts";
 import type { ItemDef } from "../content/schema.ts";
+import { itemValue } from "./weapons.ts";
 
 export type Market = {
   /** Item id -> how much of it there is, as a multiple of normal. */

@@ -13,7 +13,7 @@ import type { Game } from "../game.ts";
 import type { Actor } from "../engine/actor.ts";
 import type { Quote, BlackQuote } from "../engine/market.ts";
 import { BLACK_MARKET_PERIOD } from "../engine/market.ts";
-import { TRADE } from "../world/economy.ts";
+import { TRADE, routeProfit, baseStock } from "../world/economy.ts";
 import { describe } from "../engine/equipment.ts";
 
 const esc = (s: string): string =>
@@ -35,6 +35,96 @@ function standingWord(n: number): string {
  * `mine` is what you are carrying, so the sell column only shows rows you can
  * actually sell — a price list for things you do not have is a price list.
  */
+
+/**
+ * Suggest profitable routes from this village's board.
+ *
+ * Uses trade profiles and baseline stock (not live drift) so the hint is stable
+ * and readable: buy what this place produces cheap, sell it where others want it.
+ */
+function routesBlock(game: Game, index: number): string {
+  const here = game.continent.villages[index];
+  if (!here) return "";
+  const haggle = game.player.derived.haggle;
+  const hereProfile = TRADE[here.trade];
+  type Hint = { item: string; name: string; profit: number; dest: string; direction: "out" | "in" };
+  const hints: Hint[] = [];
+
+  for (const [destIndex, dest] of game.continent.villages.entries()) {
+    if (destIndex === index) continue;
+    const destProfile = TRADE[dest.trade];
+    // Goods this village produces that the other wants → buy here, sell there.
+    for (const item of hereProfile.produces) {
+      if (!destProfile.wants.includes(item)) continue;
+      const def = game.reg.items.get(item);
+      if (!def || def.unique) continue;
+      const profit = routeProfit(def, baseStock(here.trade, item), baseStock(dest.trade, item), haggle);
+      if (profit > 0) {
+        hints.push({
+          item, name: def.name ?? item, profit,
+          dest: dest.name, direction: "out",
+        });
+      }
+    }
+    // Goods this village wants that the other produces → buy there, sell here.
+    for (const item of hereProfile.wants) {
+      if (!destProfile.produces.includes(item)) continue;
+      const def = game.reg.items.get(item);
+      if (!def || def.unique) continue;
+      const profit = routeProfit(def, baseStock(dest.trade, item), baseStock(here.trade, item), haggle);
+      if (profit > 0) {
+        hints.push({
+          item, name: def.name ?? item, profit,
+          dest: dest.name, direction: "in",
+        });
+      }
+    }
+  }
+
+  hints.sort((a, b) => b.profit - a.profit);
+  // Keep the board short: best few unique goods.
+  const seen = new Set<string>();
+  const top: Hint[] = [];
+  for (const h of hints) {
+    const key = `${h.direction}:${h.item}:${h.dest}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    top.push(h);
+    if (top.length >= 8) break;
+  }
+
+  if (!top.length) {
+    return `<p class="dim">No clear routes from here yet — check other trades on the map.</p>`;
+  }
+
+  const rows = top.map((h) => {
+    if (h.direction === "out") {
+      return `<tr>
+        <td>${esc(h.name)}</td>
+        <td class="dim">buy here</td>
+        <td>→ ${esc(h.dest)}</td>
+        <td class="price">+${h.profit}</td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${esc(h.name)}</td>
+      <td class="dim">from ${esc(h.dest)}</td>
+      <td>→ sell here</td>
+      <td class="price">+${h.profit}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+    <h3>Routes</h3>
+    <p class="dim">Baseline price gaps from what this place makes and wants.</p>
+    <div class="table-scroll">
+      <table class="pack-table">
+        <tr class="dim"><th>Good</th><th></th><th></th><th>Profit</th></tr>
+        ${rows}
+      </table>
+    </div>`;
+}
+
 export function marketHtml(game: Game, index: number): string {
   const village = game.continent.villages[index];
   if (!village) return "";
