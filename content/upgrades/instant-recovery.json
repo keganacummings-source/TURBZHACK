@@ -1,0 +1,15 @@
+{
+  "name": "Instant Recovery",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "Pain is a suggestion. You decline.",
+  "perks": {
+    "regen": 18,
+    "regenDelay": -12
+  },
+  "modify": {
+    "hpMax": 60
+  }
+}

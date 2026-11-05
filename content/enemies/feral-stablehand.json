@@ -1,0 +1,34 @@
+{
+  "name": "Feral Stablehand",
+  "about": "Hurt it first and feed it second, he always said. Nobody ever asked who taught him that.",
+  "sprite": "pc-gnoll",
+  "pools": {
+    "hp": -10
+  },
+  "armour": 2,
+  "speed": 120,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "bite",
+    "gore"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 7
+  },
+  "weight": 14,
+  "xp": 60,
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "drops": [
+    { "item": "whip", "chance": 0.15 },
+    { "item": "hide", "chance": 0.3 },
+    { "item": "dried-meat", "chance": 0.2 }
+  ]
+}

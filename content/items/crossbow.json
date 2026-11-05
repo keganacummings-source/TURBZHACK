@@ -1,0 +1,18 @@
+{
+  "name": "Crossbow",
+  "sprite": "wpn-crossbow",
+  "slot": "weapon",
+  "about": "Slow to load, but it does not care about armour.",
+  "damage": 16,
+  "kind": "physical",
+  "accuracy": -2,
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight_find": 6,
+  "weaponClass": "bow",
+  "material": "iron",
+  "value": 180,
+  "verb": "fire at"
+}

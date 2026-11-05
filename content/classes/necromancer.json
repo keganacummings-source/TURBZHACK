@@ -1,0 +1,23 @@
+{
+  "name": "Necromancer",
+  "blurb": "Takes what is left and uses it.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ruin-staff",
+    "robe"
+  ],
+  "stats": {
+    "focus": 6
+  },
+  "spells": [
+    "drain",
+    "wither"
+  ],
+  "attributes": {
+    "wits": 3,
+    "presence": -2
+  }
+}

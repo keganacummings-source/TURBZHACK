@@ -1,0 +1,38 @@
+{
+  "name": "Balrug",
+  "sprite": "mon-balrug",
+  "pools": {
+    "hp": 90,
+    "mana": 25
+  },
+  "armour": 6,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 11,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 10,
+    "max": 12
+  },
+  "weight": 2,
+  "xp": 360,
+  "spells": [
+    "firestorm",
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0.0,
+    "cold": 1.5,
+    "poison": 0.5
+  },
+  "region": {
+    "min": 3,
+    "max": 5
+  }
+}

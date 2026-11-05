@@ -1,0 +1,10 @@
+{
+  "name": "Meteoric Ingot",
+  "sprite": "itm-ingot",
+  "slot": "material",
+  "about": "It does not so much melt as agree to cooperate.",
+  "stack": true,
+  "provides": "meteoric",
+  "value": 150,
+  "family": "metal"
+}

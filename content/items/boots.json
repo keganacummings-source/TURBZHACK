@@ -1,0 +1,14 @@
+{
+  "name": "Boots",
+  "sprite": "arm-boots",
+  "slot": "feet",
+  "about": "Sure-footed.",
+  "armour": 1,
+  "evasion": 3,
+  "depth": {
+    "min": 1,
+    "max": 12
+  },
+  "weight_find": 11,
+  "overlay": "ovl-feet"
+}

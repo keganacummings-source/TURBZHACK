@@ -1,0 +1,12 @@
+{
+  "name": "Keen Mind",
+  "group": "magic",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "Ideas arrive a little cleaner.",
+  "modify": {
+    "focus": 6,
+    "manaMax": 25
+  }
+}

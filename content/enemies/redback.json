@@ -1,0 +1,41 @@
+{
+  "name": "Redback",
+  "sprite": "mon-redback",
+  "pools": {
+    "hp": -55,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 125,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "desert",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 10,
+  "xp": 56,
+  "resist": {
+    "poison": 0
+  },
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.12,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

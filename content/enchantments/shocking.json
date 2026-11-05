@@ -1,0 +1,11 @@
+{
+  "name": "Shocking",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 2,
+  "bonusDamage": 5,
+  "bonusKind": "shock",
+  "about": "It cracks when it lands."
+}

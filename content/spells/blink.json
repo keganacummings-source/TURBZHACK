@@ -1,0 +1,12 @@
+{
+  "name": "Blink",
+  "about": "Not far. Far enough.",
+  "mana": 10,
+  "kind": "pure",
+  "range": 0,
+  "target": "self",
+  "tier": 2,
+  "say": "{caster} blink{s} sideways out of the world.",
+  "cooldown": 3,
+  "script": "blink.js"
+}

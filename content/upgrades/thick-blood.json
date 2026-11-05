@@ -1,0 +1,12 @@
+{
+  "name": "Thick Blood",
+  "group": "body",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You bleed less than you should.",
+  "modify": {
+    "hpMax": 40,
+    "armour": 3
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "Harrowed Elder",
+  "about": "Said there was a thing in the deep places older than the village. Did not say he had already met it.",
+  "sprite": "pc-mummy",
+  "pools": {
+    "hp": 10,
+    "mana": 40
+  },
+  "armour": 3,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "staff-strike"
+  ],
+  "spells": [
+    "hex-bolt",
+    "drain",
+    "mend"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 4,
+  "xp": 220,
+  "region": {
+    "min": 2,
+    "max": 5
+  },
+  "resist": {
+    "poison": 0,
+    "cold": 0.5,
+    "pure": 0.4
+  },
+  "drops": [
+    { "item": "oak-staff", "chance": 0.2 },
+    { "item": "amulet-of-warding", "chance": 0.1 },
+    { "item": "band-of-nine-sorrows", "chance": 0.05 }
+  ]
+}

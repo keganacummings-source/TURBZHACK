@@ -1,0 +1,10 @@
+{
+  "name": "Packed Snow",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "tundra",
+    "glacier"
+  ],
+  "sprite": "t-wall-snow"
+}

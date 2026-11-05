@@ -1,0 +1,9 @@
+{
+  "name": "Root Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-wall-root"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Craft God",
+  "group": "trade",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "What takes others a day takes you a moment.",
+  "perks": {
+    "craftSpeed": -6,
+    "gatherSpeed": -3,
+    "gatherLuck": 0.6
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Void-Touched",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 6,
+  "about": "Something else looks out of your eyes.",
+  "modify": {
+    "focus": 40,
+    "might": 15,
+    "manaMax": 100,
+    "hpMax": -80,
+    "evasion": 10
+  }
+}

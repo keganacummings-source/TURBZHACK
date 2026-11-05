@@ -1,0 +1,7 @@
+{
+  "name": "Cap Mushroom",
+  "sprite": "itm-mushroom",
+  "slot": "material",
+  "about": "Edible, if you are sure.",
+  "stack": true
+}

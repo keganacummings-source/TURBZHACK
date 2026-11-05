@@ -1,0 +1,15 @@
+{
+  "name": "Freeze",
+  "about": "Locks a creature in place. Even odds it breaks out each turn.",
+  "mana": 14,
+  "kind": "cold",
+  "range": 6,
+  "target": "actor",
+  "tier": 3,
+  "say": "{caster} freeze{s} {target} solid.",
+  "damage": 8,
+  "applies": [
+    "frozen"
+  ],
+  "cooldown": 1
+}

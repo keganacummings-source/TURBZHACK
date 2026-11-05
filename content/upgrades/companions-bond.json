@@ -1,0 +1,15 @@
+{
+  "name": "Companion's Bond",
+  "group": "company",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "They stay closer, and fight a little harder.",
+  "perks": {
+    "party": 1,
+    "tame": 0.2
+  },
+  "modify": {
+    "hpMax": 15
+  }
+}

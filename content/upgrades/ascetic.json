@@ -1,0 +1,11 @@
+{
+  "name": "Ascetic",
+  "about": "Trades health for power.",
+  "modify": {
+    "focus": 7,
+    "hpMax": -15
+  },
+  "weight": 5,
+  "group": "magic",
+  "tier": 2
+}

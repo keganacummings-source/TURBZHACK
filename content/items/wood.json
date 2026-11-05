@@ -1,0 +1,9 @@
+{
+  "name": "Wood",
+  "sprite": "itm-wood",
+  "slot": "material",
+  "about": "Cut, not yet anything.",
+  "stack": true,
+  "provides": "wood",
+  "family": "timber"
+}

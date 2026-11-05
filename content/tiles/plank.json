@@ -1,0 +1,8 @@
+{
+  "name": "Wooden Planks",
+  "biomes": [
+    "dungeon",
+    "forest"
+  ],
+  "sprite": "t-plank"
+}

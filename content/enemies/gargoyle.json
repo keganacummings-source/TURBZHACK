@@ -1,0 +1,34 @@
+{
+  "name": "Gargoyle",
+  "sprite": "mon-gargoyle",
+  "pools": {
+    "hp": 20,
+    "mana": -50
+  },
+  "armour": 8,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "slam"
+  ],
+  "biomes": [
+    "highland",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 8,
+  "xp": 110,
+  "resist": {
+    "physical": 0.5,
+    "poison": 0.0,
+    "shock": 0.5
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

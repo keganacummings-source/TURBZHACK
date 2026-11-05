@@ -1,0 +1,11 @@
+{
+  "name": "of the Leech",
+  "place": "suffix",
+  "slots": ["weapon"],
+  "tier": 2,
+  "weight": 7,
+  "procs": [
+    { "kind": "lifesteal", "leech": 0.18 }
+  ],
+  "about": "A little of every wound you deal comes back to you."
+}

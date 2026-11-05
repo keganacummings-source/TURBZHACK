@@ -1,0 +1,11 @@
+{
+  "name": "of the Titan",
+  "place": "suffix",
+  "slots": [],
+  "tier": 3,
+  "attributes": {
+    "strength": 3,
+    "endurance": 2
+  },
+  "about": "Something very large lent you its idea of itself."
+}

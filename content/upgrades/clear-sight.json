@@ -1,0 +1,12 @@
+{
+  "name": "Clear Sight",
+  "group": "arms",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You see the opening.",
+  "modify": {
+    "accuracy": 8,
+    "might": 4
+  }
+}

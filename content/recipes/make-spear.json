@@ -1,0 +1,19 @@
+{
+  "name": "Make a Spear",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 3,
+  "needs": [
+    {
+      "metal": 1
+    },
+    {
+      "timber": 2
+    }
+  ],
+  "makes": {
+    "item": "spear"
+  },
+  "about": "Mostly stick.",
+  "forge": true
+}

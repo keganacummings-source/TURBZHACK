@@ -1,0 +1,13 @@
+{
+  "name": "Webbed",
+  "about": "Held fast — cannot act.",
+  "turns": 4,
+  "preventsAction": true,
+  "breakChance": 0.25,
+  "messages": {
+    "applied": "{name} is caught in webbing!",
+    "refreshed": "More webbing binds {name}!",
+    "broke": "{name} tears free.",
+    "ended": "The web falls away from {name}."
+  }
+}

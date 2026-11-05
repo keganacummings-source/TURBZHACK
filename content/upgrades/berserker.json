@@ -1,0 +1,14 @@
+{
+  "name": "Berserker",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "The more it hurts, the harder you hit.",
+  "modify": {
+    "might": 28,
+    "hpMax": 70,
+    "evasion": -5,
+    "accuracy": -4
+  }
+}

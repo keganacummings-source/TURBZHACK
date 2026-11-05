@@ -1,0 +1,21 @@
+{
+  "name": "The Deep",
+  "kind": "delve",
+  "tier": 3,
+  "pay": 40,
+  "standing": 6,
+  "ask": [
+    "Get to the {nth} floor of {where} and come back up. That is all.",
+    "Nobody has been past the {nth} of {where}. Be nobody.",
+    "{where} goes down a long way. Reach the {nth} and I will believe the rest."
+  ],
+  "thanks": [
+    "You were down there a while.",
+    "Good. Now we know.",
+    "The {nth}. Most people turn at the third."
+  ],
+  "from": [
+    "elder",
+    "guard"
+  ]
+}

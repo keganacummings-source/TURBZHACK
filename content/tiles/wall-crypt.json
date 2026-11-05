@@ -1,0 +1,9 @@
+{
+  "name": "Crypt Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-wall-crypt"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Chilled",
+  "about": "Slowed and softened, but still able to act.",
+  "turns": 6,
+  "modify": {
+    "speed": -35,
+    "armour": -2
+  },
+  "messages": {
+    "applied": "{name} is chilled!",
+    "refreshed": "{name} grows colder!",
+    "ended": "{name} warms up."
+  }
+}

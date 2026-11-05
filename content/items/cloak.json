@@ -1,0 +1,14 @@
+{
+  "name": "Cloak",
+  "sprite": "arm-cloak",
+  "slot": "cloak",
+  "about": "Hard to see the shape of.",
+  "armour": 1,
+  "evasion": 4,
+  "depth": {
+    "min": 2,
+    "max": 12
+  },
+  "weight_find": 10,
+  "overlay": "ovl-cloak"
+}

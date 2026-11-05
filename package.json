@@ -1,0 +1,18 @@
+{
+  "name": "turbzhack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A NetHack-like with the TURBZ look. Every enemy, spell, class and enchantment is its own file.",
+  "scripts": {
+    "test": "node --experimental-strip-types --test scripts/*.test.mts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "serve": "node tools/serve.mjs",
+    "stage": "node tools/stage-web.mjs",
+    "build:web": "npm run build && node tools/index-content.mjs content && npm run stage"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

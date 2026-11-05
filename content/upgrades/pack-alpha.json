@@ -1,0 +1,16 @@
+{
+  "name": "Pack Alpha",
+  "group": "company",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "They would die for you. Some already have.",
+  "perks": {
+    "party": 2,
+    "tame": 0.5
+  },
+  "modify": {
+    "might": 8,
+    "hpMax": 30
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "Orc Berserker",
+  "about": "Broad, loud, and heavily armed.",
+  "sprite": "pc-hill-orc",
+  "pools": {
+    "hp": 40,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 4,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "tundra",
+    "taiga",
+    "glacier"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 105,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "war-axe",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "greatsword",
+      "chance": 0.12
+    }
+  ]
+}

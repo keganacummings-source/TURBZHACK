@@ -1,0 +1,16 @@
+{
+  "name": "Shortbow",
+  "sprite": "wpn-crossbow",
+  "slot": "weapon",
+  "weaponClass": "bow",
+  "material": "wood",
+  "damage": 12,
+  "kind": "physical",
+  "value": 60,
+  "about": "Quiet, quick, and you will want distance.",
+  "depth": {
+    "min": 0,
+    "max": 8
+  },
+  "weight_find": 9
+}

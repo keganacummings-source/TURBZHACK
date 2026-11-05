@@ -1,0 +1,7 @@
+{
+  "name": "Void Grass",
+  "biomes": [
+    "void"
+  ],
+  "sprite": "t-voidgrass"
+}

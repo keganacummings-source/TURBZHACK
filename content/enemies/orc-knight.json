@@ -1,0 +1,36 @@
+{
+  "name": "Orc Knight",
+  "sprite": "mon-orc-knight",
+  "pools": {
+    "hp": 45,
+    "mana": 25
+  },
+  "armour": 7,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "slam",
+    "cleave"
+  ],
+  "biomes": [
+    "dungeon",
+    "highland"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 5,
+  "xp": 140,
+  "spells": [
+    "warcry"
+  ],
+  "resist": {
+    "physical": 0.8
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

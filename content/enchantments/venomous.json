@@ -1,0 +1,14 @@
+{
+  "name": "Venomous",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 2,
+  "bonusDamage": 3,
+  "bonusKind": "poison",
+  "applies": [
+    "poisoned"
+  ],
+  "about": "The edge is doing something it should not."
+}

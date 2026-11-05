@@ -1,0 +1,9 @@
+{
+  "name": "Rubble",
+  "solid": false,
+  "opaque": false,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-rubble"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Bog",
+  "cost": 2,
+  "biomes": [
+    "swamp"
+  ],
+  "sprite": "t-swamp"
+}

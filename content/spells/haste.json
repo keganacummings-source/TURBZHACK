@@ -1,0 +1,14 @@
+{
+  "name": "Haste",
+  "about": "Everything, quicker.",
+  "mana": 18,
+  "kind": "pure",
+  "range": 0,
+  "target": "self",
+  "tier": 3,
+  "say": "{caster} quicken{s}.",
+  "applies": [
+    "hasted"
+  ],
+  "cooldown": 6
+}

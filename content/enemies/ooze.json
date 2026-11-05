@@ -1,0 +1,32 @@
+{
+  "name": "Ooze",
+  "sprite": "mon-ooze",
+  "pools": {
+    "hp": -50,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 4,
+  "abilities": [
+    "engulf"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 8
+  },
+  "weight": 16,
+  "xp": 22,
+  "resist": {
+    "poison": 0,
+    "physical": 0.7
+  },
+  "region": {
+    "min": 0,
+    "max": 3
+  }
+}

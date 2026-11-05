@@ -1,0 +1,15 @@
+{
+  "name": "Flame Lash",
+  "about": "A whip of fire down a line.",
+  "mana": 14,
+  "kind": "fire",
+  "range": 5,
+  "target": "beam",
+  "tier": 3,
+  "say": "{caster} lash{es} out a line of fire.",
+  "damage": 16,
+  "applies": [
+    "burning"
+  ],
+  "cooldown": 1
+}

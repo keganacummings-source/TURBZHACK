@@ -1,0 +1,31 @@
+{
+  "name": "Two-Headed Ogre",
+  "size": "huge",
+  "sprite": "mon-two-headed-ogre",
+  "pools": {
+    "hp": 70,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slam",
+    "cleave"
+  ],
+  "biomes": [
+    "dungeon",
+    "highland"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 5,
+  "xp": 150,
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

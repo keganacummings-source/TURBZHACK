@@ -1,0 +1,23 @@
+{
+  "name": "Berserker",
+  "blurb": "Hits first, hits hard, apologises never.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "war-axe",
+    "leather-armour"
+  ],
+  "stats": {
+    "might": 8,
+    "accuracy": -2,
+    "evasion": -3
+  },
+  "spells": [],
+  "attributes": {
+    "strength": 3,
+    "endurance": 1,
+    "wits": -2
+  }
+}

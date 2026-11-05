@@ -1,0 +1,15 @@
+{
+  "name": "Unbroken",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "You do not stay hurt.",
+  "perks": {
+    "regen": 10,
+    "regenDelay": -8
+  },
+  "modify": {
+    "hpMax": 80
+  }
+}

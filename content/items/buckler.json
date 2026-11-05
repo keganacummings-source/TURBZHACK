@@ -1,0 +1,15 @@
+{
+  "name": "Buckler",
+  "sprite": "arm-buckler",
+  "slot": "shield",
+  "about": "Small, and it stays out of the way.",
+  "armour": 2,
+  "evasion": 1,
+  "depth": {
+    "min": 1,
+    "max": 10
+  },
+  "weight_find": 12,
+  "overlay": "ovl-shield",
+  "staminaMax": -2
+}

@@ -1,0 +1,46 @@
+{
+  "name": "Riftbell Colossus",
+  "size": "huge",
+  "title": "The Riftbell, storm sealed in stone",
+  "sprite": "mon-gargoyle",
+  "about": "A cracked bell rings inside its chest. Each note bends the air toward its fist.",
+  "pools": {
+    "hp": 280,
+    "mana": 60
+  },
+  "armour": 10,
+  "speed": 92,
+  "ai": "caster",
+  "sight": 12,
+  "abilities": ["slam"],
+  "spells": ["shock-bolt", "chain-arc"],
+  "resist": {
+    "physical": 0.8,
+    "shock": 0.5
+  },
+  "biomes": ["highland"],
+  "region": {
+    "min": 4,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 900,
+  "drops": [
+    {
+      "item": "riftbell-hook",
+      "chance": 1.0
+    },
+    {
+      "item": "meteoric-ore",
+      "chance": 0.35
+    }
+  ],
+  "says": [
+    "The note is older than your name.",
+    "Come closer. The storm can hear you."
+  ]
+}

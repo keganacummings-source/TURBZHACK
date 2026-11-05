@@ -1,0 +1,10 @@
+{
+  "name": "Pack Sense",
+  "group": "company",
+  "tier": 2,
+  "weight": 5,
+  "about": "You read animals, and they read you.",
+  "perks": {
+    "tame": 0.3
+  }
+}

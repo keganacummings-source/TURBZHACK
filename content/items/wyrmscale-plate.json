@@ -1,0 +1,14 @@
+{
+  "name": "Wyrmscale Plate",
+  "sprite": "arm-plate",
+  "slot": "body",
+  "about": "Scavenged, re-set, and still proud of it.",
+  "armour": 14,
+  "resist": {
+    "fire": 0.35
+  },
+  "evasion": -6,
+  "unique": true,
+  "source": "Dropped by Ashmaw, the Cinder Wyrm.",
+  "staminaMax": -20
+}

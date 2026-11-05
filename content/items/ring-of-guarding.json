@@ -1,0 +1,12 @@
+{
+  "name": "Ring of Guarding",
+  "sprite": "itm-ring",
+  "slot": "ring",
+  "about": "Blows glance.",
+  "armour": 3,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 7
+}

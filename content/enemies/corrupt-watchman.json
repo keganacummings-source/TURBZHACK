@@ -1,0 +1,34 @@
+{
+  "name": "Corrupt Watchman",
+  "about": "Wears a Watchman's old mail and carries his sword. Something else is wearing him.",
+  "sprite": "pc-human",
+  "pools": {
+    "hp": -10
+  },
+  "armour": 5,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slash",
+    "cleave"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 12,
+  "xp": 45,
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "drops": [
+    { "item": "short-sword", "chance": 0.25 },
+    { "item": "shield", "chance": 0.15 },
+    { "item": "leather-armour", "chance": 0.12 }
+  ]
+}

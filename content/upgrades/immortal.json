@@ -1,0 +1,16 @@
+{
+  "name": "Immortal",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 6,
+  "about": "Death is a rumour you have not heard.",
+  "modify": {
+    "hpMax": 250,
+    "armour": 12
+  },
+  "perks": {
+    "regen": 12,
+    "regenDelay": -10
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Iron Grate",
+  "solid": false,
+  "opaque": false,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-grate"
+}

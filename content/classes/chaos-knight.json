@@ -1,0 +1,24 @@
+{
+  "name": "Chaos Knight",
+  "blurb": "Armed by something with a sense of humour.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "morningstar",
+    "ring-mail"
+  ],
+  "stats": {
+    "might": 4,
+    "focus": 2
+  },
+  "spells": [
+    "hex-bolt"
+  ],
+  "attributes": {
+    "strength": 1,
+    "presence": 2,
+    "wits": 1
+  }
+}

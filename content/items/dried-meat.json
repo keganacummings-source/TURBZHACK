@@ -1,0 +1,9 @@
+{
+  "name": "Dried Meat",
+  "sprite": "itm-meal",
+  "slot": "food",
+  "about": "Keeps. Barely.",
+  "casts": "mend",
+  "charges": 1,
+  "stack": true
+}

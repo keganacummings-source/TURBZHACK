@@ -1,0 +1,97 @@
+# Builds TURBZHACK into a Windows .exe, on every tag and on demand.
+#
+# The game itself is a dependency-free TypeScript + canvas app: `tsc` is the
+# only build step. Tauri wraps that into a native window. All of it happens
+# here rather than on your machine, so a release is: push a tag, wait, download.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Fast, and it runs on every push: if the rules are broken there is no point
+  # spending ten minutes building an installer.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci || npm install
+      - name: Check the content folder and the rules
+        run: npm test
+      - name: Type-check
+        run: npm run typecheck
+      - name: Build and stage the web game
+        run: npm run build:web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turbzhack-web
+          path: dist-web/
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+      - run: npm ci || npm install
+      # dist-web/ holds only the files the game loads. Tauri bundles whatever
+      # `frontendDist` points at, and pointing it at the repo root fails: it
+      # would pack node_modules and Tauri's own target/ into the installer.
+      - name: Build and stage the web game
+        run: npm run build:web
+      # A staging script that silently does nothing is how the last build broke:
+      # `npm run build:web` exited 0 having staged no files, and Tauri failed
+      # two steps later with "Unable to find your web assets". Fail here, where
+      # the message says what is actually wrong.
+      - name: Check the web assets were really staged
+        shell: bash
+        run: |
+          test -f dist-web/index.html || { echo "dist-web/index.html is missing — staging did nothing"; exit 1; }
+          test -f dist-web/content/index.json || { echo "dist-web/content/index.json is missing"; exit 1; }
+          test -d dist-web/assets/tiles16 || { echo "dist-web/assets/tiles16 is missing"; exit 1; }
+          echo "staged $(find dist-web -type f | wc -l) files"
+      - name: Build the executable
+        run: |
+          npm install --no-save @tauri-apps/cli@^2
+          npx tauri build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TURBZHACK-windows
+          path: |
+            src-tauri/target/release/*.exe
+            src-tauri/target/release/bundle/**/*.exe
+            src-tauri/target/release/bundle/**/*.msi
+
+  release:
+    needs: windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TURBZHACK-windows
+          path: out
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/**/*
+          generate_release_notes: true

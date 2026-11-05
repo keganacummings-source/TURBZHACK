@@ -1,0 +1,14 @@
+{
+  "name": "Colossus",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "The ground complains when you walk.",
+  "modify": {
+    "hpMax": 200,
+    "armour": 15,
+    "might": 12,
+    "evasion": -10
+  }
+}

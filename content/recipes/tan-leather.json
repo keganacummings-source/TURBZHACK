@@ -1,0 +1,20 @@
+{
+  "name": "Tan Leather",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 3,
+  "needs": [
+    {
+      "item": "hide",
+      "amount": 2
+    },
+    {
+      "item": "ash-salt"
+    }
+  ],
+  "makes": {
+    "item": "leather",
+    "amount": 2
+  },
+  "about": "Salt, scrape, wait."
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Warg",
+  "sprite": "mon-warg",
+  "pools": {
+    "hp": -25,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 140,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "taiga",
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 12,
+  "xp": 50,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.15,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Spark",
+  "about": "A thrown mote of flame. Cheap enough to open every fight with.",
+  "mana": 4,
+  "kind": "fire",
+  "range": 6,
+  "target": "actor",
+  "tier": 1,
+  "say": "{caster} flick{s} a spark at {target}.",
+  "damage": 8
+}

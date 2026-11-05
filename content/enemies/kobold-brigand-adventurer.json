@@ -1,0 +1,48 @@
+{
+  "name": "Kobold Brigand",
+  "about": "Small, fast, and armed with many knives.",
+  "sprite": "pc-kobold",
+  "pools": {
+    "hp": 48,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 8,
+  "speed": 104,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "forest",
+    "taiga",
+    "hills"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 125,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "dagger",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "cloak",
+      "chance": 0.12
+    }
+  ]
+}

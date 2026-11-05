@@ -1,0 +1,10 @@
+{
+  "name": "Engulf",
+  "damage": 9,
+  "kind": "poison",
+  "range": 1,
+  "say": "{caster} engulf{s} {target}.",
+  "applies": [
+    "poisoned"
+  ]
+}

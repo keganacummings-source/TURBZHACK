@@ -1,0 +1,13 @@
+{
+  "name": "Whispered Word",
+  "group": "magic",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "A little more power in the quiet spells.",
+  "modify": {
+    "focus": 8,
+    "manaMax": 30,
+    "accuracy": 3
+  }
+}

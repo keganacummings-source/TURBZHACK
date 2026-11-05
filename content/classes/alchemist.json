@@ -1,0 +1,25 @@
+{
+  "name": "Alchemist",
+  "blurb": "Poison, and a great deal of patience.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ruin-staff",
+    "robe",
+    "potion-of-mending",
+    "potion-of-haste"
+  ],
+  "stats": {
+    "focus": 4
+  },
+  "spells": [
+    "spore-cloud"
+  ],
+  "attributes": {
+    "cunning": 3,
+    "wits": 2,
+    "strength": -1
+  }
+}

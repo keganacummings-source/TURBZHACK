@@ -1,0 +1,30 @@
+{
+  "name": "Hobgoblin",
+  "sprite": "mon-hobgoblin",
+  "pools": {
+    "hp": -45,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "hills",
+    "dungeon",
+    "badlands"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 7
+  },
+  "weight": 18,
+  "xp": 20,
+  "region": {
+    "min": 0,
+    "max": 3
+  }
+}

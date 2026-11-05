@@ -1,0 +1,20 @@
+{
+  "name": "Hunter",
+  "blurb": "Kills things before they arrive.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "crossbow",
+    "leather-armour",
+    "cap"
+  ],
+  "stats": {
+    "accuracy": 7
+  },
+  "attributes": {
+    "agility": 2,
+    "cunning": 2
+  }
+}

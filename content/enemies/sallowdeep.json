@@ -1,0 +1,56 @@
+{
+  "name": "Sallowdeep",
+  "title": "Sallowdeep, the Mire's Patience",
+  "sprite": "mon-sallowdeep",
+  "about": "The Mire does not drown you. It waits for you to stop.",
+  "pools": {
+    "hp": 340,
+    "mana": 90
+  },
+  "armour": 8,
+  "speed": 105,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "bite",
+    "slash"
+  ],
+  "spells": [
+    "spore-cloud"
+  ],
+  "resist": {
+    "poison": 0.0,
+    "pure": 0.7
+  },
+  "stats": {
+    "accuracy": 94,
+    "evasion": 12
+  },
+  "biomes": [
+    "swamp"
+  ],
+  "region": {
+    "min": 2,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 900,
+  "drops": [
+    {
+      "item": "crown-of-the-drowned",
+      "chance": 1.0
+    },
+    {
+      "item": "sunken-lamp",
+      "chance": 0.3
+    },
+    {
+      "item": "amulet-of-warding",
+      "chance": 0.5
+    }
+  ]
+}

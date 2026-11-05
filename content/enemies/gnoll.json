@@ -1,0 +1,34 @@
+{
+  "name": "Gnoll",
+  "sprite": "mon-gnoll",
+  "pools": {
+    "hp": -35,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "savanna",
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 8
+  },
+  "weight": 16,
+  "xp": 26,
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "says": [
+    "Not hungry. Yet.",
+    "Keep walking."
+  ]
+}

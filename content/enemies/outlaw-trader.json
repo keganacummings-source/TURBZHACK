@@ -1,0 +1,36 @@
+{
+  "name": "Outlaw Trader",
+  "about": "Coin first, then conversation. Now it is just the crossbow first.",
+  "sprite": "pc-human",
+  "pools": {
+    "hp": -5
+  },
+  "armour": 3,
+  "speed": 105,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "slash"
+  ],
+  "spells": [
+    "arrow"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 8
+  },
+  "weight": 10,
+  "xp": 85,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "drops": [
+    { "item": "dagger", "chance": 0.25 },
+    { "item": "crossbow", "chance": 0.12 },
+    { "item": "silver-ingot", "chance": 0.1 }
+  ]
+}

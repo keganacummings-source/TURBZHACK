@@ -1,0 +1,19 @@
+{
+  "name": "Halberd",
+  "sprite": "wpn-spear",
+  "slot": "weapon",
+  "weaponClass": "polearm",
+  "material": "steel",
+  "damage": 19,
+  "kind": "physical",
+  "value": 330,
+  "about": "Two squares, and an opinion about horses.",
+  "requires": {
+    "strength": 13
+  },
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 5
+}

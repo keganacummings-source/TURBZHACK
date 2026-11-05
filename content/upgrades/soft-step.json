@@ -1,0 +1,12 @@
+{
+  "name": "Soft Step",
+  "group": "body",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You are harder to catch.",
+  "modify": {
+    "evasion": 6,
+    "staminaMax": 20
+  }
+}

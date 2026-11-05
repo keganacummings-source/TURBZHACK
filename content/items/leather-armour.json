@@ -1,0 +1,15 @@
+{
+  "name": "Leather Armour",
+  "sprite": "arm-leather",
+  "slot": "body",
+  "about": "Soft enough to move in.",
+  "armour": 4,
+  "evasion": -1,
+  "depth": {
+    "min": 1,
+    "max": 10
+  },
+  "weight_find": 13,
+  "overlay": "ovl-body-leather",
+  "staminaMax": -4
+}

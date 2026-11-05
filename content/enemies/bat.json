@@ -1,0 +1,39 @@
+{
+  "name": "Bat",
+  "sprite": "mon-bat",
+  "pools": {
+    "hp": -85,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 150,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "dungeon",
+    "hills",
+    "badlands"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 6
+  },
+  "weight": 24,
+  "xp": 7,
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "tameable": {
+    "chance": 0.35,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

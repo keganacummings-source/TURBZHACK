@@ -1,0 +1,14 @@
+{
+  "name": "Glass Cannon",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "Everything in the attack. Nothing left over.",
+  "modify": {
+    "focus": 30,
+    "might": 18,
+    "hpMax": -60,
+    "manaMax": 40
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Kobold",
+  "sprite": "mon-kobold",
+  "pools": {
+    "hp": -68,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon",
+    "hills",
+    "badlands"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 6
+  },
+  "weight": 24,
+  "xp": 11,
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "says": [
+    "Did not see you. Not telling anyone either.",
+    "There is a way down, past the stones. Mind the big one."
+  ],
+  "stance": "neutral"
+}

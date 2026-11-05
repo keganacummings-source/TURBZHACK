@@ -1,0 +1,17 @@
+{
+  "name": "Make a Cloak",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "leather",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "cloak"
+  },
+  "about": "Warm, and it hides a shape.",
+  "forge": true
+}

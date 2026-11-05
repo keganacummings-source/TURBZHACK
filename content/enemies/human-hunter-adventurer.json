@@ -1,0 +1,47 @@
+{
+  "name": "Human Hunter",
+  "about": "Bow or crossbow ready, travelling light.",
+  "sprite": "pc-human",
+  "pools": {
+    "hp": 32,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 5,
+  "speed": 96,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "forest",
+    "taiga",
+    "hills"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 85,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "crossbow",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "cap",
+      "chance": 0.12
+    }
+  ]
+}

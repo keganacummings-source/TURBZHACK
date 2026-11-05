@@ -1,0 +1,47 @@
+{
+  "name": "Gnoll Hunter",
+  "about": "Pack hunter with a bow.",
+  "sprite": "pc-gnoll",
+  "pools": {
+    "hp": 56,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 7,
+  "speed": 98,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "tundra",
+    "taiga",
+    "glacier"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 145,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "crossbow",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "cap",
+      "chance": 0.12
+    }
+  ]
+}

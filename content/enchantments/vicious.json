@@ -1,0 +1,10 @@
+{
+  "name": "Vicious",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 3,
+  "bonusDamage": 8,
+  "about": "There is no nice way to say what it does."
+}

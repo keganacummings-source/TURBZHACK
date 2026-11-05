@@ -1,0 +1,15 @@
+{
+  "name": "Second Wind",
+  "group": "body",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You recover sooner than you should.",
+  "perks": {
+    "regen": 3,
+    "regenDelay": -3
+  },
+  "modify": {
+    "hpMax": 20
+  }
+}

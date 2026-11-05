@@ -1,0 +1,32 @@
+{
+  "name": "Wight",
+  "sprite": "mon-wight",
+  "pools": {
+    "hp": -20,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 12,
+  "xp": 70,
+  "resist": {
+    "poison": 0,
+    "cold": 0.6
+  },
+  "region": {
+    "min": 1,
+    "max": 4
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Ghost Step",
+  "about": "Much harder.",
+  "modify": {
+    "evasion": 10
+  },
+  "weight": 5,
+  "group": "body",
+  "tier": 1
+}

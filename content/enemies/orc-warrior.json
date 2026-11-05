@@ -1,0 +1,30 @@
+{
+  "name": "Orc Warrior",
+  "sprite": "mon-orc-warrior",
+  "pools": {
+    "hp": 10,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave",
+    "slam"
+  ],
+  "biomes": [
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 11
+  },
+  "weight": 12,
+  "xp": 70,
+  "region": {
+    "min": 1,
+    "max": 4
+  }
+}

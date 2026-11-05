@@ -1,0 +1,13 @@
+{
+  "name": "Stunned",
+  "about": "Reeling — cannot act. Short, but it always costs at least one turn.",
+  "turns": 3,
+  "preventsAction": true,
+  "breakChance": 0.2,
+  "messages": {
+    "applied": "{name} reels!",
+    "refreshed": "{name} is stunned again!",
+    "broke": "{name} shakes it off.",
+    "ended": "{name} recovers."
+  }
+}

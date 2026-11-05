@@ -1,0 +1,57 @@
+{
+  "name": "The Mother of Dust",
+  "title": "The Mother of Dust",
+  "sprite": "mon-mother-of-dust",
+  "about": "Everything in the Waste used to be something of hers.",
+  "pools": {
+    "hp": 360,
+    "mana": 160
+  },
+  "armour": 9,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 12,
+  "abilities": [
+    "chill-touch"
+  ],
+  "spells": [
+    "hex-bolt",
+    "drain"
+  ],
+  "resist": {
+    "fire": 1.4,
+    "pure": 0.3
+  },
+  "stats": {
+    "accuracy": 93,
+    "evasion": 8
+  },
+  "biomes": [
+    "desert",
+    "badlands"
+  ],
+  "region": {
+    "min": 2,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 1000,
+  "drops": [
+    {
+      "item": "band-of-nine-sorrows",
+      "chance": 0.6
+    },
+    {
+      "item": "urns-measure",
+      "chance": 0.4
+    },
+    {
+      "item": "amulet-of-the-quick",
+      "chance": 0.6
+    }
+  ]
+}

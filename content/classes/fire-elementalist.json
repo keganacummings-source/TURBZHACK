@@ -1,0 +1,22 @@
+{
+  "name": "Fire Elementalist",
+  "blurb": "Everything burns, given enough attention.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ember-staff",
+    "robe"
+  ],
+  "stats": {
+    "focus": 5
+  },
+  "spells": [
+    "spark",
+    "ember-bolt"
+  ],
+  "attributes": {
+    "wits": 3
+  }
+}

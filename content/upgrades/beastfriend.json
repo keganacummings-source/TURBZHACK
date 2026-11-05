@@ -1,0 +1,12 @@
+{
+  "name": "Beastfriend",
+  "group": "company",
+  "tier": 2,
+  "talent": true,
+  "weight": 10,
+  "about": "They come to you. You are not entirely sure why.",
+  "perks": {
+    "party": 2,
+    "tame": 0.4
+  }
+}

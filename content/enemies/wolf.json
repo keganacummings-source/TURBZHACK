@@ -1,0 +1,39 @@
+{
+  "name": "Wolf",
+  "sprite": "mon-wolf",
+  "pools": {
+    "hp": -55,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 140,
+  "ai": "melee",
+  "sight": 9,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "forest",
+    "taiga",
+    "hills"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 6
+  },
+  "weight": 20,
+  "xp": 18,
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "tameable": {
+    "chance": 0.25,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

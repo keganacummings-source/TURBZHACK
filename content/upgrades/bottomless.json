@@ -1,0 +1,10 @@
+{
+  "name": "Bottomless",
+  "about": "Far more mana.",
+  "modify": {
+    "manaMax": 50
+  },
+  "weight": 5,
+  "group": "magic",
+  "tier": 2
+}

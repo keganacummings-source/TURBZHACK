@@ -1,0 +1,23 @@
+{
+  "name": "Brigand",
+  "blurb": "A knife, and somewhere to put it.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "dagger",
+    "leather-armour",
+    "cloak"
+  ],
+  "stats": {
+    "accuracy": 5,
+    "evasion": 8
+  },
+  "spells": [],
+  "attributes": {
+    "agility": 2,
+    "cunning": 2,
+    "presence": -1
+  }
+}

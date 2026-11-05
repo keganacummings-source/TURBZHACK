@@ -1,0 +1,16 @@
+{
+  "name": "Knife",
+  "sprite": "wpn-dagger",
+  "slot": "weapon",
+  "weaponClass": "dagger",
+  "material": "copper",
+  "damage": 8,
+  "kind": "physical",
+  "value": 14,
+  "about": "Cheap, quick, and better than nothing.",
+  "depth": {
+    "min": 0,
+    "max": 4
+  },
+  "weight_find": 12
+}

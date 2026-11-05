@@ -1,0 +1,13 @@
+{
+  "name": "Wand of Fire",
+  "sprite": "itm-wand",
+  "slot": "misc",
+  "about": "Three good gouts left in it.",
+  "casts": "firestorm",
+  "charges": 3,
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight_find": 4
+}

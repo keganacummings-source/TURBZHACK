@@ -1,0 +1,11 @@
+{
+  "name": "Arrow",
+  "about": "Not magic at all, but it is cast the same way.",
+  "mana": 0,
+  "kind": "physical",
+  "range": 8,
+  "target": "actor",
+  "tier": 1,
+  "say": "{caster} loose{s} an arrow at {target}.",
+  "damage": 11
+}

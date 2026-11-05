@@ -1,0 +1,33 @@
+{
+  "name": "Orc Priest",
+  "sprite": "mon-orc-priest",
+  "pools": {
+    "hp": -40,
+    "mana": 25
+  },
+  "armour": 2,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon",
+    "hills"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 10,
+  "xp": 55,
+  "spells": [
+    "hex-bolt",
+    "mend"
+  ],
+  "region": {
+    "min": 1,
+    "max": 4
+  }
+}

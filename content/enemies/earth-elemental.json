@@ -1,0 +1,36 @@
+{
+  "name": "Earth Elemental",
+  "sprite": "mon-earth-elemental",
+  "pools": {
+    "hp": 55,
+    "mana": -50
+  },
+  "armour": 8,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "slam"
+  ],
+  "biomes": [
+    "highland",
+    "dungeon",
+    "badlands"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 135,
+  "resist": {
+    "physical": 0.5,
+    "shock": 0,
+    "fire": 0.0,
+    "cold": 0.0
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

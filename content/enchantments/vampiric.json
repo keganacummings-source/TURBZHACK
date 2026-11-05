@@ -1,0 +1,11 @@
+{
+  "name": "Vampiric",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 3,
+  "weight": 4,
+  "procs": [
+    { "kind": "lifesteal", "leech": 0.35, "say": "The wound's warmth flows back up the blade." }
+  ],
+  "about": "It drinks. A third of what you deal, you take back as your own."
+}

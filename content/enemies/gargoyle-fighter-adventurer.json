@@ -1,0 +1,48 @@
+{
+  "name": "Gargoyle Fighter",
+  "about": "Stone skin under real armour.",
+  "sprite": "pc-gargoyle",
+  "pools": {
+    "hp": 54,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 6,
+  "speed": 97,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "highland",
+    "hills",
+    "volcanic"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 140,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "short-sword",
+      "chance": 0.25
+    },
+    {
+      "item": "ring-mail",
+      "chance": 0.12
+    },
+    {
+      "item": "shield",
+      "chance": 0.12
+    }
+  ]
+}

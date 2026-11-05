@@ -1,0 +1,6 @@
+{
+  "id": "road",
+  "name": "Packed Road",
+  "biomes": ["village"],
+  "sprite": "t-dirt"
+}

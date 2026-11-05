@@ -1,0 +1,60 @@
+{
+  "name": "Ashmaw",
+  "title": "Ashmaw, the Cinder Wyrm",
+  "sprite": "mon-ashmaw",
+  "about": "The Cinderland is not a place. It is where Ashmaw sleeps.",
+  "pools": {
+    "hp": 420,
+    "mana": 120
+  },
+  "armour": 12,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 13,
+  "abilities": [
+    "searing-bite"
+  ],
+  "spells": [
+    "firestorm",
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0.0,
+    "cold": 1.6
+  },
+  "stats": {
+    "accuracy": 95,
+    "evasion": 10
+  },
+  "biomes": [
+    "volcanic"
+  ],
+  "region": {
+    "min": 3,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 1400,
+  "drops": [
+    {
+      "item": "ashmaw-fang",
+      "chance": 1.0
+    },
+    {
+      "item": "wyrmscale-plate",
+      "chance": 0.45
+    },
+    {
+      "item": "band-of-nine-sorrows",
+      "chance": 0.2
+    },
+    {
+      "item": "potion-of-greater-mending",
+      "chance": 0.6
+    }
+  ]
+}

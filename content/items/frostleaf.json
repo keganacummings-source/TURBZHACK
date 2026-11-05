@@ -1,0 +1,7 @@
+{
+  "name": "Frostleaf",
+  "sprite": "itm-herb",
+  "slot": "material",
+  "about": "Cold to hold.",
+  "stack": true
+}

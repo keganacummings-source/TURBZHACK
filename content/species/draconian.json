@@ -1,0 +1,20 @@
+{
+  "name": "Draconian",
+  "sprite": "pc-draconian",
+  "blurb": "Scaled, winged, and warm-blooded about fire.",
+  "difficulty": 2,
+  "stats": {
+    "might": 2,
+    "focus": 2
+  },
+  "armour": 3,
+  "resist": {
+    "fire": 0.5
+  },
+  "attributes": {
+    "strength": 2,
+    "endurance": 2,
+    "presence": 1,
+    "agility": -1
+  }
+}

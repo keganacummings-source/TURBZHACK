@@ -1,0 +1,19 @@
+{
+  "name": "Forge a Pickaxe",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 3,
+  "needs": [
+    {
+      "metal": 2
+    },
+    {
+      "timber": 1
+    }
+  ],
+  "makes": {
+    "item": "pickaxe"
+  },
+  "about": "The tool that gets you the rest of them.",
+  "forge": true
+}

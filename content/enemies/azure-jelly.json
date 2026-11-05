@@ -1,0 +1,35 @@
+{
+  "name": "Azure Jelly",
+  "sprite": "mon-azure-jelly",
+  "pools": {
+    "hp": 20,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 75,
+  "ai": "melee",
+  "sight": 5,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "tundra"
+  ],
+  "depth": {
+    "min": 7,
+    "max": 12
+  },
+  "weight": 6,
+  "xp": 140,
+  "resist": {
+    "cold": 0,
+    "physical": 0.6,
+    "poison": 0.5,
+    "fire": 1.5
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

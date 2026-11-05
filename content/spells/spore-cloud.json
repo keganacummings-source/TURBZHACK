@@ -1,0 +1,16 @@
+{
+  "name": "Spore Cloud",
+  "about": "A bloom of poison.",
+  "mana": 17,
+  "kind": "poison",
+  "range": 5,
+  "target": "burst",
+  "tier": 3,
+  "say": "{caster} burst{s} a cloud of spores.",
+  "damage": 9,
+  "applies": [
+    "poisoned"
+  ],
+  "radius": 2,
+  "cooldown": 2
+}

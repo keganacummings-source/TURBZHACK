@@ -1,0 +1,21 @@
+{
+  "name": "Revenant",
+  "sprite": "pc-revenant",
+  "blurb": "Came back wrong, and kept the magic.",
+  "difficulty": 3,
+  "stats": {
+    "focus": 7,
+    "evasion": 3
+  },
+  "resist": {
+    "cold": 0,
+    "poison": 0,
+    "fire": 1.5
+  },
+  "attributes": {
+    "wits": 4,
+    "presence": -3,
+    "endurance": 1,
+    "strength": -1
+  }
+}

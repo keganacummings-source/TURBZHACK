@@ -1,0 +1,11 @@
+{
+  "name": "Workbench",
+  "sprite": "t-bench",
+  "solid": true,
+  "opaque": false,
+  "station": "bench",
+  "biomes": [
+    "village",
+    "dungeon"
+  ]
+}

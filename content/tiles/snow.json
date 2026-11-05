@@ -1,0 +1,8 @@
+{
+  "name": "Snow",
+  "biomes": [
+    "tundra",
+    "glacier"
+  ],
+  "sprite": "t-snow"
+}

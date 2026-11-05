@@ -1,0 +1,16 @@
+{
+  "name": "Make a Club",
+  "station": "bench",
+  "craft": "woodwork",
+  "turns": 1,
+  "needs": [
+    {
+      "item": "hardwood"
+    }
+  ],
+  "makes": {
+    "item": "club"
+  },
+  "about": "It is a heavy stick and it works.",
+  "forge": true
+}

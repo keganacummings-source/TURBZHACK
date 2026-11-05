@@ -1,0 +1,36 @@
+{
+  "name": "Shadow Imp",
+  "sprite": "mon-shadow-imp",
+  "pools": {
+    "hp": -62,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 125,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "chill-touch"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 11,
+  "xp": 44,
+  "spells": [
+    "drain"
+  ],
+  "resist": {
+    "pure": 0.5,
+    "poison": 0.5
+  },
+  "region": {
+    "min": 1,
+    "max": 4
+  }
+}

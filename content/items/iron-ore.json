@@ -1,0 +1,7 @@
+{
+  "name": "Iron Ore",
+  "sprite": "itm-ore",
+  "slot": "material",
+  "about": "Rock with something in it.",
+  "stack": true
+}

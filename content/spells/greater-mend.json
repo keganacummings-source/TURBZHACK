@@ -1,0 +1,12 @@
+{
+  "name": "Greater Mend",
+  "about": "Closes rather more.",
+  "mana": 24,
+  "kind": "pure",
+  "range": 0,
+  "target": "self",
+  "tier": 3,
+  "say": "{caster} {are} made whole.",
+  "cooldown": 3,
+  "heal": 80
+}

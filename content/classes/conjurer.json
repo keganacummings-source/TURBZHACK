@@ -1,0 +1,23 @@
+{
+  "name": "Conjurer",
+  "blurb": "Raw force, straight at the problem.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "ruin-staff",
+    "robe"
+  ],
+  "stats": {
+    "focus": 6
+  },
+  "spells": [
+    "spark",
+    "shock-bolt"
+  ],
+  "attributes": {
+    "wits": 3,
+    "endurance": -1
+  }
+}

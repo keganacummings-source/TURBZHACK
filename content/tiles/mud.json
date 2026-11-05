@@ -1,0 +1,8 @@
+{
+  "name": "Mud",
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "sprite": "t-mud"
+}

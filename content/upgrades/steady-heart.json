@@ -1,0 +1,13 @@
+{
+  "name": "Steady Heart",
+  "group": "body",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You endure what others would not.",
+  "modify": {
+    "hpMax": 30,
+    "armour": 2,
+    "might": 3
+  }
+}

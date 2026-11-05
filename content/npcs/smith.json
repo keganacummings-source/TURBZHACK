@@ -1,0 +1,61 @@
+{
+  "name": "Smith",
+  "role": "smith",
+  "sprite": "pc-hill-orc",
+  "about": "Will sell you steel and tell you what is wrong with your sword, says it from behind a scarred leather apron with a war-hammer never racked far from his hand.",
+  "trades": [
+    "smithing",
+    "mining",
+    "market"
+  ],
+  "greetings": [
+    "Mind the heat.",
+    "If it is bent I can see it from here.",
+    "Ore, tools, or an opinion. Pick one."
+  ],
+  "gossip": [
+    "Good iron comes from the hills. Bad iron comes from people in a hurry.",
+    "A masterwork blade is a lucky day, not a technique. Anyone who says otherwise is selling.",
+    "Bring me meteoric and I will clear my week."
+  ],
+  "deals": [
+    "iron-ingot",
+    "silver-ingot",
+    "pickaxe",
+    "hatchet",
+    "helm",
+    "shield",
+    "short-sword",
+    "war-axe"
+  ],
+  "teaches": [
+    {
+      "skill": "weapon-sword",
+      "price": 120
+    },
+    {
+      "skill": "weapon-axe",
+      "price": 120
+    },
+    {
+      "skill": "weapon-mace",
+      "price": 120
+    },
+    {
+      "skill": "smithing",
+      "price": 90
+    },
+    {
+      "skill": "recipe:steel-ingot",
+      "price": 200
+    },
+    {
+      "skill": "recipe:meteoric-ingot",
+      "price": 600
+    }
+  ],
+  "quests": [
+    "bounty-local",
+    "gather-order"
+  ]
+}

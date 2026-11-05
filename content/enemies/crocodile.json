@@ -1,0 +1,38 @@
+{
+  "name": "Crocodile",
+  "sprite": "mon-crocodile",
+  "pools": {
+    "hp": 5,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "swamp",
+    "river"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 9,
+  "xp": 62,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.12,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

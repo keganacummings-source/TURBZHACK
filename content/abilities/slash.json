@@ -1,0 +1,8 @@
+{
+  "name": "Slash",
+  "damage": 8,
+  "kind": "physical",
+  "range": 1,
+  "say": "{caster} slash{es} {target}.",
+  "stamina": 10
+}

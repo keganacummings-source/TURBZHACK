@@ -1,0 +1,9 @@
+{
+  "name": "Pit-trapped",
+  "turns": 2,
+  "preventsMove": true,
+  "messages": {
+    "applied": "{name} is caught in the pit!",
+    "ended": "{name} climbs out of the pit."
+  }
+}

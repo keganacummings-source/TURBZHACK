@@ -1,0 +1,14 @@
+{
+  "name": "Oracle",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "You see the blow before it is thrown.",
+  "modify": {
+    "accuracy": 20,
+    "evasion": 15,
+    "focus": 15,
+    "manaMax": 50
+  }
+}

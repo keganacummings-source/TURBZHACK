@@ -1,0 +1,12 @@
+{
+  "name": "Ring of Might",
+  "sprite": "itm-ring",
+  "slot": "ring",
+  "about": "Your arm remembers being stronger.",
+  "might": 4,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 7
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Ghoul",
+  "sprite": "pc-ghoul",
+  "blurb": "Rotting, and it feeds on what rots.",
+  "difficulty": 3,
+  "stats": {
+    "might": 5,
+    "focus": -3
+  },
+  "armour": 2,
+  "resist": {
+    "poison": 0,
+    "cold": 0,
+    "pure": 0.5
+  },
+  "attributes": {
+    "strength": 2,
+    "endurance": 3,
+    "presence": -5,
+    "wits": -2,
+    "cunning": -1
+  }
+}

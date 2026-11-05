@@ -1,0 +1,23 @@
+{
+  "name": "Order",
+  "kind": "gather",
+  "tier": 1,
+  "pay": 10,
+  "standing": 1,
+  "ask": [
+    "I need {count} {what}, and I need it before the week is out.",
+    "{count} {what}. I am good for the coin.",
+    "Bring me {count} {what} and we will call it an arrangement."
+  ],
+  "thanks": [
+    "{count} {what}. That will do nicely.",
+    "Exactly what I asked for. Rare, that.",
+    "Here. Come back when you have more."
+  ],
+  "from": [
+    "trader",
+    "smith",
+    "alchemist",
+    "stablemaster"
+  ]
+}

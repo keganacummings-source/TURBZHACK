@@ -1,0 +1,42 @@
+{
+  "name": "Poison Alchemist",
+  "about": "Glowcap only grows where something died badly. She started helping it along.",
+  "sprite": "pc-deep-elf",
+  "pools": {
+    "hp": -30,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 100,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "slash"
+  ],
+  "spells": [
+    "spore-cloud",
+    "ember-bolt"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 8
+  },
+  "weight": 9,
+  "xp": 95,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "resist": {
+    "poison": 0.9,
+    "fire": 0.3
+  },
+  "drops": [
+    { "item": "glowcap", "chance": 0.3 },
+    { "item": "potion-of-mending", "chance": 0.15 },
+    { "item": "scroll-of-warding", "chance": 0.1 }
+  ]
+}

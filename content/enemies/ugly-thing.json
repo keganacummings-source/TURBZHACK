@@ -1,0 +1,29 @@
+{
+  "name": "Ugly Thing",
+  "sprite": "mon-ugly-thing",
+  "pools": {
+    "hp": 10,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 8,
+  "xp": 105,
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

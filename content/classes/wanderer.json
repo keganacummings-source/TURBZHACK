@@ -1,0 +1,27 @@
+{
+  "name": "Wanderer",
+  "blurb": "Carries a bit of everything and is good at none of it.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "club",
+    "leather-armour",
+    "potion-of-mending"
+  ],
+  "stats": {
+    "might": 1,
+    "focus": 1,
+    "accuracy": 1,
+    "evasion": 1
+  },
+  "spells": [
+    "spark"
+  ],
+  "attributes": {
+    "cunning": 1,
+    "presence": 1,
+    "endurance": 1
+  }
+}

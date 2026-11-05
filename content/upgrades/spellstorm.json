@@ -1,0 +1,13 @@
+{
+  "name": "Spellstorm",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "Every spell is a catastrophe.",
+  "modify": {
+    "focus": 35,
+    "accuracy": 15,
+    "manaMax": 80
+  }
+}

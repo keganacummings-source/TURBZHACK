@@ -1,0 +1,17 @@
+{
+  "name": "Deep Elf",
+  "sprite": "pc-deep-elf",
+  "blurb": "Frail as paper and the finest caster alive.",
+  "difficulty": 2,
+  "stats": {
+    "focus": 6,
+    "evasion": 4
+  },
+  "attributes": {
+    "wits": 5,
+    "agility": 2,
+    "endurance": -4,
+    "strength": -3,
+    "presence": 1
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "Minotaur Berserker",
+  "about": "Axe in hand, little interest in talking.",
+  "sprite": "pc-minotaur",
+  "pools": {
+    "hp": 38,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 8,
+  "speed": 99,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "highland",
+    "hills",
+    "volcanic"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 100,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "war-axe",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "greatsword",
+      "chance": 0.12
+    }
+  ]
+}

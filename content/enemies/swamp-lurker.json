@@ -1,0 +1,22 @@
+{
+  "name": "Swamp Lurker",
+  "sprite": "mon-jelly",
+  "pools": {
+    "hp": -10
+  },
+  "armour": 1,
+  "speed": 80,
+  "ai": "melee",
+  "abilities": [
+    "engulf"
+  ],
+  "biomes": [
+    "swamp"
+  ],
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "weight": 14,
+  "xp": 18
+}

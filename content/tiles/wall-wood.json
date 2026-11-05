@@ -1,0 +1,10 @@
+{
+  "name": "Wooden Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "village",
+    "dungeon"
+  ],
+  "sprite": "t-wall-wood"
+}

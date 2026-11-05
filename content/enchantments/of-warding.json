@@ -1,0 +1,13 @@
+{
+  "name": "of Warding",
+  "place": "suffix",
+  "slots": [],
+  "tier": 3,
+  "resist": {
+    "physical": 0.75
+  },
+  "modify": {
+    "armour": 2
+  },
+  "about": "Blows land softer than they should."
+}

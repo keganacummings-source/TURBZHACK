@@ -1,0 +1,26 @@
+{
+  "name": "Great Mushroom",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "swamp",
+    "sporefield"
+  ],
+  "sprite": "t-mushroom",
+  "harvest": {
+    "skill": "foraging",
+    "turns": 2,
+    "tool": "foragers-knife",
+    "yields": [
+      {
+        "item": "cap-mushroom",
+        "chance": 1.0,
+        "amount": 2
+      },
+      {
+        "item": "glowcap",
+        "chance": 0.3
+      }
+    ]
+  }
+}

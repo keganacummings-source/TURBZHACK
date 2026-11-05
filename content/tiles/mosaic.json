@@ -1,0 +1,7 @@
+{
+  "name": "Mosaic",
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-mosaic"
+}

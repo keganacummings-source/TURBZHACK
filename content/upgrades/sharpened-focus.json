@@ -1,0 +1,10 @@
+{
+  "name": "Sharpened Focus",
+  "about": "Every spell you know bites deeper.",
+  "modify": {
+    "focus": 3
+  },
+  "weight": 12,
+  "group": "magic",
+  "tier": 1
+}

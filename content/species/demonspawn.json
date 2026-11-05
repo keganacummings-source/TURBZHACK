@@ -1,0 +1,21 @@
+{
+  "name": "Demonspawn",
+  "sprite": "pc-demonspawn",
+  "blurb": "Something got in. It is still getting in.",
+  "difficulty": 3,
+  "stats": {
+    "focus": 4,
+    "might": 2
+  },
+  "armour": 1,
+  "resist": {
+    "fire": 0.6,
+    "pure": 0.7
+  },
+  "attributes": {
+    "presence": 3,
+    "wits": 2,
+    "strength": 1,
+    "cunning": -1
+  }
+}

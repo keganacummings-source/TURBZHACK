@@ -1,0 +1,39 @@
+{
+  "name": "Hog",
+  "sprite": "mon-hog",
+  "pools": {
+    "hp": -50,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 110,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "plains",
+    "forest"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 4
+  },
+  "weight": 16,
+  "xp": 14,
+  "stance": "neutral",
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "tameable": {
+    "chance": 0.35,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

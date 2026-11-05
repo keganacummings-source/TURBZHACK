@@ -1,0 +1,42 @@
+{
+  "name": "Hydra",
+  "sprite": "mon-hydra",
+  "pools": {
+    "hp": 95,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave",
+    "bite"
+  ],
+  "biomes": [
+    "swamp",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 8,
+    "max": 12
+  },
+  "weight": 4,
+  "xp": 210,
+  "resist": {
+    "poison": 0
+  },
+  "region": {
+    "min": 3,
+    "max": 5
+  },
+  "tameable": {
+    "chance": 0.05,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

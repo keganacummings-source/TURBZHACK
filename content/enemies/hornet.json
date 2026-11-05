@@ -1,0 +1,41 @@
+{
+  "name": "Hornet",
+  "sprite": "mon-hornet",
+  "pools": {
+    "hp": -62,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 150,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "forest",
+    "swamp"
+  ],
+  "depth": {
+    "min": 3,
+    "max": 10
+  },
+  "weight": 10,
+  "xp": 46,
+  "resist": {
+    "poison": 0
+  },
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.12,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

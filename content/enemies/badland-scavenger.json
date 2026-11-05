@@ -1,0 +1,25 @@
+{
+  "name": "Badland Scavenger",
+  "sprite": "mon-goblin",
+  "pools": {
+    "hp": -50
+  },
+  "armour": 0,
+  "speed": 110,
+  "ai": "melee",
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "badlands",
+    "desert",
+    "hills"
+  ],
+  "region": {
+    "min": 0,
+    "max": 4
+  },
+  "weight": 20,
+  "xp": 14
+}

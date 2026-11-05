@@ -1,0 +1,15 @@
+{
+  "name": "Cone of Cold",
+  "about": "A wall of cold down a line.",
+  "mana": 20,
+  "kind": "cold",
+  "range": 5,
+  "target": "beam",
+  "tier": 4,
+  "say": "{caster} breathe{s} out a cone of cold.",
+  "damage": 20,
+  "applies": [
+    "chilled"
+  ],
+  "cooldown": 2
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Moss",
+  "biomes": [
+    "forest",
+    "swamp"
+  ],
+  "sprite": "t-moss"
+}

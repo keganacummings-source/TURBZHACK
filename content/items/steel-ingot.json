@@ -1,0 +1,10 @@
+{
+  "name": "Steel Ingot",
+  "sprite": "itm-ingot",
+  "slot": "material",
+  "about": "Iron with its mind made up.",
+  "stack": true,
+  "provides": "steel",
+  "value": 26,
+  "family": "metal"
+}

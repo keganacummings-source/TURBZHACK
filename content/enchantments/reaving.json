@@ -1,0 +1,11 @@
+{
+  "name": "Reaving",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 2,
+  "weight": 6,
+  "procs": [
+    { "kind": "cleave", "damage": 6, "say": "The blow carries through everything in reach." }
+  ],
+  "about": "A swing meant for a crowd. Everything beside you shares the blow."
+}

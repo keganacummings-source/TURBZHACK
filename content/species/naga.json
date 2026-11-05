@@ -1,0 +1,23 @@
+{
+  "name": "Naga",
+  "sprite": "pc-naga",
+  "blurb": "Slow, armoured, and spits venom.",
+  "difficulty": 2,
+  "stats": {
+    "might": 3,
+    "evasion": -6
+  },
+  "armour": 4,
+  "resist": {
+    "poison": 0
+  },
+  "speed": 80,
+  "attributes": {
+    "strength": 2,
+    "endurance": 2,
+    "wits": 1,
+    "agility": -4,
+    "presence": 1
+  },
+  "build": "serpentine"
+}

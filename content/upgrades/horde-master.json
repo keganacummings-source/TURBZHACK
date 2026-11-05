@@ -1,0 +1,12 @@
+{
+  "name": "Horde Master",
+  "group": "company",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "They follow in numbers that make the ground shake.",
+  "perks": {
+    "party": 3,
+    "tame": 0.6
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Brick Floor",
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-brick"
+}

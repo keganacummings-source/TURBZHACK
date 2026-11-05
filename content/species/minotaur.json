@@ -1,0 +1,20 @@
+{
+  "name": "Minotaur",
+  "sprite": "pc-minotaur",
+  "blurb": "Built around a weapon. Cannot cast to save its life.",
+  "difficulty": 1,
+  "stats": {
+    "might": 7,
+    "accuracy": 5,
+    "focus": -4
+  },
+  "armour": 2,
+  "attributes": {
+    "strength": 5,
+    "endurance": 2,
+    "agility": -1,
+    "wits": -4,
+    "cunning": -2,
+    "presence": -1
+  }
+}

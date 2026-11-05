@@ -1,0 +1,13 @@
+{
+  "name": "Campfire",
+  "sprite": "t-campfire",
+  "solid": true,
+  "opaque": false,
+  "station": "camp",
+  "biomes": [
+    "village",
+    "dungeon",
+    "plains",
+    "forest"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Mossy Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-wall-mossy"
+}

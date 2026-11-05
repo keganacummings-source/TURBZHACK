@@ -1,0 +1,13 @@
+{
+  "name": "Greater Mending",
+  "sprite": "itm-potion-3",
+  "slot": "potion",
+  "about": "Closes rather more.",
+  "casts": "greater-mend",
+  "charges": 1,
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 9
+}

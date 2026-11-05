@@ -1,0 +1,10 @@
+{
+  "name": "Staff Strike",
+  "damage": 8,
+  "kind": "physical",
+  "range": 1,
+  "say": "{caster} crack{s} {target} with a staff-hand.",
+  "about": "The hand that is not casting.",
+  "stamina": 10,
+  "key": "c"
+}

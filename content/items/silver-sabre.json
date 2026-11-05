@@ -1,0 +1,16 @@
+{
+  "name": "Silver Sabre",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "weaponClass": "sword",
+  "material": "silver",
+  "damage": 15,
+  "kind": "physical",
+  "value": 520,
+  "about": "Some things will not come near it.",
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight_find": 3
+}

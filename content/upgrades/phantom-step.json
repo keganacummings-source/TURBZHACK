@@ -1,0 +1,14 @@
+{
+  "name": "Phantom Step",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "You are never quite where they aim.",
+  "modify": {
+    "evasion": 22,
+    "accuracy": 12,
+    "staminaMax": 80,
+    "armour": -4
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Fire Elemental",
+  "sprite": "mon-fire-elemental",
+  "pools": {
+    "hp": -20,
+    "mana": 25
+  },
+  "armour": 2,
+  "speed": 110,
+  "ai": "caster",
+  "sight": 9,
+  "abilities": [
+    "searing-bite"
+  ],
+  "biomes": [
+    "volcanic",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 8,
+  "xp": 100,
+  "spells": [
+    "flame-lash"
+  ],
+  "resist": {
+    "fire": 0.0,
+    "cold": 1.75,
+    "shock": 0.5
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

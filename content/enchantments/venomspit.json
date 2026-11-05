@@ -1,0 +1,11 @@
+{
+  "name": "Venomspit",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 2,
+  "weight": 6,
+  "procs": [
+    { "kind": "burst", "damage": 4, "dkind": "poison", "radius": 1, "applies": ["poisoned"], "statusTurns": 4, "say": "Venom sprays from the strike." }
+  ],
+  "about": "The strike spatters poison across everything near what it hit."
+}

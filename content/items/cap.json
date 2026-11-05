@@ -1,0 +1,14 @@
+{
+  "name": "Cap",
+  "sprite": "arm-hat",
+  "slot": "head",
+  "about": "Keeps the rain off, mostly.",
+  "armour": 1,
+  "depth": {
+    "min": 0,
+    "max": 8
+  },
+  "weight_find": 12,
+  "overlay": "ovl-head-cap",
+  "staminaMax": -2
+}

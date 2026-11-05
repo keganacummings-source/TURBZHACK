@@ -1,0 +1,12 @@
+{
+  "name": "Field Sense",
+  "group": "trade",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "You notice the good veins and the ripe fruit.",
+  "perks": {
+    "gatherLuck": 0.35,
+    "gatherSpeed": -1
+  }
+}

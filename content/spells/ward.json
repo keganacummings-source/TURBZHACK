@@ -1,0 +1,14 @@
+{
+  "name": "Ward",
+  "about": "A skin of hardened air.",
+  "mana": 14,
+  "kind": "pure",
+  "range": 0,
+  "target": "self",
+  "tier": 2,
+  "say": "{caster} draw{s} a ward tight.",
+  "applies": [
+    "warded"
+  ],
+  "cooldown": 4
+}

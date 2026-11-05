@@ -1,0 +1,11 @@
+{
+  "name": "Prospector",
+  "group": "trade",
+  "tier": 2,
+  "weight": 5,
+  "about": "You know where the good seams run.",
+  "perks": {
+    "gatherLuck": 0.5,
+    "gatherSpeed": -1
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Hoarmother's Tear",
+  "sprite": "itm-potion",
+  "slot": "potion",
+  "about": "One mouthful of a very old winter.",
+  "casts": "greater-mend",
+  "charges": 3,
+  "unique": true,
+  "source": "Dropped by the Hoarmother."
+}

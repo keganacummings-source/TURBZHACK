@@ -1,0 +1,16 @@
+{
+  "name": "Frozen",
+  "about": "Cannot act. Even odds of breaking free each turn after the first.",
+  "turns": 5,
+  "preventsAction": true,
+  "breakChance": 0.4,
+  "modify": {
+    "armour": -2
+  },
+  "messages": {
+    "applied": "{name} is frozen solid!",
+    "refreshed": "The ice around {name} thickens!",
+    "broke": "{name} breaks out of the ice.",
+    "ended": "The ice around {name} melts."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Maul",
+  "sprite": "wpn-morningstar",
+  "slot": "weapon",
+  "weaponClass": "mace",
+  "material": "steel",
+  "damage": 22,
+  "kind": "physical",
+  "value": 340,
+  "about": "Nothing subtle survives contact with it.",
+  "requires": {
+    "strength": 15
+  },
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight_find": 4
+}

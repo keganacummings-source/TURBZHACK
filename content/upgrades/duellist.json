@@ -1,0 +1,13 @@
+{
+  "name": "Duellist",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "One at a time, and each one briefly.",
+  "modify": {
+    "might": 15,
+    "accuracy": 12,
+    "evasion": 12
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Ring Mail",
+  "sprite": "arm-ring-mail",
+  "slot": "body",
+  "about": "Rings on leather. Noisy.",
+  "armour": 7,
+  "evasion": -4,
+  "accuracy": -2,
+  "depth": {
+    "min": 3,
+    "max": 12
+  },
+  "weight_find": 10,
+  "overlay": "ovl-body-mail",
+  "staminaMax": -12
+}

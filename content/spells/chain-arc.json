@@ -1,0 +1,15 @@
+{
+  "name": "Chain Arc",
+  "about": "Jumps along everything in the line.",
+  "mana": 18,
+  "kind": "shock",
+  "range": 7,
+  "target": "beam",
+  "tier": 4,
+  "say": "{caster} send{s} an arc leaping down the line.",
+  "damage": 17,
+  "applies": [
+    "stunned"
+  ],
+  "cooldown": 2
+}

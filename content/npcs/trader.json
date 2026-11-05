@@ -1,0 +1,20 @@
+{
+  "name": "Trader",
+  "role": "trader",
+  "sprite": "pc-human",
+  "about": "Buys what the village has too much of, sells what it has too little of, under a travel-cloak with more pockets than a coat has any right to and a belt-knife for cutting rope, not throats.",
+  "greetings": [
+    "What are you carrying?",
+    "Let us see it, then.",
+    "Coin first. Then conversation."
+  ],
+  "gossip": [
+    "Prices are better two valleys over. They always are, until you get there.",
+    "Anything that comes out of the ground is cheap where it comes out.",
+    "I will take mushrooms off your hands. I will not pretend to be pleased about it."
+  ],
+  "quests": [
+    "gather-order",
+    "delivery-run"
+  ]
+}

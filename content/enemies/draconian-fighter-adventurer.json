@@ -1,0 +1,48 @@
+{
+  "name": "Draconian Fighter",
+  "about": "Scales and plate.",
+  "sprite": "pc-draconian",
+  "pools": {
+    "hp": 64,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 6,
+  "speed": 102,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "forest",
+    "taiga",
+    "hills"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 165,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "short-sword",
+      "chance": 0.25
+    },
+    {
+      "item": "ring-mail",
+      "chance": 0.12
+    },
+    {
+      "item": "shield",
+      "chance": 0.12
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Stone Floor",
+  "biomes": [
+    "highland",
+    "dungeon"
+  ],
+  "sprite": "t-stone"
+}

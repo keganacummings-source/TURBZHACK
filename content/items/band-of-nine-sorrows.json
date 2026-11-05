@@ -1,0 +1,10 @@
+{
+  "name": "Band of Nine Sorrows",
+  "sprite": "itm-ring",
+  "slot": "ring",
+  "about": "Nine, and it is counting.",
+  "might": 6,
+  "focus": 6,
+  "unique": true,
+  "source": "Dropped by Ashmaw, the Cinder Wyrm."
+}

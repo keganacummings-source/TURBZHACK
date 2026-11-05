@@ -1,0 +1,23 @@
+{
+  "name": "Forest Stalker",
+  "sprite": "mon-gnoll",
+  "pools": {
+    "hp": -20
+  },
+  "armour": 1,
+  "speed": 105,
+  "ai": "melee",
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "forest",
+    "taiga"
+  ],
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "weight": 16,
+  "xp": 20
+}

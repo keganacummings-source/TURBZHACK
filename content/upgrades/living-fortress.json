@@ -1,0 +1,16 @@
+{
+  "name": "Living Fortress",
+  "group": "body",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "You are the wall. The wall does not fall.",
+  "modify": {
+    "armour": 25,
+    "hpMax": 150,
+    "evasion": -8
+  },
+  "perks": {
+    "regen": 6
+  }
+}

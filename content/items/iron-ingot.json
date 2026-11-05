@@ -1,0 +1,9 @@
+{
+  "name": "Iron Ingot",
+  "sprite": "itm-ingot",
+  "slot": "material",
+  "about": "Smelted and squared off.",
+  "stack": true,
+  "provides": "iron",
+  "family": "metal"
+}

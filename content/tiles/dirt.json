@@ -1,0 +1,9 @@
+{
+  "name": "Packed Earth",
+  "biomes": [
+    "plains",
+    "hills",
+    "dungeon"
+  ],
+  "sprite": "t-dirt"
+}

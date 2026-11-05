@@ -1,0 +1,16 @@
+{
+  "name": "Smelt Copper",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "copper-ore",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "copper-ingot"
+  },
+  "about": "Low heat. It is not fussy."
+}

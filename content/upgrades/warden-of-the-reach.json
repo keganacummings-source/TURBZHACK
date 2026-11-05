@@ -1,0 +1,16 @@
+{
+  "name": "Warden of the Reach",
+  "group": "company",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "Three of them, and they listen.",
+  "perks": {
+    "party": 2,
+    "tame": 0.35
+  },
+  "modify": {
+    "armour": 4,
+    "hpMax": 30
+  }
+}

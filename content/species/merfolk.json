@@ -1,0 +1,20 @@
+{
+  "name": "Merfolk",
+  "sprite": "pc-merfolk",
+  "blurb": "At home in water, and handy with anything with a point on it.",
+  "difficulty": 2,
+  "stats": {
+    "accuracy": 4,
+    "evasion": 3
+  },
+  "resist": {
+    "cold": 0.75
+  },
+  "attributes": {
+    "agility": 3,
+    "strength": 1,
+    "wits": 1,
+    "endurance": -1,
+    "cunning": -1
+  }
+}

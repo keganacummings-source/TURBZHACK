@@ -1,0 +1,8 @@
+{
+  "name": "Lava",
+  "solid": true,
+  "biomes": [
+    "volcanic"
+  ],
+  "sprite": "t-lava"
+}

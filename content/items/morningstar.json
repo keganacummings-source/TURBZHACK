@@ -1,0 +1,17 @@
+{
+  "name": "Morningstar",
+  "sprite": "wpn-morningstar",
+  "slot": "weapon",
+  "about": "All the spikes a mace was missing.",
+  "damage": 17,
+  "kind": "physical",
+  "accuracy": -4,
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 8,
+  "weaponClass": "mace",
+  "material": "steel",
+  "value": 210
+}

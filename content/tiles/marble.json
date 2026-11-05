@@ -1,0 +1,7 @@
+{
+  "name": "Marble",
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-marble"
+}

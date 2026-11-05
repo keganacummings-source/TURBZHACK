@@ -1,0 +1,13 @@
+{
+  "name": "Archmage",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 10,
+  "about": "The whole of it, at once, for as long as you can stand.",
+  "modify": {
+    "focus": 20,
+    "manaMax": 100,
+    "accuracy": 6
+  }
+}

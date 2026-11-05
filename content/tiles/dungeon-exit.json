@@ -1,0 +1,6 @@
+{
+  "name": "Way to the Surface",
+  "on": "dungeon-exit",
+  "biomes": ["dungeon"],
+  "sprite": "t-dungeon-door"
+}

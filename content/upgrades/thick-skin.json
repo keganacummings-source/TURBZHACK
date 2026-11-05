@@ -1,0 +1,10 @@
+{
+  "name": "Thick Skin",
+  "group": "body",
+  "tier": 1,
+  "weight": 8,
+  "about": "Less of it gets through.",
+  "modify": {
+    "armour": 3
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Deep Well",
+  "about": "More mana, so more spells.",
+  "modify": {
+    "manaMax": 25
+  },
+  "weight": 12,
+  "group": "magic",
+  "tier": 2
+}

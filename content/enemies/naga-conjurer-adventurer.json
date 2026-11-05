@@ -1,0 +1,53 @@
+{
+  "name": "Naga Conjurer",
+  "about": "Coiled and casting.",
+  "sprite": "pc-naga",
+  "pools": {
+    "hp": 62,
+    "stamina": 10,
+    "mana": 10
+  },
+  "armour": 5,
+  "speed": 101,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "plains",
+    "hills",
+    "forest"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 160,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2,
+    "focus": 6
+  },
+  "drops": [
+    {
+      "item": "ruin-staff",
+      "chance": 0.25
+    },
+    {
+      "item": "robe",
+      "chance": 0.12
+    },
+    {
+      "item": "ember-staff",
+      "chance": 0.12
+    }
+  ],
+  "spells": [
+    "spark",
+    "shock-bolt"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Spiked Pit",
+  "about": "A visible, one-shot floor trap. The first creature to step or be knocked onto it takes damage and is briefly rooted.",
+  "on": "pit-trap",
+  "biomes": ["dungeon"],
+  "sprite": "t-ash"
+}

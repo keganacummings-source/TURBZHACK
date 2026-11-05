@@ -1,0 +1,16 @@
+{
+  "name": "Forge a Helm",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 3,
+  "needs": [
+    {
+      "metal": 2
+    }
+  ],
+  "makes": {
+    "item": "helm"
+  },
+  "about": "Shaped over a stake.",
+  "forge": true
+}

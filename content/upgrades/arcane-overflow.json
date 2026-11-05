@@ -1,0 +1,14 @@
+{
+  "name": "Arcane Overflow",
+  "group": "magic",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "Mana pours from you. The world notices.",
+  "modify": {
+    "focus": 28,
+    "manaMax": 160,
+    "accuracy": 8,
+    "hpMax": -20
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Jackal",
+  "sprite": "mon-jackal",
+  "pools": {
+    "hp": -72,
+    "mana": -50
+  },
+  "armour": 0,
+  "speed": 130,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "plains",
+    "savanna",
+    "desert"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 4
+  },
+  "weight": 26,
+  "xp": 8,
+  "region": {
+    "min": 0,
+    "max": 2
+  },
+  "tameable": {
+    "chance": 0.4,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

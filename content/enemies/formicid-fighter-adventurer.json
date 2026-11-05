@@ -1,0 +1,47 @@
+{
+  "name": "Formicid Fighter",
+  "about": "Antennae, armour, and discipline.",
+  "sprite": "pc-formicid",
+  "pools": {
+    "hp": 68,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 8,
+  "speed": 104,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "swamp",
+    "forest"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 175,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "short-sword",
+      "chance": 0.25
+    },
+    {
+      "item": "ring-mail",
+      "chance": 0.12
+    },
+    {
+      "item": "shield",
+      "chance": 0.12
+    }
+  ]
+}

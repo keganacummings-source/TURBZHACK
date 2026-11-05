@@ -1,0 +1,12 @@
+{
+  "name": "Hasted",
+  "about": "Quicker than anything around it.",
+  "turns": 10,
+  "modify": {
+    "speed": 50
+  },
+  "messages": {
+    "applied": "{name} quickens!",
+    "ended": "{name} slows to an ordinary pace."
+  }
+}

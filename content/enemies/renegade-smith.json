@@ -1,0 +1,37 @@
+{
+  "name": "Renegade Smith",
+  "about": "He always said a masterwork blade was a lucky day. He kept the unlucky ones.",
+  "sprite": "pc-hill-orc",
+  "pools": {
+    "hp": 30
+  },
+  "armour": 9,
+  "speed": 95,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slam",
+    "cleave"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 4,
+    "max": 9
+  },
+  "weight": 8,
+  "xp": 130,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "resist": {
+    "physical": 0.3
+  },
+  "drops": [
+    { "item": "war-axe", "chance": 0.2 },
+    { "item": "helm", "chance": 0.2 },
+    { "item": "plate-armour", "chance": 0.08 }
+  ]
+}

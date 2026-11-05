@@ -1,0 +1,13 @@
+{
+  "name": "Levinbrand",
+  "place": "prefix",
+  "slots": ["weapon"],
+  "tier": 3,
+  "weight": 4,
+  "bonusDamage": 4,
+  "bonusKind": "shock",
+  "procs": [
+    { "kind": "chain", "damage": 9, "dkind": "shock", "jumps": 2, "applies": ["stunned"], "statusTurns": 1, "say": "Lightning leaps from the wound." }
+  ],
+  "about": "Strike one, and the lightning finds the rest. Ask for it on a sword and watch a room light up."
+}

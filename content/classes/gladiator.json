@@ -1,0 +1,22 @@
+{
+  "name": "Gladiator",
+  "blurb": "Fast, light, and trained to be looked at.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "spear",
+    "leather-armour",
+    "buckler"
+  ],
+  "stats": {
+    "accuracy": 6,
+    "evasion": 4
+  },
+  "spells": [],
+  "attributes": {
+    "agility": 2,
+    "strength": 1
+  }
+}

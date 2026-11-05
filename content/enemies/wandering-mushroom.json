@@ -1,0 +1,47 @@
+{
+  "name": "Wandering Mushroom",
+  "sprite": "mon-wandering-mushroom",
+  "pools": {
+    "hp": -40,
+    "mana": -50
+  },
+  "armour": 4,
+  "speed": 70,
+  "ai": "melee",
+  "sight": 4,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "swamp",
+    "forest",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 12,
+  "xp": 40,
+  "resist": {
+    "poison": 0
+  },
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "tameable": {
+    "chance": 0.3,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  },
+  "says": [
+    "...",
+    "(it shifts slightly, and seems pleased)"
+  ],
+  "stance": "neutral"
+}

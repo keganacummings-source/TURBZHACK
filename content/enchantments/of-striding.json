@@ -1,0 +1,9 @@
+{
+  "name": "of Striding",
+  "place": "suffix",
+  "slots": ["feet"],
+  "tier": 2,
+  "weight": 7,
+  "extraMove": 0.3,
+  "about": "A third of your steps cost nothing. The ground just passes quicker."
+}

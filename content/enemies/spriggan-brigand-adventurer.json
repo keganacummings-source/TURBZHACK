@@ -1,0 +1,47 @@
+{
+  "name": "Spriggan Brigand",
+  "about": "Tiny, quick, and hard to hit.",
+  "sprite": "pc-spriggan",
+  "pools": {
+    "hp": 58,
+    "stamina": 10,
+    "mana": -20
+  },
+  "armour": 8,
+  "speed": 99,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "void",
+    "volcanic"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 4,
+  "xp": 150,
+  "stats": {
+    "might": 4,
+    "accuracy": 3,
+    "evasion": 2
+  },
+  "drops": [
+    {
+      "item": "dagger",
+      "chance": 0.25
+    },
+    {
+      "item": "leather-armour",
+      "chance": 0.12
+    },
+    {
+      "item": "cloak",
+      "chance": 0.12
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "World-Eater",
+  "group": "trade",
+  "tier": 3,
+  "talent": true,
+  "weight": 6,
+  "about": "The continent is a pantry.",
+  "perks": {
+    "gatherSpeed": -8,
+    "gatherLuck": 1.5,
+    "craftSpeed": -5
+  }
+}

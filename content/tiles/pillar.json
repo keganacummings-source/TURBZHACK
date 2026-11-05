@@ -1,0 +1,9 @@
+{
+  "name": "Stone Pillar",
+  "solid": true,
+  "opaque": false,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-pillar"
+}

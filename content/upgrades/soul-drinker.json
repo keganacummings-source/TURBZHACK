@@ -1,0 +1,16 @@
+{
+  "name": "Soul Drinker",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "Every kill fills the emptiness.",
+  "modify": {
+    "might": 18,
+    "focus": 18,
+    "hpMax": 40
+  },
+  "perks": {
+    "regen": 8
+  }
+}

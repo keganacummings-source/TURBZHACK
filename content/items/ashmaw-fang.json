@@ -1,0 +1,15 @@
+{
+  "name": "Ashmaw's Fang",
+  "sprite": "wpn-sword",
+  "slot": "weapon",
+  "about": "Still warm. It does not cool. Every cut cracks the air into fire.",
+  "damage": 24,
+  "kind": "fire",
+  "accuracy": 6,
+  "unique": true,
+  "enchantments": ["cracking", "of-the-leech"],
+  "source": "Dropped by Ashmaw, the Cinder Wyrm, in the Cinderland.",
+  "weaponClass": "sword",
+  "material": "meteoric",
+  "value": 3600
+}

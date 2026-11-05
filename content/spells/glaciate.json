@@ -1,0 +1,16 @@
+{
+  "name": "Glaciate",
+  "about": "Freezes everything around the point of impact.",
+  "mana": 30,
+  "kind": "cold",
+  "range": 6,
+  "target": "burst",
+  "tier": 5,
+  "say": "{caster} glaciate{s} the ground.",
+  "damage": 18,
+  "applies": [
+    "frozen"
+  ],
+  "radius": 2,
+  "cooldown": 4
+}

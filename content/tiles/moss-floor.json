@@ -1,0 +1,9 @@
+{
+  "name": "Mossy Floor",
+  "biomes": [
+    "forest",
+    "swamp",
+    "dungeon"
+  ],
+  "sprite": "t-moss-floor"
+}

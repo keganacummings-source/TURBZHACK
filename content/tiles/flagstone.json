@@ -1,0 +1,9 @@
+{
+  "name": "Flagstones",
+  "biomes": [
+    "dungeon",
+    "village"
+  ],
+  "sprite": "t-flagstone",
+  "id": "flagstone"
+}

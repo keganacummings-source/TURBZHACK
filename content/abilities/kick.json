@@ -1,0 +1,11 @@
+{
+  "name": "Kick",
+  "damage": 10,
+  "kind": "physical",
+  "range": 1,
+  "knockback": true,
+  "say": "{caster} kick{s} {target}.",
+  "about": "A costly, forceful kick that can knock an enemy into hazards.",
+  "stamina": 25,
+  "key": "x"
+}

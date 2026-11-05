@@ -1,0 +1,19 @@
+{
+  "name": "Cook a Meal",
+  "station": "camp",
+  "craft": "cooking",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "cap-mushroom",
+      "amount": 2
+    },
+    {
+      "item": "wood"
+    }
+  ],
+  "makes": {
+    "item": "dried-meat"
+  },
+  "about": "Whatever it is, hot is better."
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Destroyer",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 7,
+  "about": "Everything breaks when you touch it.",
+  "modify": {
+    "might": 32,
+    "focus": 12,
+    "armour": -6,
+    "hpMax": 20
+  }
+}

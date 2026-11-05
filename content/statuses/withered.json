@@ -1,0 +1,18 @@
+{
+  "name": "Withered",
+  "about": "Rot. It takes a share of what is left, so it hurts most when you are whole.",
+  "turns": 5,
+  "tick": {
+    "kind": "poison",
+    "percent": 0.06,
+    "of": "currentHp"
+  },
+  "modify": {
+    "armour": -2
+  },
+  "messages": {
+    "applied": "{name} begins to wither.",
+    "tick": "the rot",
+    "ended": "{name} stops withering."
+  }
+}

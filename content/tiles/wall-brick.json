@@ -1,0 +1,9 @@
+{
+  "name": "Brick Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-wall-brick"
+}

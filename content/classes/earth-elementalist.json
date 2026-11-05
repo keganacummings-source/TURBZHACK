@@ -1,0 +1,25 @@
+{
+  "name": "Earth Elementalist",
+  "blurb": "Slow magic, and it does not miss.",
+  "abilities": [
+    "punch",
+    "staff-strike"
+  ],
+  "items": [
+    "mace",
+    "robe",
+    "buckler"
+  ],
+  "stats": {
+    "focus": 5,
+    "might": 2
+  },
+  "armour": 2,
+  "spells": [
+    "spark"
+  ],
+  "attributes": {
+    "wits": 2,
+    "endurance": 1
+  }
+}

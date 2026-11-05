@@ -1,0 +1,42 @@
+{
+  "name": "Scorpion",
+  "sprite": "mon-scorpion",
+  "pools": {
+    "hp": -70,
+    "mana": -50
+  },
+  "armour": 2,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 6,
+  "abilities": [
+    "venom-bite"
+  ],
+  "biomes": [
+    "desert",
+    "badlands",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 1,
+    "max": 7
+  },
+  "weight": 16,
+  "xp": 20,
+  "resist": {
+    "poison": 0
+  },
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "tameable": {
+    "chance": 0.15,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

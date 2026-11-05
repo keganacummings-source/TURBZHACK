@@ -1,0 +1,14 @@
+{
+  "name": "Apex Predator",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "Nothing that walks is safe from you.",
+  "modify": {
+    "might": 25,
+    "accuracy": 10,
+    "evasion": 8,
+    "hpMax": 40
+  }
+}

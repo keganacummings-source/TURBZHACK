@@ -1,0 +1,13 @@
+{
+  "name": "Perfect Harvest",
+  "group": "trade",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "The land gives you everything, immediately.",
+  "perks": {
+    "gatherSpeed": -6,
+    "craftSpeed": -4,
+    "gatherLuck": 1.2
+  }
+}

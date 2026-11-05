@@ -1,0 +1,16 @@
+{
+  "name": "Dress Stone",
+  "station": "forge",
+  "craft": "smithing",
+  "turns": 2,
+  "needs": [
+    {
+      "item": "stone-block",
+      "amount": 2
+    }
+  ],
+  "makes": {
+    "item": "gemstone"
+  },
+  "about": "Split enough rock and something in it is worth keeping."
+}

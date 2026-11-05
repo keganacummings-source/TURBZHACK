@@ -1,0 +1,611 @@
+/**
+ * The things an actor can actually do on its turn.
+ *
+ * Every action returns an `ActionResult` saying whether it used the turn. That
+ * distinction is load-bearing in a roguelike: walking into a wall, or trying to
+ * cast with no mana, must NOT pass the turn to the monsters, or the game
+ * punishes you for a mistyped key.
+ *
+ * Nothing here knows about any specific spell or ability. They are all driven
+ * by their content files, so the engine never grows a branch per content item.
+ */
+import type { Actor } from "./actor.ts";
+import { applyDamage, rollToHit } from "./combat.ts";
+import { distance, hasLineOfSight, line, type Level } from "./grid.ts";
+import type { Rng } from "./rng.ts";
+import { applyStatus, isRooted, type StatusDef } from "./status.ts";
+import type { AbilityDef, ProcDef, SpellDef } from "../content/schema.ts";
+import type { ActionResult, DamageKind, Pos } from "./types.ts";
+
+/** Everything an action needs to reach. */
+export type ActionCtx = {
+  level: Level;
+  /** Needed for the to-hit roll. */
+  rng: Rng;
+  actors: Actor[];
+  statuses: Map<string, StatusDef>;
+  turn: number;
+  /** Cooldowns, keyed `actorId:abilityOrSpellId`. */
+  cooldowns: Map<string, number>;
+  /** Called after a persistent floor trap is consumed. */
+  onTrapTriggered?: (x: number, y: number) => void;
+};
+
+/** Whoever is standing on a tile, if anyone. */
+export function actorAt(actors: Actor[], x: number, y: number): Actor | undefined {
+  return actors.find((a) => a.alive && a.pos.x === x && a.pos.y === y);
+}
+
+/** Is this spell or ability off cooldown for this actor? */
+export function ready(ctx: ActionCtx, actor: Actor, id: string): boolean {
+  const until = ctx.cooldowns.get(`${actor.id}:${id}`) ?? 0;
+  return ctx.turn >= until;
+}
+
+function startCooldown(ctx: ActionCtx, actor: Actor, id: string, turns?: number): void {
+  if (!turns || turns <= 0) return;
+  ctx.cooldowns.set(`${actor.id}:${id}`, ctx.turn + turns);
+}
+
+/**
+ * Fill in a content file's `say` line.
+ *
+ * The player is called "You", which is second person, while every monster is
+ * third person — so one template cannot serve both without help, and the first
+ * version printed "You punches Wolf."
+ *
+ * Content writes the verb with a `{s}` or `{es}` token on it:
+ *
+ *     "{caster} punch{es} {target}."   ->  "You punch Wolf."
+ *                                      ->  "Goblin punches you."
+ *
+ * which keeps the grammar in the file that owns the sentence rather than in a
+ * list of irregular verbs in here.
+ */
+export function say(text: string, caster: Actor, target?: Actor): string {
+  const second = caster.isPlayer;
+  return text
+    .replace(/\{caster\}/g, caster.name)
+    .replace(/\{target\}/g, target ? objectName(target) : "it")
+    .replace(/\{es\}/g, second ? "" : "es")
+    .replace(/\{s\}/g, second ? "" : "s");
+}
+
+/** How to refer to an actor in the middle of a sentence. */
+export function objectName(actor: Actor): string {
+  return actor.isPlayer ? "you" : actor.name;
+}
+
+/**
+ * Walk one step, or attack whoever is standing there.
+ *
+ * NetHack's rule, and the reason movement feels right: moving INTO a hostile
+ * creature is an attack, so you never have to choose a separate "attack" verb
+ * for the overwhelmingly common case.
+ */
+export function moveOrAttack(
+  ctx: ActionCtx,
+  actor: Actor,
+  dx: number,
+  dy: number,
+  defaultAttack: AbilityDef | undefined,
+): ActionResult {
+  const nx = actor.pos.x + dx;
+  const ny = actor.pos.y + dy;
+
+  const occupant = actorAt(ctx.actors, nx, ny);
+  if (occupant && occupant !== actor) {
+    // Walking into something neutral or friendly swaps nothing and attacks
+    // nothing — you have to mean it, with an explicit attack key.
+    if (occupant.stance !== "hostile" && actor.isPlayer) {
+      return { tookTurn: false, messages: [{ text: `${occupant.name} is in the way. Attack it deliberately if you mean to.`, tone: "warn" }] };
+    }
+    if (!defaultAttack) return { tookTurn: false };
+    return useAbility(ctx, actor, defaultAttack, occupant);
+  }
+
+  // Rooted: the feet are held, but the arms are not — attacking the occupant
+  // of the next tile, above, still works. Anything that needs a step does not.
+  // A creature loses the turn rather than being told no, so a rooted monster
+  // that wants to close the distance stands and strains instead of the AI
+  // asking again forever; the player is told and keeps the turn.
+  if (isRooted(actor, ctx.statuses)) {
+    return actor.isPlayer
+      ? { tookTurn: false, messages: [{ text: "You are rooted in place! You can still fight and cast.", tone: "warn" }] }
+      : { tookTurn: true };
+  }
+
+  if (ctx.level.solid(nx, ny)) {
+    const what = ctx.level.at(nx, ny)?.name ?? "the edge of the world";
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${what} blocks the way.`, tone: "plain" }] : [] };
+  }
+
+  actor.pos = { x: nx, y: ny };
+  return { tookTurn: true, messages: enterTile(ctx, actor, nx, ny) };
+}
+
+/** Resolve a one-shot pit immediately when any actor enters its tile. */
+function enterTile(ctx: ActionCtx, actor: Actor, x: number, y: number): ActionResult["messages"] {
+  if (ctx.level.at(x, y)?.on !== "pit-trap") return [];
+  const under = ctx.level.floorAt(x, y);
+  if (under) {
+    const floor = ctx.level.kindIndex(under);
+    ctx.level.set(x, y, floor, floor);
+  }
+  ctx.onTrapTriggered?.(x, y);
+  const outcome = applyDamage(actor, {
+    amount: 18, kind: "physical", label: "the pit spikes",
+  });
+  const messages = [...outcome.messages];
+  const trapped = ctx.statuses.get("pit-trapped");
+  if (trapped && actor.alive) messages.push(...applyStatus(actor, trapped, 0));
+  messages.unshift({
+    text: `${actor.isPlayer ? "You" : actor.name} ${actor.isPlayer ? "fall" : "falls"} into a spiked pit!`,
+    tone: "bad",
+  });
+  return messages;
+}
+
+/** Stand still for a turn. Always succeeds, which is what makes it useful for waiting out a burn. */
+export function wait(): ActionResult {
+  return { tookTurn: true };
+}
+
+/**
+ * Use an ability — punch, kick, a monster's bite.
+ *
+ * Costs are checked and spent here, once, so no content file can forget to.
+ */
+export function useAbility(ctx: ActionCtx, actor: Actor, def: AbilityDef, target: Actor | undefined): ActionResult {
+  const id = String(def.id ?? def.name);
+  if (!target || !target.alive) return { tookTurn: false };
+
+  const range = def.range ?? 1;
+  if (distance(actor.pos, target.pos) > range) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${target.name} is out of reach.`, tone: "warn" }] : [] };
+  }
+  // Anything that reaches past the next square needs a clear line: a bow
+  // does not shoot through the wall between you and the wolf.
+  if (range > 1 && distance(actor.pos, target.pos) > 1 && !hasLineOfSight(ctx.level, actor.pos, target.pos, range)) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `No clear shot at ${target.name}.`, tone: "warn" }] : [] };
+  }
+  if (!ready(ctx, actor, id)) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${def.name} is not ready yet.`, tone: "warn" }] : [] };
+  }
+  const staminaCost = def.stamina ?? 0;
+  if (actor.pools.stamina < staminaCost) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `Not enough stamina for ${def.name} (${staminaCost} needed).`, tone: "warn" }] : [] };
+  }
+  const manaCost = def.mana ?? 0;
+  if (actor.pools.mana < manaCost) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `Not enough mana for ${def.name} (${manaCost} needed).`, tone: "warn" }] : [] };
+  }
+
+  actor.spendStamina(staminaCost);
+  actor.spendMana(manaCost);
+  startCooldown(ctx, actor, id, def.cooldown);
+
+  const cost = def.cost ?? 1;
+  const messages: NonNullable<ActionResult["messages"]> = [];
+  if (def.say) messages.push({ text: say(def.say, actor, target), tone: "plain" });
+  // Something loosed from across the room is drawn crossing it, hit or miss.
+  const shot = distance(actor.pos, target.pos) > 1
+    ? { from: { ...actor.pos }, to: { ...target.pos } } : undefined;
+
+  /*
+   * Abilities roll to hit; spells do not.
+   *
+   * That split is the point of having two kinds of attack: a swing can miss
+   * and gets better as you raise accuracy, while magic always lands and is
+   * paid for in mana instead. It also means `accuracy` is a meaningful thing
+   * to be offered at a level-up rather than a stat with nothing attached.
+   *
+   * The cost is spent either way — a miss is a turn and a kick's stamina gone.
+   */
+  if (!rollToHit(actor, target, ctx.rng)) {
+    messages.push({
+      text: `${def.name} misses ${objectName(target)}.`,
+      tone: actor.isPlayer ? "warn" : "plain",
+    });
+    return { tookTurn: true, cost, messages, shot };
+  }
+
+  const out = applyDamage(target, {
+    amount: def.damage + actor.stats.might,
+    kind: (def.kind ?? "physical") as DamageKind,
+    source: actor,
+    label: def.name,
+  });
+  messages.push(...out.messages);
+  messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, target, out.dealt));
+  if (def.knockback && target.alive) messages.push(...shove(ctx, actor, target));
+  if (def.procs?.length) {
+    messages.push(...fireProcs(def.procs, ctx, actor, target, out.dealt, (def.kind ?? "physical") as DamageKind));
+  }
+
+  return { tookTurn: true, cost, messages, shot };
+}
+
+/** Which side an actor fights for — the player and tamed pets against everything else. */
+function playerSide(a: Actor): boolean {
+  return !!a.isPlayer || !!a.data?.["companion"];
+}
+
+/**
+ * Is `a` a legitimate victim of `attacker`'s on-hit effect?
+ *
+ * The two must be on opposite sides, and when the player is swinging, only
+ * creatures that are actually hostile count — a chain-lightning sword must not
+ * arc into a villager standing behind the goblin you meant to hit.
+ */
+function procHostile(a: Actor, attacker: Actor): boolean {
+  if (!a.alive || a === attacker) return false;
+  if (playerSide(a) === playerSide(attacker)) return false;
+  return playerSide(attacker) ? a.stance === "hostile" : true;
+}
+
+/**
+ * Fire a weapon's on-hit effects after a landed blow.
+ *
+ * Kept wholly data-driven: the effect is read off the `ProcDef` the affix
+ * carried, so a new kind of enchantment is a content file, not a branch here —
+ * the same rule the rest of the engine lives by. `dealt` is the damage the main
+ * blow did, which lifesteal leeches from; `weaponKind` is the fallback element
+ * for a proc that does not name its own.
+ */
+function fireProcs(
+  procs: ProcDef[], ctx: ActionCtx, actor: Actor, target: Actor,
+  dealt: number, weaponKind: DamageKind,
+): NonNullable<ActionResult["messages"]> {
+  const out: NonNullable<ActionResult["messages"]> = [];
+  for (const p of procs) {
+    if ((p.chance ?? 1) < 1 && ctx.rng.next() > (p.chance ?? 1)) continue;
+    const kind = (p.dkind ?? weaponKind) as DamageKind;
+    const dmg = p.damage ?? 0;
+
+    switch (p.kind) {
+      case "lifesteal": {
+        const back = Math.max(1, Math.round(dealt * (p.leech ?? 0.2)));
+        const got = actor.heal(back);
+        if (got > 0) out.push({ text: say(p.say ?? "{caster} drain{s} life from the blow.", actor, target), tone: "magic" });
+        break;
+      }
+      case "execute": {
+        if (target.alive && target.pools.hp <= target.pools.hpMax * (p.threshold ?? 0.2)) {
+          const o = applyDamage(target, { amount: target.pools.hp + 1, kind: "pure", source: actor, label: p.say ?? "execution" });
+          out.push({ text: say(p.say ?? "{caster} finish{es} {target}.", actor, target), tone: "magic" });
+          out.push(...o.messages);
+        }
+        break;
+      }
+      case "knockback": {
+        if (target.alive) {
+          out.push(...shove(ctx, actor, target));
+          out.push({ text: say(p.say ?? "{target} is flung back.", actor, target), tone: "plain" });
+        }
+        break;
+      }
+      case "stun": {
+        out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, target, dmg || dealt));
+        if (p.say) out.push({ text: say(p.say, actor, target), tone: "magic" });
+        break;
+      }
+      case "chain": {
+        // Leap from the struck creature to the nearest others, in turn.
+        const jumps = p.jumps ?? 2;
+        let from = target;
+        const hit = new Set<string>([target.id]);
+        const caught: Actor[] = [];
+        for (let j = 0; j < jumps; j++) {
+          const next = ctx.actors
+            .filter((a) => procHostile(a, actor) && !hit.has(a.id) && distance(a.pos, from.pos) <= 3)
+            .sort((a, b) => distance(a.pos, from.pos) - distance(b.pos, from.pos))[0];
+          if (!next) break;
+          hit.add(next.id);
+          caught.push(next);
+          const o = applyDamage(next, { amount: dmg, kind, source: actor, label: p.say ?? "arc" });
+          out.push(...o.messages);
+          out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, next, dmg));
+          from = next;
+        }
+        if (caught.length) out.push({ text: say(p.say ?? "The strike arcs onward.", actor, target), tone: "magic" });
+        break;
+      }
+      case "burst":
+      case "cleave": {
+        const origin = p.kind === "cleave" ? actor.pos : target.pos;
+        const radius = p.kind === "cleave" ? 1 : (p.radius ?? 1);
+        const caught = ctx.actors.filter(
+          (a) => procHostile(a, actor) && a !== target && distance(a.pos, origin) <= radius);
+        for (const v of caught) {
+          const o = applyDamage(v, { amount: dmg, kind, source: actor, label: p.say ?? p.kind });
+          out.push(...o.messages);
+          out.push(...applyAll(p.applies, p.statusTurns, ctx, actor, v, dmg));
+        }
+        if (caught.length && p.say) out.push({ text: say(p.say, actor, target), tone: "magic" });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/** Push a creature away, resolving a collision or entered hazard immediately. */
+function shove(ctx: ActionCtx, attacker: Actor, target: Actor): NonNullable<ActionResult["messages"]> {
+  if (isRooted(target, ctx.statuses)) {
+    return [{ text: target.isPlayer ? "You brace against the shove." : `${target.name} braces against the shove.`, tone: "plain" }];
+  }
+  const sizeResistance = { tiny: 0, small: 1, medium: 2, large: 4, huge: 6 }[target.size];
+  const physicalResistance = Math.max(0, Math.min(1, target.resist.physical ?? 1));
+  const requiredForce = sizeResistance + Math.ceil((1 - physicalResistance) * 2);
+  const force = 3 + Math.max(0, Math.floor(attacker.stats.might / 5));
+  if (force < requiredForce) {
+    return [{ text: `${target.isPlayer ? "You brace" : `${target.name} braces`} against the shove.`, tone: "plain" }];
+  }
+  const dx = Math.sign(target.pos.x - attacker.pos.x);
+  const dy = Math.sign(target.pos.y - attacker.pos.y);
+  if (!dx && !dy) return [];
+  const nx = target.pos.x + dx, ny = target.pos.y + dy;
+  const blocker = actorAt(ctx.actors, nx, ny);
+  if (ctx.level.solid(nx, ny) || blocker) {
+    const collision = applyDamage(target, {
+      amount: blocker ? 3 : 5, kind: "physical", label: "the impact",
+    });
+    return [{ text: `${target.isPlayer ? "You slam" : `${target.name} slams`} into ${blocker?.name ?? "the wall"}.`, tone: "plain" }, ...collision.messages];
+  }
+  target.pos = { x: nx, y: ny };
+  return [
+    { text: target.isPlayer ? "You are knocked back." : `${target.name} is knocked back.`, tone: "plain" },
+    ...(enterTile(ctx, target, nx, ny) ?? []),
+  ];
+}
+
+/**
+ * Cast a spell.
+ *
+ * `target` is the creature aimed at for the single-target case; beams and
+ * bursts work out their own victims from the tile.
+ */
+export function castSpell(
+  ctx: ActionCtx,
+  actor: Actor,
+  def: SpellDef,
+  target: Actor | undefined,
+  at?: Pos,
+): ActionResult {
+  const id = String(def.id ?? def.name);
+  const shape = def.target ?? "actor";
+  const range = def.range ?? 1;
+
+  if (!ready(ctx, actor, id)) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${def.name} is not ready yet.`, tone: "warn" }] : [] };
+  }
+  if (actor.pools.mana < def.mana) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `Not enough mana for ${def.name} (${def.mana} needed, you have ${actor.pools.mana}).`, tone: "warn" }] : [] };
+  }
+  const staminaCost = def.stamina ?? 0;
+  if (actor.pools.stamina < staminaCost) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: `Not enough stamina for ${def.name}.`, tone: "warn" }] : [] };
+  }
+
+  // Work out who it hits before spending anything, so a spell aimed at nothing
+  // is a no-op rather than a wasted turn and wasted mana.
+  const spot = at ?? target?.pos ?? actor.pos;
+  let victims: Actor[];
+  switch (shape) {
+    case "self":
+      victims = [actor];
+      break;
+    case "beam":
+      victims = beamVictims(ctx, actor, spot, range);
+      break;
+    case "burst":
+      victims = ctx.actors.filter((a) => a.alive && distance(a.pos, spot) <= (def.radius ?? 1));
+      break;
+    default:
+      victims = target && target.alive ? [target] : [];
+      break;
+  }
+
+  /*
+   * A spell that hurts does not hurt your own side.
+   *
+   * A beam or a blast takes in everything on the line or inside the radius, and
+   * without this that included you if you stood within the radius, your pets,
+   * and any villager who wandered into the line. Spells that help (heal, ward,
+   * haste) are left alone: they are meant to reach whoever they reach.
+   */
+  if ((shape === "beam" || shape === "burst") && def.damage && !def.heal) {
+    victims = victims.filter((a) => procHostile(a, actor));
+  }
+
+  if (!victims.length) {
+    return { tookTurn: false, messages: actor.isPlayer ? [{ text: "There is nothing there to aim at.", tone: "warn" }] : [] };
+  }
+  if (shape === "actor" || shape === "beam") {
+    const far = victims.find((v) => distance(actor.pos, v.pos) > range);
+    if (far) return { tookTurn: false, messages: actor.isPlayer ? [{ text: `${far.name} is out of range.`, tone: "warn" }] : [] };
+    if (shape === "actor" && range > 1 && victims[0] && !hasLineOfSight(ctx.level, actor.pos, victims[0].pos, range)) {
+      return { tookTurn: false, messages: actor.isPlayer ? [{ text: "You cannot see it from here.", tone: "warn" }] : [] };
+    }
+  }
+
+  actor.spendMana(def.mana);
+  actor.spendStamina(staminaCost);
+  startCooldown(ctx, actor, id, def.cooldown);
+
+  const messages: NonNullable<ActionResult["messages"]> = [];
+  if (def.say) messages.push({ text: say(def.say, actor, victims[0]), tone: "magic" });
+
+  // Everything the spell actually does to a creature's health, for `leech`.
+  let totalDealt = 0;
+  for (const v of victims) {
+    if (def.heal) {
+      const healed = v.heal(def.heal);
+      if (healed > 0) messages.push({ text: `${v.name} recovers ${healed}.`, tone: "good" });
+    }
+    let dealt = 0;
+    if (def.damage) {
+      const out = applyDamage(v, {
+        // Focus raises every spell, which is what makes it worth taking at a
+        // level-up whatever you happen to have learned.
+        amount: def.damage + actor.stats.focus,
+        kind: (def.kind ?? "pure") as DamageKind,
+        source: actor,
+        label: def.name,
+      });
+      messages.push(...out.messages);
+      dealt = out.dealt;
+      totalDealt += dealt;
+    }
+    messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, v, dealt || def.damage || 0));
+    messages.push(...rollInflicts(def, ctx, actor, v, dealt || def.damage || 0));
+  }
+
+  // Then on, to the next creature along.
+  if (def.bounce && shape === "actor" && victims[0]) {
+    const hops = bounceFrom(ctx, actor, def, victims[0]);
+    messages.push(...hops.messages);
+    totalDealt += hops.dealt;
+  }
+
+  // And whatever it took comes back.
+  if (def.leech && totalDealt > 0 && actor.alive) {
+    const got = actor.heal(Math.max(1, Math.round(totalDealt * def.leech)));
+    if (got > 0) {
+      messages.push({
+        text: actor.isPlayer ? `You drain ${got} health.` : `${actor.name} drains ${got} health.`,
+        tone: "good",
+      });
+    }
+  }
+  return { tookTurn: true, messages };
+}
+
+/**
+ * Roll a spell's `inflicts` against one creature.
+ *
+ * Each entry is its own coin, flipped per creature: a bolt that has a 40% chance
+ * to root and a 50% chance to burn can do both, either or neither, and a beam
+ * through three goblins flips all of it three times.
+ */
+function rollInflicts(
+  def: SpellDef, ctx: ActionCtx, source: Actor, target: Actor, power: number,
+): NonNullable<ActionResult["messages"]> {
+  const out: NonNullable<ActionResult["messages"]> = [];
+  if (!def.inflicts?.length) return out;
+  for (const f of def.inflicts) {
+    if (!target.alive) break;
+    if (!ctx.rng.chance(f.chance)) continue;
+    const sdef = ctx.statuses.get(f.status);
+    if (!sdef) continue;
+    out.push(...applyStatus(target, sdef, power, source, f.turns));
+  }
+  return out;
+}
+
+/**
+ * Carry a single-target spell on from the creature it struck.
+ *
+ * Each hop goes to the nearest OTHER creature the caster counts as an enemy,
+ * within `range` of the one just hit and in its line of sight, and never to one
+ * already struck by this casting. It does the first hit's damage times the
+ * falloff for every hop so far, and rolls its own statuses. Allies, pets and
+ * neutral villagers are skipped, so an arc never turns on the person who threw
+ * it. It stops early if nothing is near enough.
+ */
+function bounceFrom(
+  ctx: ActionCtx, actor: Actor, def: SpellDef, first: Actor,
+): { messages: NonNullable<ActionResult["messages"]>; dealt: number } {
+  const messages: NonNullable<ActionResult["messages"]> = [];
+  const b = def.bounce!;
+  const reach = b.range ?? 4;
+  const falloff = b.falloff ?? 0.75;
+  const hit = new Set<string>([first.id]);
+  let from = first;
+  let scale = 1;
+  let dealt = 0;
+
+  for (let hop = 0; hop < b.jumps; hop++) {
+    const next = ctx.actors
+      .filter((a) => procHostile(a, actor) && !hit.has(a.id)
+        && distance(a.pos, from.pos) <= reach
+        && hasLineOfSight(ctx.level, from.pos, a.pos, reach))
+      .sort((a, b2) => distance(a.pos, from.pos) - distance(b2.pos, from.pos))[0];
+    if (!next) break;
+
+    hit.add(next.id);
+    scale *= falloff;
+    messages.push({ text: `${def.name} arcs to ${objectName(next)}.`, tone: "magic" });
+
+    let landed = 0;
+    if (def.damage) {
+      const out = applyDamage(next, {
+        amount: Math.max(1, Math.round((def.damage + actor.stats.focus) * scale)),
+        kind: (def.kind ?? "pure") as DamageKind,
+        source: actor,
+        label: def.name,
+      });
+      messages.push(...out.messages);
+      landed = out.dealt;
+      dealt += landed;
+    }
+    messages.push(...applyAll(def.applies, def.statusTurns, ctx, actor, next, landed || def.damage || 0));
+    messages.push(...rollInflicts(def, ctx, actor, next, landed || def.damage || 0));
+    from = next;
+  }
+  return { messages, dealt };
+}
+
+/** Everything a beam passes through, stopping at the first wall. */
+function beamVictims(ctx: ActionCtx, actor: Actor, toward: Pos, range: number): Actor[] {
+  const out: Actor[] = [];
+  /*
+   * A beam runs out to its range, not just to the creature aimed at.
+   *
+   * `line` stops at the point it is given, which is the target, so a beam used
+   * to hit the nearest creature and anything in front of it and never reach what
+   * was standing behind — the opposite of "everything in a line out to range".
+   * Stretching the aim point out to the full range fixes that; the loop below
+   * still stops at the first wall.
+   */
+  const dx = toward.x - actor.pos.x, dy = toward.y - actor.pos.y;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  const end = steps === 0 || range <= steps
+    ? toward
+    : { x: actor.pos.x + Math.round((dx * range) / steps), y: actor.pos.y + Math.round((dy * range) / steps) };
+  const path = line(actor.pos, end);
+  for (let i = 1; i < path.length; i++) {
+    const p = path[i]!;
+    if (distance(actor.pos, p) > range) break;
+    if (ctx.level.solid(p.x, p.y)) break;
+    const hit = actorAt(ctx.actors, p.x, p.y);
+    if (hit) out.push(hit);
+  }
+  return out;
+}
+
+/**
+ * Put every status a spell or ability applies onto its victim.
+ *
+ * `power` is the damage that landed, which is what burning scales off. A spell
+ * that applies burning without doing damage still burns, using its own listed
+ * damage, so a pure-status spell is possible.
+ */
+function applyAll(
+  ids: string[] | undefined,
+  turns: number | undefined,
+  ctx: ActionCtx,
+  source: Actor,
+  target: Actor,
+  power: number,
+): NonNullable<ActionResult["messages"]> {
+  const out: NonNullable<ActionResult["messages"]> = [];
+  if (!ids?.length || !target.alive) return out;
+  for (const sid of ids) {
+    const sdef = ctx.statuses.get(sid);
+    if (!sdef) continue;
+    out.push(...applyStatus(target, sdef, power, source, turns));
+  }
+  return out;
+}

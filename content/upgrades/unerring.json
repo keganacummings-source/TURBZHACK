@@ -1,0 +1,10 @@
+{
+  "name": "Unerring",
+  "about": "You very nearly stop missing.",
+  "modify": {
+    "accuracy": 12
+  },
+  "weight": 5,
+  "group": "arms",
+  "tier": 1
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Cinder Acolyte",
+  "blurb": "Burns at both ends.",
+  "abilities": [
+    "punch",
+    "kick"
+  ],
+  "items": [
+    "ember-staff",
+    "leather-armour"
+  ],
+  "stats": {
+    "might": 3,
+    "focus": 4
+  },
+  "spells": [
+    "ember-bolt"
+  ],
+  "attributes": {
+    "wits": 2,
+    "presence": 1
+  }
+}

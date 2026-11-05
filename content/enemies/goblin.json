@@ -1,0 +1,30 @@
+{
+  "name": "Goblin",
+  "sprite": "mon-goblin",
+  "pools": {
+    "hp": -62,
+    "mana": -50
+  },
+  "armour": 1,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "forest",
+    "hills",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 0,
+    "max": 6
+  },
+  "weight": 26,
+  "xp": 12,
+  "region": {
+    "min": 0,
+    "max": 2
+  }
+}

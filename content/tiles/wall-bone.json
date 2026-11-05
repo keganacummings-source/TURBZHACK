@@ -1,0 +1,9 @@
+{
+  "name": "Bone Wall",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-wall-bone"
+}

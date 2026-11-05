@@ -1,0 +1,16 @@
+{
+  "name": "Pike",
+  "sprite": "wpn-spear",
+  "slot": "weapon",
+  "weaponClass": "polearm",
+  "material": "iron",
+  "damage": 14,
+  "kind": "physical",
+  "value": 70,
+  "about": "Very long. Awkward indoors.",
+  "depth": {
+    "min": 1,
+    "max": 8
+  },
+  "weight_find": 8
+}

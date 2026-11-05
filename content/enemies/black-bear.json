@@ -1,0 +1,38 @@
+{
+  "name": "Black Bear",
+  "sprite": "mon-black-bear",
+  "pools": {
+    "hp": 10,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "gore"
+  ],
+  "biomes": [
+    "forest",
+    "taiga"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 8
+  },
+  "weight": 10,
+  "xp": 48,
+  "region": {
+    "min": 1,
+    "max": 4
+  },
+  "tameable": {
+    "chance": 0.15,
+    "food": [
+      "dried-meat",
+      "cap-mushroom",
+      "emberfruit",
+      "bitterroot"
+    ]
+  }
+}

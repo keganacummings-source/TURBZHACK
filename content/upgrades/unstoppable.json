@@ -1,0 +1,14 @@
+{
+  "name": "Unstoppable",
+  "group": "arms",
+  "tier": 3,
+  "talent": true,
+  "weight": 8,
+  "about": "Once you start, nothing ends you.",
+  "modify": {
+    "might": 20,
+    "hpMax": 100,
+    "armour": 8,
+    "staminaMax": 60
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "The Hollow Choir",
+  "title": "The Hollow Choir",
+  "sprite": "mon-hollow-choir",
+  "about": "Several voices. It is not clear how many bodies.",
+  "pools": {
+    "hp": 300,
+    "mana": 220
+  },
+  "armour": 6,
+  "speed": 120,
+  "ai": "caster",
+  "sight": 14,
+  "abilities": [
+    "chill-touch"
+  ],
+  "spells": [
+    "soul-rend",
+    "hex-bolt",
+    "blink"
+  ],
+  "resist": {
+    "physical": 0.6,
+    "pure": 0.0
+  },
+  "stats": {
+    "accuracy": 96,
+    "evasion": 22
+  },
+  "biomes": [
+    "void"
+  ],
+  "region": {
+    "min": 3,
+    "max": 5
+  },
+  "depth": {
+    "min": 0,
+    "max": 0
+  },
+  "boss": true,
+  "xp": 1500,
+  "drops": [
+    {
+      "item": "mantle-of-the-blight",
+      "chance": 1.0
+    },
+    {
+      "item": "sunken-lamp",
+      "chance": 0.4
+    },
+    {
+      "item": "ring-of-focus",
+      "chance": 0.6
+    }
+  ]
+}

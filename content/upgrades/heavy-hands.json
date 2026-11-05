@@ -1,0 +1,10 @@
+{
+  "name": "Heavy Hands",
+  "group": "arms",
+  "tier": 2,
+  "weight": 6,
+  "about": "Everything you swing lands harder.",
+  "modify": {
+    "might": 6
+  }
+}

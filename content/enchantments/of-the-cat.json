@@ -1,0 +1,10 @@
+{
+  "name": "of the Cat",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "attributes": {
+    "agility": 2
+  },
+  "about": "Quickness, borrowed."
+}

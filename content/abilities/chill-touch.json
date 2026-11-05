@@ -1,0 +1,10 @@
+{
+  "name": "Chill Touch",
+  "damage": 6,
+  "kind": "cold",
+  "range": 1,
+  "say": "{caster} touch{es} {target}, and it aches.",
+  "applies": [
+    "chilled"
+  ]
+}

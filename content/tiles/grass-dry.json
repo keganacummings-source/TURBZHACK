@@ -1,0 +1,8 @@
+{
+  "name": "Dry Grass",
+  "biomes": [
+    "savanna",
+    "steppe"
+  ],
+  "sprite": "t-grass-dry"
+}

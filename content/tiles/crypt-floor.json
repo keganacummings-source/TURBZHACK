@@ -1,0 +1,7 @@
+{
+  "name": "Crypt Floor",
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-crypt-floor"
+}

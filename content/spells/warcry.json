@@ -1,0 +1,16 @@
+{
+  "name": "Warcry",
+  "about": "A shout that lands like a blow.",
+  "mana": 10,
+  "kind": "pure",
+  "range": 5,
+  "target": "burst",
+  "tier": 2,
+  "say": "{caster} roar{s}.",
+  "damage": 6,
+  "applies": [
+    "stunned"
+  ],
+  "radius": 2,
+  "cooldown": 3
+}

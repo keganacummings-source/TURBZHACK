@@ -1,0 +1,8 @@
+{
+  "name": "Stairs Up",
+  "on": "stairs-up",
+  "biomes": [
+    "dungeon"
+  ],
+  "sprite": "t-stairs-up"
+}

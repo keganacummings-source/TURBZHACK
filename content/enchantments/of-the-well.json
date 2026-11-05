@@ -1,0 +1,10 @@
+{
+  "name": "of the Well",
+  "place": "suffix",
+  "slots": [],
+  "tier": 2,
+  "modify": {
+    "manaMax": 20
+  },
+  "about": "It does not run dry so fast."
+}

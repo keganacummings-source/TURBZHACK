@@ -1,0 +1,14 @@
+{
+  "name": "Ring of Ice",
+  "sprite": "itm-ring",
+  "slot": "ring",
+  "about": "Cold finds you dull.",
+  "resist": {
+    "cold": 0.4
+  },
+  "depth": {
+    "min": 4,
+    "max": 12
+  },
+  "weight_find": 5
+}

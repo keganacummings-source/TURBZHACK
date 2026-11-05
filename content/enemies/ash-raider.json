@@ -1,0 +1,24 @@
+{
+  "name": "Ash Raider",
+  "sprite": "mon-crimson-imp",
+  "pools": {
+    "hp": 5
+  },
+  "armour": 2,
+  "speed": 115,
+  "ai": "melee",
+  "abilities": [
+    "slash",
+    "kick"
+  ],
+  "biomes": [
+    "volcanic",
+    "badlands"
+  ],
+  "region": {
+    "min": 1,
+    "max": 5
+  },
+  "weight": 12,
+  "xp": 28
+}

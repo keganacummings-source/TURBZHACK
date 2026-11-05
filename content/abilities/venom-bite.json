@@ -1,0 +1,10 @@
+{
+  "name": "Venom Bite",
+  "damage": 5,
+  "kind": "poison",
+  "range": 1,
+  "say": "{caster} sink{s} venom into {target}.",
+  "applies": [
+    "poisoned"
+  ]
+}

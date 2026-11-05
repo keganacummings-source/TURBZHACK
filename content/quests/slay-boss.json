@@ -1,0 +1,20 @@
+{
+  "name": "The Thing Out There",
+  "kind": "slay",
+  "tier": 5,
+  "pay": 90,
+  "standing": 12,
+  "ask": [
+    "{what} is in {where}, and it has been there longer than the village.",
+    "We do not say its name. {what}. In {where}. Go and see.",
+    "Somebody has to go to {where}. You are the first one in years who might come back."
+  ],
+  "thanks": [
+    "It is dead. I did not think I would hear that.",
+    "The valley sleeps tonight. Take this. Take all of it.",
+    "You did the thing nobody does."
+  ],
+  "from": [
+    "elder"
+  ]
+}

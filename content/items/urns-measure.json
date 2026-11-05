@@ -1,0 +1,10 @@
+{
+  "name": "Urn's Measure",
+  "sprite": "itm-scroll",
+  "slot": "scroll",
+  "about": "A reckoning, written out.",
+  "casts": "ward",
+  "charges": 2,
+  "unique": true,
+  "source": "Dropped by Stonefather Urn."
+}

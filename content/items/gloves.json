@@ -1,0 +1,14 @@
+{
+  "name": "Gloves",
+  "sprite": "arm-gloves",
+  "slot": "hands",
+  "about": "A better grip.",
+  "armour": 1,
+  "accuracy": 3,
+  "depth": {
+    "min": 1,
+    "max": 12
+  },
+  "weight_find": 11,
+  "overlay": "ovl-hands"
+}

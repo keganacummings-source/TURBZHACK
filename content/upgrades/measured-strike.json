@@ -1,0 +1,13 @@
+{
+  "name": "Measured Strike",
+  "group": "arms",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "Each blow lands where you mean it.",
+  "modify": {
+    "might": 6,
+    "accuracy": 6,
+    "evasion": 2
+  }
+}

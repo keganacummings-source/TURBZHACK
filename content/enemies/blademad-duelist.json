@@ -1,0 +1,39 @@
+{
+  "name": "Blademad Duelist",
+  "about": "Practice is cheaper than a funeral, he used to say. He stopped practicing on dummies.",
+  "sprite": "pc-minotaur",
+  "pools": {
+    "hp": 40
+  },
+  "armour": 6,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 10,
+  "abilities": [
+    "slash",
+    "cleave",
+    "kick"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 11
+  },
+  "weight": 5,
+  "xp": 180,
+  "region": {
+    "min": 2,
+    "max": 5
+  },
+  "stats": {
+    "accuracy": 4,
+    "evasion": 4
+  },
+  "drops": [
+    { "item": "greatsword", "chance": 0.15 },
+    { "item": "falchion", "chance": 0.15 },
+    { "item": "rondel", "chance": 0.1 }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Air Elemental",
+  "sprite": "mon-air-elemental",
+  "pools": {
+    "hp": -40,
+    "mana": 25
+  },
+  "armour": 1,
+  "speed": 145,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [],
+  "biomes": [
+    "highland",
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 6,
+    "max": 12
+  },
+  "weight": 7,
+  "xp": 120,
+  "spells": [
+    "shock-bolt",
+    "chain-arc"
+  ],
+  "resist": {
+    "shock": 0.0,
+    "physical": 0.4
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

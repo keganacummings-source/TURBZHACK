@@ -1,0 +1,13 @@
+{
+  "name": "Rimehold",
+  "sprite": "arm-shield",
+  "slot": "offhand",
+  "about": "A shield of standing ice that never sweats. Those who batter it come away slowed.",
+  "armour": 9,
+  "resist": { "fire": 0.5, "cold": 0.0 },
+  "evasion": -2,
+  "unique": true,
+  "enchantments": ["fortified", "of-warding"],
+  "source": "Dropped by the Hoarmother on the Icefield.",
+  "value": 3000
+}

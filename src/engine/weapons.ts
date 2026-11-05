@@ -1,0 +1,524 @@
+/**
+ * Weapons: classes, reach, speed, scaling, material and quality.
+ *
+ * A weapon used to be a damage number and a damage kind, which made the choice
+ * between any two of them arithmetic — take the bigger one. This gives a weapon
+ * five separate things to be good and bad at, so that the best weapon depends on
+ * who is holding it and what they are fighting:
+ *
+ *   CLASS    decides which attribute it scales off, which skill it trains, and
+ *            how it feels — a dagger and a maul are not the same tool
+ *   REACH    decides whether you strike first, and whether you can strike at all
+ *            from where you are standing
+ *   SPEED    decides how many turns a swing costs, so a fast weak weapon and a
+ *            slow strong one can do the same damage per turn and play nothing
+ *            alike
+ *   MATERIAL decides the base numbers, and is where crafting enters
+ *   QUALITY  decides how well that particular one came out, which is where a
+ *            crafter's skill and a lucky find enter
+ *
+ * The arithmetic lives here rather than in the combat code so that the character
+ * sheet, the wiki, the crafting screen and the blow itself are all reading the
+ * same function — a weapon that displays one number and deals another is the
+ * kind of bug nobody ever quite believes.
+ */
+import { derive, type Attributes } from "./attributes.ts";
+import type { ItemDef } from "../content/schema.ts";
+
+// ---------------------------------------------------------------------------
+// Classes
+// ---------------------------------------------------------------------------
+
+export const WEAPON_CLASSES = [
+  "dagger", "sword", "axe", "mace", "polearm", "staff", "bow", "unarmed",
+] as const;
+
+export type WeaponClass = (typeof WEAPON_CLASSES)[number];
+
+export type WeaponClassInfo = {
+  name: string;
+  /** Which attribute's damage bonus applies. */
+  scales: "light" | "heavy";
+  /** Turns per swing, 1 being the standard pace. */
+  speed: number;
+  /** Squares it can reach. 1 is adjacent. */
+  reach: number;
+  /** Multiplier on the material's base damage. */
+  damage: number;
+  /** Added to the chance to hit. */
+  accuracy: number;
+  /** Needs both hands: nothing in the off-hand. */
+  twoHanded?: boolean;
+  /**
+   * Spell power the class grants just for being held.
+   *
+   * A staff is a deliberately poor weapon, and without this it was strictly
+   * worse than a dagger at everything — which made it a trap rather than a
+   * trade. The compensation belongs on the CLASS rather than on each staff
+   * file, because it is true of staves: holding one helps you cast.
+   */
+  focus?: number;
+  /**
+   * Weight per point of damage, for a weapon whose file does not state its own.
+   *
+   * Weight is what a swing costs in stamina (see `swingStamina`), so this is
+   * the number that makes a maul tiring and a dagger not. Per point of damage
+   * rather than flat per class, so a Club and a Maul — both maces — are not
+   * the same load. A file can always say `"weight"` itself and skip this.
+   */
+  heft: number;
+  /** What it is good at, in words, for the sheet and the wiki. */
+  about: string;
+};
+
+/**
+ * The classes.
+ *
+ * The numbers are set so that no class is simply better: a dagger lands far more
+ * often and hits for much less, a maul is the reverse, a polearm trades its
+ * accuracy for a square of reach. Damage-per-turn comes out within about 15% of
+ * each other across the table, which is the point — the differences are in HOW
+ * each one gets there.
+ */
+export const WEAPON_CLASS: Record<WeaponClass, WeaponClassInfo> = {
+  unarmed: {
+    name: "Unarmed", scales: "light", speed: 1, reach: 1, damage: 0.35, accuracy: 5,
+    heft: 0,
+    about: "Always available, and always a last resort.",
+  },
+  dagger: {
+    name: "Dagger", scales: "light", speed: 0.6, reach: 1, damage: 0.55, accuracy: 12,
+    heft: 0.12,
+    about: "Fast and accurate. You will land everything and feel none of it.",
+  },
+  sword: {
+    name: "Sword", scales: "light", speed: 1, reach: 1, damage: 1, accuracy: 5,
+    heft: 0.22,
+    about: "No weakness and no particular strength, which is its strength.",
+  },
+  axe: {
+    name: "Axe", scales: "heavy", speed: 1.2, reach: 1, damage: 1.3, accuracy: -4,
+    heft: 0.35,
+    about: "Slow, heavy, and it does not care what you are wearing.",
+  },
+  mace: {
+    name: "Mace", scales: "heavy", speed: 1.15, reach: 1, damage: 1.15, accuracy: -2,
+    heft: 0.4,
+    about: "Blunt. Armour helps less than its wearer hoped.",
+  },
+  polearm: {
+    name: "Polearm", scales: "heavy", speed: 1.25, reach: 2, damage: 1.2, accuracy: -6,
+    twoHanded: true,
+    heft: 0.35,
+    about: "Two squares of reach, and you strike first because of it.",
+  },
+  staff: {
+    name: "Staff", scales: "light", speed: 1, reach: 1, damage: 0.6, accuracy: 0,
+    twoHanded: true, focus: 6,
+    heft: 0.2,
+    about: "A poor weapon and an excellent place to put a spell.",
+  },
+  bow: {
+    name: "Bow", scales: "light", speed: 1.1, reach: 6, damage: 0.9, accuracy: -2,
+    twoHanded: true,
+    heft: 0.15,
+    about: "Reach that makes a fight a different problem entirely.",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Materials
+// ---------------------------------------------------------------------------
+
+export type MaterialInfo = {
+  name: string;
+  /** A colour to tint the item's sprite, so metals read apart on the ground. */
+  colour: string;
+  /** Multiplier on the class's damage. */
+  damage: number;
+  /** Added to armour, for armour made of it. */
+  armour: number;
+  /** Added to the chance to hit. */
+  accuracy: number;
+  /** Multiplier on how heavy it is. */
+  weight: number;
+  /** Rough worth per unit, which the economy prices from. */
+  value: number;
+  about: string;
+};
+
+/**
+ * What a thing is made of.
+ *
+ * This is the axis crafting owns. A smith cannot change a sword into an axe, but
+ * they can make the same axe out of something better — and the material a thing
+ * is made of is recorded on the item, so a Silver Axe and an Iron Axe are the
+ * same recipe and not the same weapon.
+ */
+export const MATERIALS = [
+  "wood", "bone", "copper", "iron", "steel", "silver", "meteoric",
+] as const;
+
+export type MaterialId = (typeof MATERIALS)[number];
+
+export const MATERIAL: Record<MaterialId, MaterialInfo> = {
+  wood: {
+    name: "Wooden", colour: "#6b4a2b", damage: 0.6, armour: 0.5, accuracy: 2, weight: 0.7, value: 1,
+    about: "It is a stick with intent.",
+  },
+  bone: {
+    name: "Bone", colour: "#e8e0c8", damage: 0.75, armour: 0.7, accuracy: 3, weight: 0.6, value: 2,
+    about: "Light, sharp, and it was somebody's.",
+  },
+  copper: {
+    name: "Copper", colour: "#b06a3c", damage: 0.85, armour: 0.8, accuracy: 0, weight: 1, value: 4,
+    about: "Soft. It will hold an edge for about one fight.",
+  },
+  iron: {
+    name: "Iron", colour: "#8a8f98", damage: 1, armour: 1, accuracy: 0, weight: 1, value: 8,
+    about: "The standard against which the others are measured.",
+  },
+  steel: {
+    name: "Steel", colour: "#aeb6c2", damage: 1.25, armour: 1.3, accuracy: 2, weight: 0.95, value: 20,
+    about: "Iron, with the argument taken out of it.",
+  },
+  silver: {
+    name: "Silver", colour: "#dfe6ee", damage: 1.1, armour: 1.1, accuracy: 4, weight: 0.9, value: 45,
+    about: "Not the hardest. Some things mind it a great deal.",
+  },
+  meteoric: {
+    name: "Meteoric", colour: "#7d5bd0", damage: 1.5, armour: 1.5, accuracy: 5, weight: 0.8, value: 120,
+    about: "It arrived already finished. Working it is mostly listening.",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Quality
+// ---------------------------------------------------------------------------
+
+export const QUALITIES = [
+  "crude", "plain", "fine", "superior", "masterwork",
+] as const;
+
+export type QualityId = (typeof QUALITIES)[number];
+
+export const QUALITY: Record<QualityId, { name: string; damage: number; armour: number; accuracy: number; value: number }> = {
+  crude:      { name: "Crude",      damage: 0.75, armour: 0.7,  accuracy: -5, value: 0.5 },
+  plain:      { name: "",           damage: 1,    armour: 1,    accuracy: 0,  value: 1 },
+  fine:       { name: "Fine",       damage: 1.15, armour: 1.15, accuracy: 3,  value: 2 },
+  superior:   { name: "Superior",   damage: 1.3,  armour: 1.3,  accuracy: 6,  value: 4 },
+  masterwork: { name: "Masterwork", damage: 1.5,  armour: 1.5,  accuracy: 10, value: 9 },
+};
+
+/**
+ * Which quality a roll comes out as.
+ *
+ * `roll` is the crafter's skill plus their Cunning plus the dice; the bands are
+ * wide enough that a beginner can get lucky and a master can still have a bad
+ * day, because a craft whose outcome is a foregone conclusion is a press of a
+ * button rather than a decision about whether to spend the materials.
+ */
+export function qualityFor(roll: number): QualityId {
+  if (roll < 10) return "crude";
+  if (roll < 30) return "plain";
+  if (roll < 55) return "fine";
+  if (roll < 80) return "superior";
+  return "masterwork";
+}
+
+export const qualityRank = (q: QualityId): number => QUALITIES.indexOf(q);
+
+// ---------------------------------------------------------------------------
+// Putting one together
+// ---------------------------------------------------------------------------
+
+/**
+ * A specific weapon, as opposed to the kind of weapon.
+ *
+ * Carried alongside the item id, because two Iron Axes are the same content file
+ * and may not be the same object: one of them might be masterwork.
+ */
+export type ItemInstance = {
+  /** The content id it is an instance of. */
+  item: string;
+  material?: MaterialId;
+  quality?: QualityId;
+  /** Who made it, for the log and for pride. */
+  maker?: string;
+  /**
+   * Affix ids riding on this particular piece.
+   *
+   * This is what makes two Steel Axes different objects: one might be "Flaming …
+   * of the Bear" and the other plain. Stored as ids and resolved against the
+   * enchantment registry wherever the item's numbers or name are worked out.
+   */
+  affixes?: string[];
+};
+
+/** The numbers a weapon actually has, after class, material and quality. */
+export type WeaponStats = {
+  class: WeaponClass;
+  name: string;
+  damage: number;
+  accuracy: number;
+  speed: number;
+  reach: number;
+  twoHanded: boolean;
+  material?: MaterialId;
+  quality: QualityId;
+  /** Spell power from the class, before anything the file itself adds. */
+  focus: number;
+  /** How heavy this particular weapon is, which is what a swing costs in stamina. */
+  weight: number;
+};
+
+/** What using a class of weapon is called in the log, when its file does not say. */
+export const WEAPON_VERB: Record<WeaponClass, string> = {
+  unarmed: "punch", dagger: "stab", sword: "slash", axe: "chop", mace: "smash",
+  polearm: "thrust at", staff: "strike", bow: "shoot",
+};
+
+/** "{s}" or "{es}" for a verb, so the log reads right for you and for everyone else. */
+export function swingVerbSay(def: ItemDef | undefined, cls: WeaponClass): string {
+  const verb = def?.verb ?? WEAPON_VERB[cls];
+  const first = verb.split(" ")[0]!;
+  const rest = verb.slice(first.length);
+  return `${first}${/(s|sh|ch|x|z)$/.test(first) ? "{es}" : "{s}"}${rest}`;
+}
+
+/** What class an item's file says it is, defaulting sensibly. */
+export function classOf(def: ItemDef | undefined): WeaponClass {
+  const named = def?.weaponClass;
+  if (named && (WEAPON_CLASSES as readonly string[]).includes(named)) return named as WeaponClass;
+  return "unarmed";
+}
+
+/**
+ * Work out a weapon's real numbers.
+ *
+ * Multiplicative in material and quality and additive in accuracy, because the
+ * two kinds of bonus mean different things: being made of steel makes every blow
+ * harder in proportion, while being well made shifts how often it lands by a
+ * flat amount. Multiplying accuracy would make a masterwork dagger literally
+ * unmissable and a crude one useless.
+ */
+export function weaponStats(def: ItemDef, inst?: ItemInstance): WeaponStats {
+  const cls = classOf(def);
+  const info = WEAPON_CLASS[cls];
+
+  /*
+   * The file's number is the weapon as written. Multipliers are for the copy.
+   *
+   * This distinction matters and is easy to get wrong. A file that says
+   * "Silver Sabre, 15 damage" has ALREADY accounted for being a sabre and being
+   * silver — the author wrote 15 knowing both. Multiplying by the class and the
+   * material again on top of that double-counts, and the first version of this
+   * did: a wooden staff written as 9 came out at 5, which looked like the
+   * weapon system had broken the weapon.
+   *
+   * So the class and material tables are consulted for two things only:
+   *   - the fallback damage, for a file that gives no number at all
+   *   - the INSTANCE's material and quality, which is what crafting and a lucky
+   *     find change about one particular copy
+   *
+   * The class still decides reach, speed, accuracy and which attribute it scales
+   * off, which is where the character of a weapon actually lives.
+   */
+  const material = inst?.material;
+  const mat = material ? MATERIAL[material] : undefined;
+  const quality = inst?.quality ?? "plain";
+  const q = QUALITY[quality];
+
+  const base = def.damage ?? Math.round(14 * info.damage);
+
+  return {
+    class: cls,
+    name: fullName(def, inst),
+    damage: Math.max(1, Math.round(base * (mat?.damage ?? 1) * q.damage)),
+    accuracy: (def.accuracy ?? 0) + info.accuracy + (mat?.accuracy ?? 0) + q.accuracy,
+    speed: info.speed,
+    reach: def.reach ?? info.reach,
+    twoHanded: !!info.twoHanded,
+    material,
+    quality,
+    focus: info.focus ?? 0,
+    weight: weaponWeight(def, inst),
+  };
+}
+
+/**
+ * How heavy a weapon is, in no unit in particular.
+ *
+ * The file's own `weight` wins when it has one — a Greatsword is a sword by
+ * class and nothing like a Short Sword to hold out at arm's length, and only
+ * its author can say so. Otherwise it is the damage times the class's heft,
+ * which puts a dagger near 1, a sword near 3, a mace near 6 and a maul near 9.
+ *
+ * Only a crafted copy's material moves it, for the same reason it only moves
+ * the damage: the file's number already knows what the file is made of.
+ */
+export function weaponWeight(def: ItemDef, inst?: ItemInstance): number {
+  const info = WEAPON_CLASS[classOf(def)];
+  const base = def.weight ?? (def.damage ?? Math.round(14 * info.damage)) * info.heft;
+  const mat = inst?.material ? MATERIAL[inst.material] : undefined;
+  return Math.max(0, Math.round(base * (mat?.weight ?? 1) * 10) / 10);
+}
+
+/**
+ * "Masterwork Steel Axe", or just "Axe".
+ *
+ * Only an instance's material is named, never the file's own default. A file
+ * that says it is wooden has already said so in its name where it matters —
+ * "Oak Staff", "Silver Sabre" — and prefixing the default as well produced
+ * "Wooden Ruin Staff", which reads as a bug. A material prefix therefore means
+ * "this particular one was made of something", which is exactly what a crafted
+ * item is.
+ */
+export function fullName(
+  def: ItemDef, inst?: ItemInstance, affixes?: { prefix?: string; suffix?: string },
+): string {
+  const parts: string[] = [];
+  if (affixes?.prefix) parts.push(affixes.prefix);
+  const quality = inst?.quality ?? "plain";
+  if (QUALITY[quality].name) parts.push(QUALITY[quality].name);
+  const material = inst?.material;
+  if (material && MATERIAL[material]) parts.push(MATERIAL[material].name);
+  parts.push(def.name ?? String(def.id));
+  // "Flaming Steel Axe of the Bear": the suffix comes after the noun.
+  const base = parts.join(" ");
+  return affixes?.suffix ? `${base} ${affixes.suffix}` : base;
+}
+
+/**
+ * What it is worth, before anybody haggles.
+ *
+ * Material and quality both multiply, so a masterwork meteoric blade is worth
+ * vastly more than the sum of its parts — which is exactly the shape a crafting
+ * economy needs, or there is no reason to ever make the good version.
+ */
+export function itemValue(def: ItemDef, inst?: ItemInstance): number {
+  const base = def.value ?? guessValue(def);
+  // Same rule as the stats: the file's price already knows what the file is
+  // made of, so only a crafted copy's material moves it.
+  const material = inst?.material;
+  const mat = material ? MATERIAL[material] : undefined;
+  const q = QUALITY[inst?.quality ?? "plain"];
+  return Math.max(1, Math.round(base * (mat ? mat.value / MATERIAL.iron.value : 1) * q.value));
+}
+
+/**
+ * A price for something whose file does not name one.
+ *
+ * Derived from what it does rather than left at zero, so that a new content file
+ * is tradeable the moment it exists. A zero-value item would be free to buy and
+ * worthless to sell, which looks like the economy is broken rather than like
+ * somebody forgot a field.
+ */
+function guessValue(def: ItemDef): number {
+  let worth = 10;
+  worth += (def.damage ?? 0) * 3;
+  worth += (def.armour ?? 0) * 6;
+  worth += ((def.might ?? 0) + (def.focus ?? 0)) * 8;
+  worth += ((def.accuracy ?? 0) + (def.evasion ?? 0)) * 3;
+  if (def.casts) worth += 40 * (def.charges ?? 1);
+  for (const mult of Object.values(def.resist ?? {})) {
+    if (typeof mult === "number" && mult < 1) worth += Math.round((1 - mult) * 60);
+  }
+  if (def.unique) worth *= 6;
+  return Math.max(1, Math.round(worth));
+}
+
+// ---------------------------------------------------------------------------
+// Using one
+// ---------------------------------------------------------------------------
+
+/**
+ * The damage a particular person does with a particular weapon.
+ *
+ * Skill is worth a flat percentage per point rather than a flat number, so that
+ * practice with a dagger is worth proportionally the same as practice with a
+ * maul — otherwise every skill point would be better spent on the heavier
+ * weapon, and the class choice would collapse again.
+ */
+export function damageWith(
+  stats: WeaponStats, attr: Attributes, skill = 0,
+): number {
+  const d = derive(attr);
+  const fromAttribute = stats.class === "unarmed"
+    ? d.lightDamage
+    : WEAPON_CLASS[stats.class].scales === "heavy" ? d.heavyDamage : d.lightDamage;
+  const practice = 1 + skill * 0.02;
+  return Math.max(1, Math.round((stats.damage + fromAttribute) * practice));
+}
+
+/** The chance to hit with it, before the target's evasion. */
+export function accuracyWith(
+  stats: WeaponStats, attr: Attributes, skill = 0,
+): number {
+  const d = derive(attr);
+  const fromAttribute = WEAPON_CLASS[stats.class].scales === "heavy"
+    ? d.heavyAccuracy : d.lightAccuracy;
+  return 85 + stats.accuracy + fromAttribute + skill;
+}
+
+/**
+ * What a swing costs, in turns.
+ *
+ * Rounded to hundredths of a turn and fed to the energy scheduler, so a dagger
+ * genuinely gets more swings rather than merely claiming to. Agility shortens it,
+ * which is the one place where being quick compounds with a quick weapon — and
+ * it is floored at a third of a turn so that cannot run away.
+ */
+export function swingCost(stats: WeaponStats, attr: Attributes): number {
+  const d = derive(attr);
+  const quickness = 100 / Math.max(50, d.speed);
+  return Math.max(0.33, Math.round(stats.speed * quickness * 100) / 100);
+}
+
+/**
+ * What one swing costs in stamina.
+ *
+ * Steeper than linear in weight, on purpose. Stamina comes back at a flat
+ * `STAMINA_PER_TURN` a turn, so a weapon is sustainable exactly when its swing
+ * costs less than that times the turns the swing takes. Light weapons sit well
+ * under the line and can swing all day. Mid-weight ones sit about on it. The
+ * heaviest sit far over it, which is what makes the pool drain in a handful of
+ * blows — and why spamming a maul stops working about the fifth swing, where a
+ * linear curve would have let it run on for fifteen.
+ *
+ * Three things bring it down, none of which can bring it to nothing:
+ *   STRENGTH   2% per point over 10, to 30%. Heavy things are lighter to the
+ *              strong, which is half of what Strength is for.
+ *   PRACTICE   1% per point of skill in the class, to 25%. Technique is
+ *              efficiency, and it makes sticking with one weapon worth something
+ *              against the pull to keep swapping.
+ *   UNDER-QUALIFIED   5% more per point of Strength a weapon asks for that you
+ *              lack. You can lift the maul at 8 Strength; you will feel it.
+ *
+ * Unarmed weighs nothing and costs nothing: a fist is always the free option,
+ * which is what keeps being winded a problem and not a dead end.
+ */
+export function swingStamina(
+  stats: WeaponStats, attr: Attributes, skill = 0, required = 0,
+): number {
+  if (stats.weight <= 0) return 0;
+  /*
+   * Exponent raised from 1.25 → 1.35 and base multiplier tuned to 2.0.
+   *
+   * With STAMINA_PER_TURN at 10 (down from 25), the curve needs to be steeper
+   * so that heavy weapons drain the pool fast and light weapons feel nearly
+   * free. The lower multiplier keeps ordinary swords sustainable while the
+   * heavier weapons still outpace recovery and force a pause during a fight.
+   */
+  const raw = Math.pow(stats.weight, 1.35) * 2.0;
+  const strong = Math.min(0.3, Math.max(0, attr.strength - 10) * 0.02);
+  const practised = Math.min(0.25, Math.max(0, skill) * 0.01);
+  const strained = Math.max(0, required - attr.strength) * 0.05;
+  return Math.max(1, Math.round(raw * (1 - strong - practised + strained)));
+}
+
+/** Which skill a class trains. One per class, so practice is a real choice. */
+export const skillFor = (cls: WeaponClass): string => `weapon-${cls}`;
+
+/** Every weapon skill, for the character sheet. */
+export const WEAPON_SKILLS = WEAPON_CLASSES.map(skillFor);

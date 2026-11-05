@@ -1,0 +1,10 @@
+{
+  "name": "Deep Focus",
+  "about": "Every spell, much deeper.",
+  "modify": {
+    "focus": 6
+  },
+  "weight": 6,
+  "group": "magic",
+  "tier": 1
+}

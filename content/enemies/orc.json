@@ -1,0 +1,30 @@
+{
+  "name": "Orc",
+  "sprite": "mon-orc",
+  "pools": {
+    "hp": -30,
+    "mana": -50
+  },
+  "armour": 3,
+  "speed": 100,
+  "ai": "melee",
+  "sight": 8,
+  "abilities": [
+    "cleave"
+  ],
+  "biomes": [
+    "hills",
+    "badlands",
+    "dungeon"
+  ],
+  "depth": {
+    "min": 2,
+    "max": 9
+  },
+  "weight": 20,
+  "xp": 36,
+  "region": {
+    "min": 0,
+    "max": 3
+  }
+}

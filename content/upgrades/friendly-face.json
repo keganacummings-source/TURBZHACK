@@ -1,0 +1,12 @@
+{
+  "name": "Friendly Face",
+  "group": "company",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "Creatures trust you a little more easily.",
+  "perks": {
+    "party": 1,
+    "tame": 0.15
+  }
+}

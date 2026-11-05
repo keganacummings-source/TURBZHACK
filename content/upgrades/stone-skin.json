@@ -1,0 +1,10 @@
+{
+  "name": "Stone Skin",
+  "about": "Blows mostly glance off.",
+  "modify": {
+    "armour": 4
+  },
+  "weight": 6,
+  "group": "body",
+  "tier": 1
+}

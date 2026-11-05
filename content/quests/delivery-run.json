@@ -1,0 +1,21 @@
+{
+  "name": "Delivery",
+  "kind": "deliver",
+  "tier": 2,
+  "pay": 22,
+  "standing": 3,
+  "ask": [
+    "This goes to {where}. Do not open it.",
+    "Carry this to {where} and the coin is yours on your word.",
+    "{where} is expecting this. They have been expecting it a while."
+  ],
+  "thanks": [
+    "They got it. Word travels.",
+    "That is settled, then.",
+    "You went all that way and came back. Not everyone does."
+  ],
+  "from": [
+    "trader",
+    "elder"
+  ]
+}

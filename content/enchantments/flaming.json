@@ -1,0 +1,14 @@
+{
+  "name": "Flaming",
+  "place": "prefix",
+  "slots": [
+    "weapon"
+  ],
+  "tier": 2,
+  "bonusDamage": 5,
+  "bonusKind": "fire",
+  "applies": [
+    "burning"
+  ],
+  "about": "It is on fire, and so is whatever it touches."
+}

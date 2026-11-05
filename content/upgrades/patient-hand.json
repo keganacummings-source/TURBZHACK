@@ -1,0 +1,13 @@
+{
+  "name": "Patient Hand",
+  "group": "trade",
+  "tier": 2,
+  "talent": true,
+  "weight": 12,
+  "about": "Work goes a little faster, and a little better.",
+  "perks": {
+    "gatherSpeed": -1,
+    "craftSpeed": -1,
+    "gatherLuck": 0.2
+  }
+}

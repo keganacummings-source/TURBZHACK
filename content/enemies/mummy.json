@@ -1,0 +1,33 @@
+{
+  "name": "Mummy",
+  "sprite": "mon-mummy",
+  "pools": {
+    "hp": 0,
+    "mana": -50
+  },
+  "armour": 5,
+  "speed": 85,
+  "ai": "melee",
+  "sight": 7,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon"
+  ],
+  "depth": {
+    "min": 5,
+    "max": 12
+  },
+  "weight": 9,
+  "xp": 95,
+  "resist": {
+    "poison": 0,
+    "cold": 0,
+    "fire": 2
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

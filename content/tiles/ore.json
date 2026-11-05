@@ -1,0 +1,32 @@
+{
+  "name": "Ore Vein",
+  "solid": true,
+  "opaque": true,
+  "biomes": [
+    "highland",
+    "badlands",
+    "dungeon"
+  ],
+  "sprite": "t-ore",
+  "harvest": {
+    "skill": "mining",
+    "turns": 4,
+    "tool": "pickaxe",
+    "becomes": "stone",
+    "yields": [
+      {
+        "item": "iron-ore",
+        "chance": 1.0,
+        "amount": 2
+      },
+      {
+        "item": "silver-ore",
+        "chance": 0.3
+      },
+      {
+        "item": "gemstone",
+        "chance": 0.08
+      }
+    ]
+  }
+}

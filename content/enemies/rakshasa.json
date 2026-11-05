@@ -1,0 +1,37 @@
+{
+  "name": "Rakshasa",
+  "sprite": "mon-rakshasa",
+  "pools": {
+    "hp": 25,
+    "mana": 25
+  },
+  "armour": 3,
+  "speed": 115,
+  "ai": "caster",
+  "sight": 10,
+  "abilities": [
+    "slash"
+  ],
+  "biomes": [
+    "dungeon",
+    "void"
+  ],
+  "depth": {
+    "min": 8,
+    "max": 12
+  },
+  "weight": 4,
+  "xp": 180,
+  "spells": [
+    "hex-bolt",
+    "soul-rend"
+  ],
+  "resist": {
+    "pure": 0.5,
+    "poison": 0.5
+  },
+  "region": {
+    "min": 2,
+    "max": 5
+  }
+}

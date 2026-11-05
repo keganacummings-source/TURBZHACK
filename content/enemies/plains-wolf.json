@@ -1,0 +1,24 @@
+{
+  "name": "Plains Wolf",
+  "sprite": "mon-jackal",
+  "pools": {
+    "hp": -40
+  },
+  "armour": 0,
+  "speed": 120,
+  "ai": "melee",
+  "abilities": [
+    "bite"
+  ],
+  "biomes": [
+    "plains",
+    "savanna",
+    "hills"
+  ],
+  "region": {
+    "min": 0,
+    "max": 3
+  },
+  "weight": 18,
+  "xp": 15
+}

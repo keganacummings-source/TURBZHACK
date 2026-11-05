@@ -1,0 +1,19 @@
+{
+  "name": "Brew Haste",
+  "station": "bench",
+  "craft": "alchemy",
+  "turns": 4,
+  "needs": [
+    {
+      "item": "emberfruit",
+      "amount": 2
+    },
+    {
+      "item": "glowcap"
+    }
+  ],
+  "makes": {
+    "item": "potion-of-haste"
+  },
+  "about": "Drink it and find out."
+}
